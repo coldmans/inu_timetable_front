@@ -399,19 +399,19 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
               {timeSlots.map((slot, index) => {
                 const isTopBorder = index > 0 && slot.endsWith('-1') && !slot.startsWith('야1');
                 const isNightTopBorder = slot === '야1-1';
-
                 return (
-                  <tr key={slot} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
+                  <tr key={slot} style={{height: '24px'}} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
                     {slot.endsWith('-1') && (
-                      <td 
-                        rowSpan={2}
-                        className={`text-gray-700 text-center p-1 font-medium text-xs border border-gray-200 ${slot.startsWith('야') ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
+                      <td rowSpan={2} className={`text-gray-700 text-center p-1 font-medium text-xs border border-gray-200 ${slot.startsWith('야') ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
                         {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
                       </td>
                     )}
                     {daysOfWeek.map(day => {
                       const course = grid[day]?.[slot];
-                      
+                      // 상반부(-1) slot에는 과목이 없으면 무조건 빈 td 추가
+                      if (slot.endsWith('-1') && (!course || !course.span)) {
+                        return <td key={`${day}-${slot}-empty`} className="empty-half"></td>;
+                      }
                       if (course && course.isStart) {
                         const backgroundColor = course.color || 'bg-blue-500';
                         const borderColor = course.borderColor || 'border-blue-400';
@@ -726,25 +726,7 @@ function AppContent() {
       return;
     }
 
-    // 현재 UI에 표시된 시간표에서만 중복 체크
-    const currentlyDisplayed = timetable.filter(c => c.id !== undefined);
-    
-    if (currentlyDisplayed.find(c => c.id === courseToAdd.id)) {
-      showToast(`'${courseToAdd.name}' 과목은 이미 시간표에 있어요.`, 'warning');
-      return;
-    }
-
-    const hasConflict = currentlyDisplayed.some(existingCourse => checkConflict(courseToAdd, existingCourse));
-    if (hasConflict) {
-      showToast(`'${courseToAdd.name}' 과목은 기존 시간표와 시간이 겹쳐요!`, 'warning');
-      return;
-    }
-
-    // Optimistic Update: 먼저 UI를 업데이트
-    const previousTimetable = [...timetable];
-    setTimetable([...timetable, courseToAdd]);
-    showToast(`'${courseToAdd.name}' 과목을 시간표에 추가했어요!`);
-
+    // 프론트 중복/충돌 검사 및 Optimistic UI 업데이트 제거
     try {
       await timetableAPI.add({
         userId: user.id,
@@ -752,28 +734,12 @@ function AppContent() {
         semester: CURRENT_SEMESTER,
         memo: ''
       });
-      console.log('✅ 시간표 추가 성공:', courseToAdd.name);
-      
       // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
-      setTimeout(async () => {
-        try {
-          const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
-          const formattedTimetable = timetableData.map((item, index) => 
-            formatCourse(item.subject, index)
-          );
-          setTimetable(formattedTimetable);
-          console.log('🔄 시간표 동기화 완료');
-        } catch (syncError) {
-          console.warn('⚠️ 시간표 동기화 실패:', syncError.message);
-        }
-      }, 1000);
-      
+      const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
+      const formattedTimetable = timetableData.map((item, index) => formatCourse(item.subject, index));
+      setTimetable(formattedTimetable);
+      showToast(`'${courseToAdd.name}' 과목을 시간표에 추가했어요!`);
     } catch (error) {
-      console.error('❌ 시간표 추가 실패:', error);
-      
-      // Rollback: 실패시 이전 상태로 되돌리기
-      setTimetable(previousTimetable);
-      
       // 에러 메시지 처리
       if (error.message.includes('시간') || error.message.includes('충돌') || error.message.includes('겹치')) {
         showToast(`'${courseToAdd.name}' 과목은 기존 시간표와 시간이 겹쳐요! (서버 검사)`, 'warning');

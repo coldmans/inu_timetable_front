@@ -71,13 +71,10 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
         };
         
         const dayKor = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-        let startPeriod, endPeriod;
-        
-        // 시간 데이터를 30분 단위로 변환
         let start, end;
         
+        // 시간 데이터를 30분 단위로 변환
         if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
-          // "09:00" 형태 - 시간을 교시로 변환
           const [hour, minute] = schedule.startTime.split(':').map(Number);
           start = hour + (minute / 60) - 8; // 09:00 = 1.0, 09:30 = 1.5
         } else {
@@ -85,117 +82,39 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
         }
         
         if (typeof schedule.endTime === 'string' && schedule.endTime.includes(':')) {
-          // "12:00" 형태 - 시간을 교시로 변환  
           const [hour, minute] = schedule.endTime.split(':').map(Number);
           end = hour + (minute / 60) - 8; // 12:00 = 4.0, 12:30 = 4.5
         } else {
           end = schedule.endTime;
         }
         
-        console.log(`⏰ 과목 ${subject.subjectName}: ${start}~${end}`);
-        
-        // 야간 교시 처리
-        if (start >= 10) {
-          let endNum = end;
-          if (end < start) endNum += 24;
-
-          const startPeriod = Math.floor(start - 9);
-          const endPeriod = Math.ceil(endNum - 9);
-          const startHalf = (start % 1 === 0.5) ? 2 : 1;
-          const endHalf = (endNum % 1 === 0.5) ? 1 : 2;
-          
-          let currentPeriod = startPeriod;
-          let currentHalf = startHalf;
-          let isFirstSlot = true;
-          let totalSlots = 0;
-          
-          while (currentPeriod < endPeriod || (currentPeriod === endPeriod && currentHalf <= endHalf)) {
-            const slotKey = `야${currentPeriod}-${currentHalf}`;
-            totalSlots++;
-            
-            if (grid[dayKor] && grid[dayKor][slotKey] === null) {
-              grid[dayKor][slotKey] = {
-                subject,
-                isStart: isFirstSlot,
-                colorScheme
-              };
-            }
-            isFirstSlot = false;
-            
-            if (currentHalf === 1) {
-              currentHalf = 2;
-            } else {
-              currentHalf = 1;
-              currentPeriod++;
-            }
+        // 30분 단위로 정확히 칸을 나누는 로직
+        const getSlotKeys = (start, end, night = false) => {
+          const slots = [];
+          let current = start;
+          while (current < end) {
+            const period = night ? Math.floor(current - 9) : Math.floor(current);
+            const half = (current % 1 === 0.5) ? 2 : 1;
+            slots.push(`${night ? '야' : ''}${period}-${half}`);
+            current += 0.5;
           }
-          
-          // span 정보 업데이트
-          currentPeriod = startPeriod;
-          currentHalf = startHalf;
-          while (currentPeriod < endPeriod || (currentPeriod === endPeriod && currentHalf <= endHalf)) {
-            const slotKey = `야${currentPeriod}-${currentHalf}`;
-            if (grid[dayKor][slotKey]) {
-              grid[dayKor][slotKey].span = totalSlots;
-            }
-            
-            if (currentHalf === 1) {
-              currentHalf = 2;
-            } else {
-              currentHalf = 1;
-              currentPeriod++;
-            }
+          return slots;
+        };
+        const isNight = start >= 10;
+        const slotKeys = getSlotKeys(start, end, isNight);
+        // 칸 채우기
+        slotKeys.forEach((slotKey, i) => {
+          if (grid[dayKor] && grid[dayKor][slotKey] === null) {
+            grid[dayKor][slotKey] = {
+              subject,
+              isStart: i === 0,
+              colorScheme
+            };
           }
-        } else {
-          // 주간 교시 처리 - 30분 단위로 배치
-          const startPeriod = Math.floor(start);
-          const endPeriod = Math.ceil(end);
-          
-          const startHalf = (start % 1 === 0.5) ? 2 : 1;
-          const endHalf = (end % 1 === 0.5) ? 1 : 2;
-          
-          let currentPeriod = startPeriod;
-          let currentHalf = startHalf;
-          let isFirstSlot = true;
-          let totalSlots = 0;
-          
-          while (currentPeriod < endPeriod || (currentPeriod === endPeriod && currentHalf <= endHalf)) {
-            const slotKey = `${currentPeriod}-${currentHalf}`;
-            totalSlots++;
-            
-            if (grid[dayKor] && grid[dayKor][slotKey] === null) {
-              grid[dayKor][slotKey] = {
-                subject,
-                isStart: isFirstSlot,
-                colorScheme
-              };
-            }
-            isFirstSlot = false;
-            
-            if (currentHalf === 1) {
-              currentHalf = 2;
-            } else {
-              currentHalf = 1;
-              currentPeriod++;
-            }
-          }
-          
-          // span 정보 업데이트
-          currentPeriod = startPeriod;
-          currentHalf = startHalf;
-          while (currentPeriod < endPeriod || (currentPeriod === endPeriod && currentHalf <= endHalf)) {
-            const slotKey = `${currentPeriod}-${currentHalf}`;
-            if (grid[dayKor][slotKey]) {
-              grid[dayKor][slotKey].span = totalSlots;
-            }
-            
-            if (currentHalf === 1) {
-              currentHalf = 2;
-            } else {
-              currentHalf = 1;
-              currentPeriod++;
-            }
-          }
+        });
+        // span 정보 업데이트 (맨 첫 칸에만 span)
+        if (slotKeys.length > 0 && grid[dayKor][slotKeys[0]]) {
+          grid[dayKor][slotKeys[0]].span = slotKeys.length;
         }
       });
     });
@@ -284,7 +203,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                         const isNightTopBorder = slot === '야1-1';
 
                         return (
-                          <tr key={slot} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
+                          <tr key={slot} style={{height: '24px'}} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
                             {slot.endsWith('-1') && (
                               <td rowSpan={2} className={`text-gray-700 text-center p-1 font-medium text-xs border border-gray-200 ${slot.startsWith('야') ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
                                 {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
@@ -292,18 +211,22 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                             )}
                             {daysOfWeek.map(day => {
                               const cell = grid[day]?.[slot];
-                              if (cell && cell.isStart) {
+                              // 상반부(-1) slot에는 과목이 없으면 무조건 빈 td 추가
+                              if (slot.endsWith('-1') && (!cell || !cell.span)) {
+                                return <td key={`${day}-${slot}-empty`} className="empty-half"></td>;
+                              }
+                              if (cell && cell.span) {
                                 const backgroundColor = cell.colorScheme.bg || 'bg-blue-500';
                                 const borderColor = cell.colorScheme.border || 'border-blue-400';
                                 return (
-                                  <td key={`${day}-${slot}`} rowSpan={cell.span || 1}
+                                  <td key={`${day}-${slot}`} rowSpan={cell.span}
                                     className={`p-1 ${backgroundColor} ${borderColor} border-l-4 align-top`}>
                                     <div className={`text-xs font-bold ${cell.colorScheme.text} leading-tight`}>{cell.subject.subjectName}</div>
                                     <div className={`text-[10px] ${cell.colorScheme.text} opacity-80`}>{cell.subject.professor}</div>
                                   </td>
                                 );
                               }
-                              if (cell && !cell.isStart) return null;
+                              if (cell && !cell.span) return null;
                               return (
                                 <td key={`${day}-${slot}`} className={`min-h-[14px] border-r border-gray-200 ${slot.endsWith('-2') ? 'border-b' : ''} ${slot.startsWith('야') ? 'bg-blue-50' : 'bg-white'}`}></td>
                               );
