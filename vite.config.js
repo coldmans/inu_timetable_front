@@ -7,9 +7,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://inutable.me',
+        target: 'https://inutable.me/api',
         changeOrigin: true,
         secure: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
