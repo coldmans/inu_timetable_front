@@ -205,6 +205,10 @@ const departments = [
 ];
 const courseTypes = ['전체', '전핵', '전심', '전기', '심교', '핵교', '기교', '일선'];
 const grades = ['전체', '1학년', '2학년', '3학년', '4학년'];
+
+// 요일 및 시간대 필터링을 위한 상수
+const filterDaysOfWeek = ['전체', '월', '화', '수', '목', '금', '토'];
+const timeOptions = ['전체', 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
 const daysOfWeek = ['월', '화', '수', '목', '금'];
 // 정수 교시 + 야간 교시
 // 그리드를 2배로 만들기 (30분 단위)
@@ -502,7 +506,7 @@ function AppContent() {
   const { user, isLoggedIn, isLoading: authLoading, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체' });
+  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
   
   // 상태 관리
   const [courses, setCourses] = useState([]);
@@ -558,7 +562,10 @@ function AppContent() {
         subjectName: searchTerm,
         department: filters.department,
         subjectType: filters.subjectType,
-        grade: gradeFilter
+        grade: gradeFilter,
+        dayOfWeek: filters.dayOfWeek === '전체' ? undefined : filters.dayOfWeek,
+        startTime: filters.startTime === '전체' ? undefined : filters.startTime,
+        endTime: filters.endTime === '전체' ? undefined : filters.endTime
       }, page, pageSize);
       
       // 페이징 응답 처리
@@ -973,7 +980,7 @@ function AppContent() {
     setWishlist([]);
     setTimetable([]);
     // 필터 초기화
-    setFilters({ department: '전체', subjectType: '전체', grade: '전체' });
+    setFilters({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
     showToast('로그아웃되었습니다.');
   };
 
@@ -1213,6 +1220,37 @@ function AppContent() {
               >
                 {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+              <select
+                value={filters.dayOfWeek}
+                onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[80px] text-sm"
+              >
+                {filterDaysOfWeek.map(day => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
+              <select
+                value={filters.startTime}
+                onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] text-sm"
+              >
+                {timeOptions.map(time => (
+                  <option key={time} value={time}>
+                    {time === '전체' ? '시작시간' : `${time}교시`}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filters.endTime}
+                onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] text-sm"
+              >
+                {timeOptions.map(time => (
+                  <option key={time} value={time}>
+                    {time === '전체' ? '종료시간' : `${time}교시`}
+                  </option>
                 ))}
               </select>
             </div>
