@@ -70,7 +70,7 @@ export const subjectAPI = {
     });
     
     const finalURL = `${BASE_URL}/subjects/filter?${params}`;
-    console.log(`🔍 API 요청: ${finalURL}`);
+    console.log(`API 요청: ${finalURL}`);
     console.log(`📄 페이지: ${page}, 크기: ${size}`);
     
     const response = await fetch(finalURL);

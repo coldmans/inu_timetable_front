@@ -11,14 +11,6 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   const combination = results.combinations[currentCombination];
   const stats = results.statistics[currentCombination];
 
-  // 디버깅을 위한 데이터 출력
-  console.log('🔍 조합 결과 데이터:', results);
-  console.log('📋 현재 조합:', combination);
-  console.log('📊 통계:', stats);
-  if (combination && combination.length > 0) {
-    console.log('📅 첫 번째 과목 스케줄:', combination[0].schedules);
-  }
-
   const createTimetableGrid = (subjects) => {
     const daysOfWeek = ['월', '화', '수', '목', '금'];
     
@@ -160,40 +152,44 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="flex w-full max-w-6xl max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">🎯 시간표 조합 결과</h2>
-            <p className="text-gray-600 mt-1">총 {results.totalCount}개 조합 중 {currentCombination + 1}번째</p>
+            <h2 className="text-2xl font-semibold text-slate-900">시간표 조합 결과</h2>
+            <p className="mt-1 text-sm text-slate-500">총 {results.totalCount}개 조합 중 {currentCombination + 1}번째</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100">
-            <X size={24} />
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+          >
+            <X size={22} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Timetable Grid */}
+        <div className="flex-1 overflow-auto px-6 py-6">
+          <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <Calendar className="mr-2" size={20} />
-                  시간표 ({stats.totalCredits}학점, {stats.subjectCount}과목)
-                </h3>
-                <div className="bg-white rounded-lg overflow-hidden shadow-sm">
-                  <table className="w-full border-collapse border-gray-200 table-fixed">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="mb-4 flex items-center gap-2 text-slate-700">
+                  <Calendar size={20} className="text-slate-400" />
+                  <span className="text-base font-semibold text-slate-900">
+                    시간표 <span className="ml-1 text-sm font-normal text-slate-500">({stats.totalCredits}학점 · {stats.subjectCount}과목)</span>
+                  </span>
+                </div>
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <table className="w-full table-fixed border-collapse text-xs text-slate-700">
                     <colgroup>
-                      <col className="w-12" />
-                      {daysOfWeek.map(day => <col key={day} className="w-32" />)}
+                      <col className="w-10" />
+                      {daysOfWeek.map(day => <col key={day} />)}
                     </colgroup>
                     <thead>
                       <tr>
-                        <th className="bg-gray-50 p-1 text-center font-bold text-xs text-gray-700 border border-gray-200"></th>
+                        <th className="border border-slate-200 bg-slate-50 p-1"></th>
                         {daysOfWeek.map(day => (
-                          <th key={day} className="bg-gray-100 p-1 text-center font-bold text-xs text-gray-700 border border-gray-200">{day}</th>
+                          <th key={day} className="border border-slate-200 bg-slate-50 p-1 text-center text-[11px] font-semibold text-slate-500">
+                            {day}
+                          </th>
                         ))}
                       </tr>
                     </thead>
@@ -203,32 +199,46 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                         const isNightTopBorder = slot === '야1-1';
 
                         return (
-                          <tr key={slot} style={{height: '24px'}} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
+                          <tr
+                            key={slot}
+                            style={{ height: '24px' }}
+                            className={`${isTopBorder ? 'border-t border-slate-200' : ''} ${isNightTopBorder ? 'border-t border-blue-200' : ''}`}
+                          >
                             {slot.endsWith('-1') && (
-                              <td rowSpan={2} className={`text-gray-700 text-center p-1 font-medium text-xs border border-gray-200 ${slot.startsWith('야') ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
+                              <td
+                                rowSpan={2}
+                                className={`border border-slate-200 p-1 text-center text-[11px] font-medium ${slot.startsWith('야') ? 'bg-slate-100 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                              >
                                 {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
                               </td>
                             )}
                             {daysOfWeek.map(day => {
                               const cell = grid[day]?.[slot];
-                              // 상반부(-1) slot에는 과목이 없으면 무조건 빈 td 추가
+
                               if (slot.endsWith('-1') && (!cell || !cell.span)) {
-                                return <td key={`${day}-${slot}-empty`} className="empty-half"></td>;
+                                return <td key={`${day}-${slot}-empty`} className="border border-slate-200 bg-white"></td>;
                               }
                               if (cell && cell.span) {
-                                const backgroundColor = cell.colorScheme.bg || 'bg-blue-500';
-                                const borderColor = cell.colorScheme.border || 'border-blue-400';
+                                const backgroundColor = cell.colorScheme?.bg || 'bg-blue-100';
+                                const borderColor = cell.colorScheme?.border || 'border-blue-300';
+                                const textColor = cell.colorScheme?.text || 'text-slate-900';
+
                                 return (
-                                  <td key={`${day}-${slot}`} rowSpan={cell.span}
-                                    className={`p-1 ${backgroundColor} ${borderColor} border-l-4 align-top`}>
-                                    <div className={`text-xs font-bold ${cell.colorScheme.text} leading-tight`}>{cell.subject.subjectName}</div>
-                                    <div className={`text-[10px] ${cell.colorScheme.text} opacity-80`}>{cell.subject.professor}</div>
+                                  <td
+                                    key={`${day}-${slot}`}
+                                    rowSpan={cell.span}
+                                    className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border text-[11px] leading-tight`}
+                                  >
+                                    <div className="font-medium">{cell.subject.subjectName}</div>
+                                    <div className="text-[10px] opacity-70">{cell.subject.professor}</div>
                                   </td>
                                 );
                               }
-                              if (cell && !cell.span) return null;
+                              if (cell && !cell.span) {
+                                return null;
+                              }
                               return (
-                                <td key={`${day}-${slot}`} className={`min-h-[14px] border-r border-gray-200 ${slot.endsWith('-2') ? 'border-b' : ''} ${slot.startsWith('야') ? 'bg-blue-50' : 'bg-white'}`}></td>
+                                <td key={`${day}-${slot}`} className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}></td>
                               );
                             })}
                           </tr>
@@ -240,14 +250,13 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
               </div>
             </div>
 
-            {/* Subject List & Stats */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl border p-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <BookOpen className="mr-2" size={20} />
-                  과목 목록
-                </h3>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 text-slate-700">
+                  <BookOpen size={20} className="text-slate-400" />
+                  <span className="text-base font-semibold text-slate-900">과목 목록</span>
+                </div>
+                <div className="max-h-60 space-y-3 overflow-y-auto">
                   {combination.map((subject, index) => {
                     const colors = [
                       'bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-purple-100 text-purple-800',
@@ -257,45 +266,47 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                     const colorClass = colors[index % colors.length];
 
                     return (
-                      <div key={subject.id} className="border rounded-lg p-3">
-                        <div className="flex items-start justify-between">
+                      <div key={subject.id} className="rounded-xl border border-slate-200 p-3">
+                        <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-800">{subject.subjectName}</span>
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${colorClass}`}>{subject.subjectType}</span>
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-slate-900">{subject.subjectName}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>{subject.subjectType}</span>
                             </div>
-                            <div className="text-sm text-gray-600 space-y-1">
-                              <div className="flex items-center"><User size={12} className="mr-1" />{subject.professor}</div>
-                              <div className="flex items-center"><Clock size={12} className="mr-1" />{formatTimeDisplay(subject.schedules)}</div>
+                            <div className="space-y-1 text-sm text-slate-600">
+                              <div className="flex items-center gap-1.5"><User size={12} className="text-slate-400" />{subject.professor}</div>
+                              <div className="flex items-center gap-1.5"><Clock size={12} className="text-slate-400" />{formatTimeDisplay(subject.schedules)}</div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <span className="text-sm font-medium text-gray-800">{subject.credits}학점</span>
-                          </div>
+                          <div className="text-right text-sm font-medium text-slate-700">{subject.credits}학점</div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-              <div className="bg-white rounded-xl border p-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><Award className="mr-2" size={20} />통계</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">총 학점</span>
-                    <span className="font-bold text-blue-600">{stats.totalCredits}학점</span>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 text-slate-700">
+                  <Award size={20} className="text-slate-400" />
+                  <span className="text-base font-semibold text-slate-900">통계</span>
+                </div>
+                <div className="space-y-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span>총 학점</span>
+                    <span className="font-semibold text-slate-900">{stats.totalCredits}학점</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">과목 수</span>
-                    <span className="font-bold">{stats.subjectCount}개</span>
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span>과목 수</span>
+                    <span className="font-semibold text-slate-900">{stats.subjectCount}개</span>
                   </div>
-                  <div className="mt-4">
-                    <div className="text-sm font-medium text-gray-700 mb-2">이수구분별 분포</div>
+                  <div className="pt-2">
+                    <div className="mb-2 text-sm font-medium text-slate-700">이수구분별 분포</div>
                     <div className="space-y-1">
                       {Object.entries(stats.subjectTypeDistribution).map(([type, count]) => (
                         <div key={type} className="flex justify-between text-sm">
-                          <span className="text-gray-600">{type}</span>
-                          <span className="font-medium">{count}개</span>
+                          <span>{type}</span>
+                          <span className="font-medium text-slate-700">{count}개</span>
                         </div>
                       ))}
                     </div>
@@ -306,20 +317,35 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-2">
-            <button onClick={handlePrevious} disabled={currentCombination === 0} className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button
+              onClick={handlePrevious}
+              disabled={currentCombination === 0}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
               <ChevronLeft size={16} /> 이전
             </button>
-            <span className="text-sm text-gray-600">{currentCombination + 1} / {results.combinations.length}</span>
-            <button onClick={handleNext} disabled={currentCombination === results.combinations.length - 1} className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span className="text-sm text-slate-500">{currentCombination + 1} / {results.combinations.length}</span>
+            <button
+              onClick={handleNext}
+              disabled={currentCombination === results.combinations.length - 1}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
               다음 <ChevronRight size={16} />
             </button>
           </div>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">닫기</button>
-            <button onClick={handleSelectThis} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <button
+              onClick={onClose}
+              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              닫기
+            </button>
+            <button
+              onClick={handleSelectThis}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+            >
               <Check size={16} /> 이 조합 선택
             </button>
           </div>

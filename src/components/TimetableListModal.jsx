@@ -52,90 +52,84 @@ const TimetableListModal = ({
   const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* 헤더 */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">📅 내 시간표</h2>
-              <p className="text-gray-600 mt-1">총 {courses.length}개 과목 • {totalCredits}학점</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X size={24} className="text-gray-500" />
-            </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+      <div className="flex w-full max-w-4xl max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
+          <div>
+            <h2 className="text-2xl font-semibold text-slate-900">내 시간표</h2>
+            <p className="mt-1 text-sm text-slate-500">총 {courses.length}개 과목 • {totalCredits}학점</p>
           </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+          >
+            <X size={22} />
+          </button>
         </div>
 
-        {/* 내용 */}
-        <div className="p-6">
+        <div className="flex-1 px-6 py-6">
           {courses.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📚</div>
-              <p className="text-gray-500 text-lg">아직 추가된 과목이 없어요</p>
-              <p className="text-gray-400 text-sm mt-2">과목을 검색해서 시간표에 추가해보세요!</p>
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
+              <p className="text-lg font-medium text-slate-600">아직 추가된 과목이 없어요</p>
+              <p className="mt-2 text-sm text-slate-400">과목을 검색해서 시간표에 담아보세요.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {courses.map((course, index) => (
-                <div key={course.id || index} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-start justify-between">
+                <div
+                  key={course.id || index}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-sm transition-colors hover:border-slate-300"
+                >
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      {/* 과목명과 학점 */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">{course.name}</h3>
-                        <span className={`px-2 py-1 text-xs font-semibold ${course.color} ${course.textColor} rounded-full`}>
+                      <div className="mb-2 flex flex-wrap items-center gap-3">
+                        <h3 className="text-lg font-semibold text-slate-900">{course.name}</h3>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${course.color} ${course.textColor}`}>
                           {course.type}
                         </span>
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                           {course.credits}학점
                         </span>
                       </div>
 
-                      {/* 기본 정보 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <User size={16} />
+                      <div className="mb-3 grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
+                        <div className="flex items-center gap-2">
+                          <User size={16} className="text-slate-400" />
                           <span>{course.professor}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <BookOpen size={16} />
+                        <div className="flex items-center gap-2">
+                          <BookOpen size={16} className="text-slate-400" />
                           <span>{course.department}</span>
                         </div>
                       </div>
 
-                      {/* 시간 정보 */}
                       <div className="flex items-center gap-2 text-sm text-blue-600">
                         <Clock size={16} />
                         <span className="font-medium">{formatTimeDisplay(course.schedules)}</span>
                       </div>
                     </div>
 
-                    {/* 액션 버튼들 */}
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="ml-auto flex items-center gap-2">
                       <button
                         onClick={() => onViewCourseDetails(course)}
-                        className="p-2 hover:bg-blue-100 rounded-full transition-colors"
+                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                         title="상세 정보 보기"
                       >
-                        <Info size={16} className="text-blue-500" />
+                        <Info size={16} />
                       </button>
                       <button
                         onClick={() => onAddToWishlist(course)}
-                        className="p-2 hover:bg-pink-100 rounded-full transition-colors"
+                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-blue-600"
                         title="위시리스트에 담기"
                       >
-                        <Heart size={16} className="text-pink-500" />
+                        <Heart size={16} />
                       </button>
                       <button
                         onClick={() => onRemoveCourse(course)}
-                        className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-rose-600"
                         title="시간표에서 제거"
                       >
-                        <Trash2 size={16} className="text-red-500" />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
@@ -145,15 +139,14 @@ const TimetableListModal = ({
           )}
         </div>
 
-        {/* 푸터 */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-xl">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
+        <div className="sticky bottom-0 border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-slate-500">
               총 {courses.length}개 과목 • {totalCredits}학점
             </div>
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
             >
               닫기
             </button>

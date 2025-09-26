@@ -66,12 +66,12 @@ const Pagination = ({
   const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 px-4">
+    <div className="mt-6 flex flex-col items-center justify-between gap-4 px-4 sm:flex-row">
       {/* 결과 정보 */}
-      <div className="text-sm text-gray-600">
-        총 <span className="font-semibold text-gray-900">{totalElements.toLocaleString()}</span>개 중 {' '}
-        <span className="font-semibold text-gray-900">{startItem}</span>-
-        <span className="font-semibold text-gray-900">{endItem}</span>개 표시
+      <div className="text-sm text-slate-500">
+        총 <span className="font-semibold text-slate-900">{totalElements.toLocaleString()}</span>개 중 {' '}
+        <span className="font-semibold text-slate-900">{startItem}</span>-
+        <span className="font-semibold text-slate-900">{endItem}</span>개 표시
       </div>
 
       {/* 페이징 네비게이션 */}
@@ -80,7 +80,7 @@ const Pagination = ({
         <button
           onClick={handlePrevious}
           disabled={currentPage === 0 || isLoading}
-          className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft size={16} />
           이전
@@ -90,7 +90,7 @@ const Pagination = ({
         <div className="flex items-center gap-1">
           {getVisiblePages().map((page, index) => (
             page === '...' ? (
-              <span key={`dots-${index}`} className="px-3 py-2 text-gray-500">
+              <span key={`dots-${index}`} className="px-3 py-2 text-slate-400">
                 ...
               </span>
             ) : (
@@ -98,10 +98,10 @@ const Pagination = ({
                 key={page}
                 onClick={() => handlePageClick(page)}
                 disabled={isLoading}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition ${
+                className={`rounded-full px-3 py-2 text-sm font-medium transition ${
                   page === currentPage
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {page + 1}
@@ -114,7 +114,7 @@ const Pagination = ({
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages - 1 || isLoading}
-          className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           다음
           <ChevronRight size={16} />

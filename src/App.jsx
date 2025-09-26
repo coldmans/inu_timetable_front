@@ -225,6 +225,100 @@ const displayTimeSlots = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
 
+const portalRegisteredCourses = [
+  {
+    grade: '전체',
+    type: '핵심교양',
+    courseNo: '0011229001',
+    courseTitle: 'MBTI로찾아가는나의해법 [7브수업]',
+    courseTitleEn: 'My Book that Goes Back to MBTI',
+    credit: 3,
+    english: '-',
+    time: '수 1-2A 2B-3 (12-301)',
+    department: '교양',
+    professor: '박상원',
+    status: '마감'
+  },
+  {
+    grade: '3',
+    type: '전공심화',
+    courseNo: '0006836001',
+    courseTitle: '네트워크구조설계 [7브수업]',
+    courseTitleEn: 'Network Architecture and Design',
+    credit: 3,
+    english: '-',
+    time: '월 2B-3 (07-311) 수 7-8A (07-311)',
+    department: '임베디드시스템공학과',
+    professor: '황광명',
+    status: '신청'
+  },
+  {
+    grade: '4',
+    type: '전공심화',
+    courseNo: 'IAC3058001',
+    courseTitle: '캡스톤디자인(2) [7브수업]',
+    courseTitleEn: 'CAPSTONE DESIGN(2)',
+    credit: 3,
+    english: '-',
+    time: '수 8B-9 (07-302) 목 9-9B (07-302)',
+    department: '임베디드시스템공학과',
+    professor: '전경구',
+    status: '신청'
+  },
+  {
+    grade: '3',
+    type: '전공심화',
+    courseNo: '0001770001',
+    courseTitle: '데이터베이스 [7브수업]',
+    courseTitleEn: 'Database',
+    credit: 3,
+    english: '-',
+    time: '월 8B-9 (07-311) 수 2B-3 (07-311)',
+    department: '임베디드시스템공학과',
+    professor: '강우천',
+    status: '신청'
+  },
+  {
+    grade: '2',
+    type: '전공필수',
+    courseNo: '0001765002',
+    courseTitle: 'C++언어',
+    courseTitleEn: 'C++ Language',
+    credit: 2,
+    english: '-',
+    time: '월 5 6 7 (07-511)',
+    department: '컴퓨터공학부',
+    professor: '전혜경',
+    status: '신청'
+  },
+  {
+    grade: '2',
+    type: '부전공',
+    courseNo: '0001780001',
+    courseTitle: '모바일소프트웨어 (온라인혼합강좌)',
+    courseTitleEn: 'Mobile Software',
+    credit: 3,
+    english: '-',
+    time: '화 5 6 (07-408) 수 5 6 (07-408)',
+    department: '컴퓨터공학부',
+    professor: '홍윤식',
+    status: '신청'
+  },
+  {
+    grade: '2',
+    type: '부전공',
+    courseNo: 'IAA6021003',
+    courseTitle: '컴퓨터네트워크 (COMPUTER NETWORK)',
+    courseTitleEn: 'COMPUTER NETWORK',
+    credit: 3,
+    english: '-',
+    time: '화 2B-3 (07-504) 목 5B-6 (07-504)',
+    department: '컴퓨터공학부',
+    professor: '최승식',
+    status: '신청'
+  },
+];
+
 // --- UI Components ---
 
 const Toast = ({ message, show, type, onDismiss }) => {
@@ -269,13 +363,18 @@ const LoadingOverlay = ({ isGenerating }) => {
     }, [isGenerating]);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex flex-col justify-center items-center z-50">
-            <div className="text-white text-2xl font-bold mb-4">🔮 마법을 부리는 중...</div>
-            <div className="w-64 bg-gray-600 rounded-full h-4">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full" style={{ width: `${progress}%` }}></div>
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/60 px-8 py-6 shadow-lg">
+                <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" aria-hidden="true"></div>
+                <div className="text-center">
+                    <p className="text-gray-900 text-lg font-semibold">시간표 조합을 준비하고 있어요</p>
+                    <p className="text-sm text-gray-500">잠시만 기다려 주세요</p>
+                </div>
+                <div className="w-52 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress}%` }}></div>
+                </div>
+                <span className="text-xs font-medium text-gray-500">{Math.round(progress)}%</span>
             </div>
-            <div className="text-white mt-2">{Math.round(progress)}%</div>
-            <div className="text-gray-300 mt-1">최적의 시간표 조합을 찾고 있어요!</div>
         </div>
     );
 };
@@ -349,25 +448,25 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
   }, [courses]);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mini-timetable">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-gray-800">📅 내 시간표</h3>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
             {courses.length > 0 && (
-              <p className="text-sm text-gray-600">
+              <p className="mt-1 text-sm text-slate-500">
                 총 {courses.reduce((total, course) => total + (course.credits || 0), 0)}학점
               </p>
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-slate-500">
             {/* 리스트 보기 버튼 */}
             {courses.length > 0 && onShowTimetableList && (
               <button
                 onClick={onShowTimetableList}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 rounded-full transition-colors hover:bg-slate-100"
                 title="시간표 리스트 보기"
               >
-                <CalendarDays size={18} className="text-gray-600" />
+                <CalendarDays size={18} />
               </button>
             )}
             
@@ -375,27 +474,27 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
             {courses.length > 0 && onClearAll && (
               <button
                 onClick={onClearAll}
-                className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                className="p-2 rounded-full transition-colors hover:bg-rose-100"
                 title="시간표 전체 삭제"
               >
-                <X size={18} className="text-red-500" />
+                <X size={18} className="text-rose-500" />
               </button>
             )}
           </div>
         </div>
-        <div className="w-full overflow-hidden">
-          <table className="w-full border-collapse border border-gray-200 table-fixed">
+        <div className="w-full">
+          <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
             <colgroup>
-              <col className="w-12" />
+              <col className="w-10" />
               {daysOfWeek.map(day => (
-                <col key={day} className="w-16" />
+                <col key={day} />
               ))}
             </colgroup>
             <thead>
               <tr>
-                <th className="bg-gray-50 p-1 text-center font-bold text-xs text-gray-700 border border-gray-200"></th>
+                <th className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-500 border border-slate-200"></th>
                 {daysOfWeek.map(day => (
-                  <th key={day} className="bg-gray-50 p-1 text-center font-bold text-xs text-gray-700 border border-gray-200">
+                  <th key={day} className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-600 border border-slate-200">
                     {day}
                   </th>
                 ))}
@@ -406,57 +505,60 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
                 const isTopBorder = index > 0 && slot.endsWith('-1') && !slot.startsWith('야1');
                 const isNightTopBorder = slot === '야1-1';
                 return (
-                  <tr key={slot} style={{height: '24px'}} className={`${isTopBorder ? 'border-t-2 border-gray-300' : ''} ${isNightTopBorder ? 'border-t-2 border-blue-300' : ''}`}>
+                  <tr
+                    key={slot}
+                    style={{height: '24px'}}
+                    className={`${isTopBorder ? 'border-t border-slate-200' : ''} ${isNightTopBorder ? 'border-t border-blue-200' : ''}`}
+                  >
                     {slot.endsWith('-1') && (
-                      <td rowSpan={2} className={`text-gray-700 text-center p-1 font-medium text-xs border border-gray-200 ${slot.startsWith('야') ? 'bg-blue-50 text-blue-700' : 'bg-gray-50'}`}>
+                      <td
+                        rowSpan={2}
+                        className={`text-center p-1 font-medium text-[11px] border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                      >
                         {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
                       </td>
                     )}
                     {daysOfWeek.map(day => {
                       const course = grid[day]?.[slot];
-                      // 상반부(-1) slot에는 과목이 없으면 무조건 빈 td 추가
                       if (slot.endsWith('-1') && (!course || !course.span)) {
-                        return <td key={`${day}-${slot}-empty`} className="empty-half"></td>;
+                        return <td key={`${day}-${slot}-empty`} className="border border-slate-200 bg-white"></td>;
                       }
                       if (course && course.isStart) {
-                        const backgroundColor = course.color || 'bg-blue-500';
-                        const borderColor = course.borderColor || 'border-blue-400';
+                        const backgroundColor = course.color || 'bg-blue-100';
+                        const borderColor = course.borderColor || 'border-blue-300';
+                        const textColor = course.textColor || 'text-slate-900';
                         return (
                           <td 
                             key={`${day}-${slot}`}
                             rowSpan={course.span || 1}
-                            className={`p-0.5 text-white text-[10px] leading-tight ${backgroundColor} ${borderColor} border-l-2 border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity align-top`}
+                            className={`align-top p-1 text-[11px] leading-tight ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95`}
                             onClick={(e) => handleCourseClick(e, course)}
                           >
-                            <div className="text-center">
-                              <div className="font-semibold text-[10px] leading-tight">{course.name}</div>
-                            </div>
+                            <div className="text-center font-medium">{course.name}</div>
                           </td>
                         );
                       } else if (course && !course.isStart) {
-                        return null; // span으로 처리되므로 렌더링하지 않음
-                      } else {
-                        // 빈 셀
-                        return (
-                          <td key={`${day}-${slot}`} className={`min-h-[14px] border-r border-gray-200 ${slot.endsWith('-2') ? 'border-b' : ''} ${slot.startsWith('야') ? 'bg-blue-50' : 'bg-gray-100'}`}></td>
-                        );
+                        return null;
                       }
+                      return (
+                        <td key={`${day}-${slot}`} className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}></td>
+                      );
                     })}
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
         </div>
         {/* 범례 */}
-        <div className="mt-2 pt-2 border-t border-gray-200">
-          <div className="flex items-center justify-center gap-3 text-xs text-gray-600">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-gray-100 rounded border"></div>
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2 w-3 rounded-sm bg-white border border-slate-200"></span>
               <span>주간</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-50 rounded border-blue-200"></div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-2 w-3 rounded-sm bg-slate-100 border border-slate-200"></span>
               <span>야간</span>
             </div>
           </div>
@@ -477,23 +579,35 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
 };
 
 const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
-  <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 ease-in-out transform hover:-translate-y-1">
-    <div className="p-4">
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-lg font-bold text-gray-800">{course.name} ({course.credits}학점)</p>
-        <div className={`inline-block px-2 py-0.5 text-xs font-semibold ${course.color} ${course.textColor} rounded-full`}>
+  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="p-5">
+      <div className="mb-3 flex items-start justify-between">
+        <p className="text-lg font-semibold text-slate-900">{course.name} ({course.credits}학점)</p>
+        <div className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${course.color} ${course.textColor}`}>
             {course.type}
         </div>
       </div>
-      <div className="space-y-1.5 text-sm text-gray-600">
-        <div className="flex items-center"><MapPin size={14} className="mr-1.5 text-gray-400" />{course.department} | {course.professor}</div>
-        <div className="flex items-center"><Clock size={14} className="mr-1.5 text-gray-400" />{course.time}</div>
+      <div className="space-y-2 text-sm text-slate-600">
+        <div className="flex items-center gap-1.5">
+          <MapPin size={14} className="text-slate-400" />
+          <span>{course.department} | {course.professor}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Clock size={14} className="text-slate-400" />
+          <span>{course.time}</span>
+        </div>
       </div>
-      <div className="mt-3 pt-3 border-t flex justify-end gap-2">
-        <button onClick={() => onAddToWishlist(course)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+      <div className="mt-4 flex justify-end gap-2 border-t border-slate-200 pt-4">
+        <button
+          onClick={() => onAddToWishlist(course)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
+        >
           <ShoppingCart size={14} /> 담기
         </button>
-        <button onClick={() => onAddToTimetable(course)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition shadow">
+        <button
+          onClick={() => onAddToTimetable(course)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+        >
           <Plus size={14} /> 바로 추가
         </button>
       </div>
@@ -507,6 +621,9 @@ function AppContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+  
+  // 페이지 상태 관리
+  const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
   
   // 상태 관리
   const [courses, setCourses] = useState([]);
@@ -544,7 +661,7 @@ function AppContent() {
 
   // 사용자 데이터 로드 - 인증 로딩 완료 후 실행
   useEffect(() => {
-    console.log('🔍 useEffect 실행 - authLoading:', authLoading, 'user:', user);
+    console.log('useEffect 실행 - authLoading:', authLoading, 'user:', user);
     if (!authLoading && user) {
       console.log('✅ 조건 만족, loadUserData 호출');
       loadUserData();
@@ -581,7 +698,7 @@ function AppContent() {
         setCurrentPage(response.number || 0);
       } else {
         // 기존 배열 응답 (백엔드 미수정 시 호환성)
-        console.log(`⚠️ 배열 응답: ${response.length}개 항목 (페이징 미적용)`);
+        console.log(`배열 응답: ${response.length}개 항목 (페이징 미적용)`);
         const formattedCourses = response.map((subject, index) => formatCourse(subject, index));
         setCourses(formattedCourses);
         setTotalPages(1);
@@ -643,7 +760,7 @@ function AppContent() {
       console.log('✅ 위시리스트 데이터 받음:', wishlistData);
       
       const formattedWishlist = wishlistData.map((item, index) => {
-        console.log('🔍 위시리스트 아이템:', item);
+        console.log('위시리스트 아이템:', item);
         
         // 색상 배열 (formatCourse에서 가져옴)
         const colors = [
@@ -960,7 +1077,7 @@ function AppContent() {
         return formatted;
       });
       
-      console.log('🎯 최종 시간표:', formattedCombination);
+      console.log('Selected timetable combination:', formattedCombination);
       setTimetable(formattedCombination);
       
       setShowCombinationResults(false);
@@ -1008,7 +1125,7 @@ function AppContent() {
           setTimetable(formattedTimetable);
           console.log('🔄 시간표 동기화 완료');
         } catch (syncError) {
-          console.warn('⚠️ 시간표 동기화 실패:', syncError.message);
+          console.warn('시간표 동기화 실패:', syncError.message);
         }
       }, 1000);
       
@@ -1098,10 +1215,283 @@ function AppContent() {
     }
   };
 
-  
+  // 인천대 로그인 페이지 컴포넌트
+  const LoginPage = ({ onLogin }) => (
+    <div className="bg-gray-50 min-h-screen font-sans">
+      <div className="container mx-auto p-4 md:p-8">
+        {/* 헤더 */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+            인천대학교 대학 <span className="text-blue-600">수강신청</span>
+          </h1>
+          <p className="text-lg text-gray-600 mb-2">Undergraduate Course Registration</p>
+        </div>
+
+        {/* 로그인 박스 */}
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-blue-800 text-white p-8 rounded-lg shadow-lg">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold">LOGIN</h2>
+            </div>
+            
+            <div className="flex gap-6">
+              {/* 좌측 - 입력 폼 */}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">학번 (ID)</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 text-gray-800 rounded border focus:outline-none focus:border-blue-300"
+                    placeholder=""
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">비밀번호 (PW)</label>
+                  <input 
+                    type="password" 
+                    className="w-full px-3 py-2 text-gray-800 rounded border focus:outline-none focus:border-blue-300"
+                    placeholder=""
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <button 
+                      type="button"
+                      onClick={onLogin}
+                      className="w-full bg-white text-blue-800 font-semibold py-3 px-4 rounded hover:bg-gray-100 transition-colors text-sm"
+                    >
+                      로그인
+                      <br />
+                      <span className="text-xs">(Login)</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 우측 - 버튼들 */}
+              <div className="flex-1 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="bg-gray-600 text-white font-semibold py-3 px-4 rounded hover:bg-gray-700 transition-colors text-sm">
+                    수강신청일정
+                  </button>
+                  <button className="bg-gray-600 text-white font-semibold py-3 px-4 rounded hover:bg-gray-700 transition-colors text-sm">
+                    대학원 수강신청
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button className="bg-gray-600 text-white font-semibold py-3 px-4 rounded hover:bg-gray-700 transition-colors text-sm">
+                    한글정보 및 유의사항
+                  </button>
+                  <button className="bg-gray-600 text-white font-semibold py-3 px-4 rounded hover:bg-gray-700 transition-colors text-sm">
+                    교수자전공 수강신청
+                    <br />
+                    <span className="text-xs">(지원자만 신청)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 하단 안내사항 */}
+            <div className="mt-6 pt-4 border-t border-blue-700">
+              <p className="text-xs text-center">
+                * 학번(ID) / 비밀번호(PW)를 올바르게 입력하다.
+              </p>
+              <p className="text-xs text-center mt-1">
+                학번(ID) 비밀번호(PW) 찾기
+              </p>
+            </div>
+          </div>
+
+          {/* 모의 수강신청 버튼 */}
+          <div className="text-center mt-8">
+            <button 
+              onClick={() => setCurrentView('timetable')}
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+            >
+              모의 수강신청으로 돌아가기
+            </button>
+            <p className="text-gray-600 mt-2 text-sm">로그인 없이 시간표 조합을 체험해보세요!</p>
+          </div>
+
+          {/* 하단 안내 */}
+          <div className="text-center mt-8 text-sm text-red-500">
+            <p>※ 수강신청 URL: https://sugang.inu.ac.kr</p>
+            <p>※ 추천된 브라우저 버전이 아닌 'Chrome' 브라우저 '최신버전'으로 사용하여 수강생체크를 대 됩니다.(Safari를 사용 불가)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const PortalPage = ({ onBackToLogin, onGoToTimetable }) => {
+    const quickMenus = [
+      { label: '장바구니', sub: 'Cart' },
+      { label: '전공과목', sub: 'Major' },
+      { label: '교양과목', sub: 'Liberal Arts' },
+      { label: '타학과과목', sub: 'Other Major' },
+      { label: '연계전공과목', sub: 'Interdisciplinary Courses' },
+      { label: '과목명(코드) 조회', sub: 'Search by Course Title(Code)' },
+      { label: '과목별/교수별 조회', sub: 'Search by Course Title/Prof.' },
+      { label: '장바구니 확인', sub: 'Check Cart' },
+    ];
+
+    return (
+      <div className="bg-gray-100 min-h-screen font-sans text-gray-800">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">인천대학교 수강신청</h1>
+              <p className="text-sm text-gray-500">INU Course Registration System</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button 
+                type="button"
+                onClick={onBackToLogin}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 rounded-md border border-slate-200 bg-white transition-colors hover:border-slate-300 hover:bg-slate-50"
+              >
+                로그아웃
+              </button>
+              <button 
+                type="button"
+                onClick={onGoToTimetable}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 transition"
+              >
+                모의 수강신청으로 이동
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+          <div className="bg-white shadow-xl rounded-xl overflow-hidden">
+            <div className="bg-blue-900 text-white px-6 py-5">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                  <p className="uppercase tracking-wide text-sm text-blue-100">2025년도 2학기 수강신청</p>
+                  <p className="text-2xl font-semibold">2025 Fall course registration</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-blue-200">학과(부)</p>
+                    <p className="font-semibold">임베디드시스템공학과</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-200">학번/성명 ID/Name</p>
+                    <p className="font-semibold">202101681 / 장진형</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-200">학년/학적상태 Grade</p>
+                    <p className="font-semibold">3 / 재학</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
+                {quickMenus.map(menu => (
+                  <div 
+                    key={menu.label}
+                    className="bg-blue-800/60 border border-blue-700 rounded-md px-3 py-2 text-center leading-tight"
+                  >
+                    <p className="font-semibold">{menu.label}</p>
+                    <p className="text-[11px] text-blue-100">{menu.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 text-xs text-blue-800">
+              ※ 주의(전공) : 검정색→주전공과 수업 / 고동색→야간학과 / 회색→미개강과목
+            </div>
+
+            <div className="px-6 py-4 bg-white">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[920px] text-sm text-gray-700">
+                  <thead>
+                    <tr className="bg-blue-100 text-blue-900 border border-blue-200">
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">학년<br />Grade</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">이수구분<br />Course Type</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">학수번호<br />Course No</th>
+                      <th className="px-4 py-3 text-left font-semibold border border-blue-200">교과목명<br />Course Title</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">학점<br />Credit</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">영어여부<br />EN</th>
+                      <th className="px-4 py-3 text-left font-semibold border border-blue-200">요일 및 교시(강의실)<br />Time Table(Lecture room)</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">개설학과<br />Dpt</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">교강사<br />Prof</th>
+                      <th className="px-4 py-3 text-center font-semibold border border-blue-200">신청<br />Add</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portalRegisteredCourses.map(course => (
+                      <tr key={course.courseNo} className="border border-blue-100">
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.grade}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.type}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">
+                          <p>{course.courseNo}</p>
+                        </td>
+                        <td className="px-4 py-3 border border-blue-100">
+                          <p className="font-semibold text-gray-900">{course.courseTitle}</p>
+                          <p className="text-xs text-gray-500">{course.courseTitleEn}</p>
+                        </td>
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.credit}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.english}</td>
+                        <td className="px-4 py-3 border border-blue-100 whitespace-pre-wrap">{course.time}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.department}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">{course.professor}</td>
+                        <td className="px-4 py-3 text-center border border-blue-100">
+                          {course.status === '마감' ? (
+                            <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-200 rounded">마감</span>
+                          ) : (
+                            <button className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition">신청</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="mt-4 text-xs text-blue-700">
+                * 수강신청내역 List of Courses registered ( 삭제 / 삭제할 과목의 취소버튼을 클릭하세요. )
+              </p>
+            </div>
+
+            <div className="px-6 py-4 bg-blue-50 border-t border-blue-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <button className="px-5 py-2 text-sm font-semibold text-white bg-blue-900 rounded shadow hover:bg-blue-800 transition">
+                  확인서출력 Print Confirmation
+                </button>
+                <button className="px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded shadow hover:bg-orange-400 transition">
+                  시간표출력 Print Time table
+                </button>
+              </div>
+              <p className="text-xs text-gray-600">※ 출력 전 팝업 차단을 해제해주세요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 로그인 화면으로 이동
+  const goToLogin = () => {
+    setCurrentView('login');
+  };
+
+  if (currentView === 'login') {
+    return <LoginPage onLogin={() => setCurrentView('portal')} />;
+  }
+
+  if (currentView === 'portal') {
+    return (
+      <PortalPage
+        onBackToLogin={() => setCurrentView('login')}
+        onGoToTimetable={() => setCurrentView('timetable')}
+      />
+    );
+  }
   
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
+    <div className="bg-[#f6f7fb] min-h-screen font-sans">
       <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
       <LoadingOverlay isGenerating={isGenerating} />
       <AuthModal 
@@ -1143,26 +1533,40 @@ function AppContent() {
         />
       )}
 
-      <div className="container mx-auto p-4 md:p-8">
-        <header className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">📚 과목 검색</h1>
-              <p className="text-gray-500 mt-2">과목을 바로 시간표에 추가하거나, 위시리스트에 담아 조합을 찾아보세요.</p>
+      <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
+        <header className="mb-10">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <button
+                onClick={goToLogin}
+                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-5 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-700"
+              >
+                인천대 수강신청으로 이동
+              </button>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
+                <p className="mt-2 text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 깔끔하게 조합을 만들어 보세요.</p>
+              </div>
             </div>
             <div className="flex-shrink-0">
               {isLoggedIn ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="font-semibold text-gray-800">{user.nickname}님</p>
-                    <p className="text-sm text-gray-500">{user.major} {user.grade}학년</p>
+                    <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
+                    <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
                   </div>
-                  <button onClick={handleLogout} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center gap-2">
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                  >
                     <LogOut size={16} /> 로그아웃
                   </button>
                 </div>
               ) : (
-                <button onClick={handleLogin} className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                <button
+                  onClick={handleLogin}
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                >
                   <LogIn size={16} /> 로그인 하기
                 </button>
               )}
@@ -1171,24 +1575,24 @@ function AppContent() {
         </header>
 
         {/* 검색 바 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-7">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 flex gap-2">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
                 <input
                   type="text"
                   placeholder="과목명 또는 교수명 입력 후 엔터키 또는 검색 버튼 클릭..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleSearchKeyPress}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-12 py-3 text-sm text-slate-900 shadow-inner shadow-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
                 />
               </div>
               <button
                 onClick={executeSearch}
                 disabled={isLoading}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
               >
                 <Search size={20} />
                 검색
@@ -1198,7 +1602,7 @@ function AppContent() {
               <select
                 value={filters.department}
                 onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px] text-sm"
+                className="min-w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {departments.map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
@@ -1207,7 +1611,7 @@ function AppContent() {
               <select
                 value={filters.subjectType}
                 onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] text-sm"
+                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {courseTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
@@ -1216,7 +1620,7 @@ function AppContent() {
               <select
                 value={filters.grade}
                 onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[90px] text-sm"
+                className="min-w-[90px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
@@ -1225,7 +1629,7 @@ function AppContent() {
               <select
                 value={filters.dayOfWeek}
                 onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[80px] text-sm"
+                className="min-w-[80px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {filterDaysOfWeek.map(day => (
                   <option key={day} value={day}>{day}</option>
@@ -1234,7 +1638,7 @@ function AppContent() {
               <select
                 value={filters.startTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] text-sm"
+                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {timeOptions.map(time => (
                   <option key={time} value={time}>
@@ -1245,7 +1649,7 @@ function AppContent() {
               <select
                 value={filters.endTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] text-sm"
+                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {timeOptions.map(time => (
                   <option key={time} value={time}>
@@ -1258,18 +1662,18 @@ function AppContent() {
         </div>
         
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Left: Course List */}
           <main className="lg:col-span-2">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-700">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-slate-900">
                 검색 결과 
                 {totalElements > 0 && (
-                  <span className="text-gray-500">
+                  <span className="text-slate-400">
                     (총 {totalElements.toLocaleString()}개 중 {filteredCourses.length}개 표시)
                   </span>
                 )}
-                {isLoading && <span className="text-sm text-blue-500 ml-2">로딩 중...</span>}
+                {isLoading && <span className="ml-2 text-sm text-blue-500">로딩 중...</span>}
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1310,31 +1714,31 @@ function AppContent() {
               </div>
 
               {/* Wishlist */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-                <div className="p-5 border-b border-gray-200">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-gray-800">🛒 위시리스트</h3>
+                    <h3 className="text-lg font-semibold text-slate-900">위시리스트</h3>
                     <div className="flex items-center gap-3">
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-slate-500">
                         총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
                       </div>
                       <button
                         onClick={() => setShowWishlistModal(true)}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
                         title="위시리스트 확장 보기"
                       >
-                        <Maximize size={18} className="text-gray-600" />
+                        <Maximize size={18} className="text-slate-500" />
                       </button>
                     </div>
                   </div>
                   
                   {/* 목표 학점 선택 */}
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <span className="text-sm font-medium text-blue-800">🎯 목표 학점:</span>
+                  <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+                    <span className="text-sm font-medium text-slate-700">목표 학점</span>
                     <select
                       value={targetCredits}
                       onChange={(e) => setTargetCredits(parseInt(e.target.value))}
-                      className="px-3 py-1 text-sm border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value={12}>12학점</option>
                       <option value={13}>13학점</option>
@@ -1352,22 +1756,22 @@ function AppContent() {
                     </select>
                   </div>
                 </div>
-                <div className="p-3 max-h-60 overflow-y-auto">
+                <div className="max-h-60 overflow-y-auto p-3">
                     {wishlist.length > 0 ? (
                         <ul className="space-y-3">
                         {wishlist.map(course => (
-                            <li key={course.id} className={`p-3 rounded-lg border-2 ${course.isRequired ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                            <li key={course.id} className={`rounded-xl border p-3 ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-semibold text-gray-800">{course.name}</p>
+                                    <p className="font-semibold text-slate-900">{course.name}</p>
                                     {course.isRequired && (
-                                      <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
                                         필수
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-sm text-gray-500">{course.credits}학점 | {course.professor}</p>
+                                  <p className="text-sm text-slate-500">{course.credits}학점 | {course.professor}</p>
                                   
                                   
                                   {/* 필수 과목 체크박스 */}
@@ -1377,11 +1781,11 @@ function AppContent() {
                                       id={`required-${course.id}`}
                                       checked={course.isRequired || false}
                                       onChange={() => handleToggleRequired(course.id, course.isRequired)}
-                                      className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                                      className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                                     />
                                     <label 
                                       htmlFor={`required-${course.id}`}
-                                      className="text-sm text-gray-600 cursor-pointer"
+                                      className="cursor-pointer text-sm text-slate-600"
                                     >
                                       필수 포함 과목
                                     </label>
@@ -1389,7 +1793,7 @@ function AppContent() {
                                 </div>
                                 <button 
                                   onClick={() => handleRemoveFromWishlist(course.id)} 
-                                  className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 ml-2"
+                                  className="ml-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500"
                                 >
                                   <X size={18} />
                                 </button>
@@ -1397,18 +1801,18 @@ function AppContent() {
                             </li>
                         ))}
                         </ul>
-                    ) : <div className="text-center py-8 text-gray-500">담은 과목이 없어요.</div>}
+                    ) : <div className="py-8 text-center text-sm text-slate-400">담은 과목이 없어요.</div>}
                 </div>
                 {wishlist.length > 0 && (
-                  <div className="p-5 border-t border-gray-200">
+                  <div className="border-t border-slate-200 p-5">
                     <div className="space-y-2">
-                      <div className="text-xs text-gray-600 text-center">
+                      <div className="text-center text-xs text-slate-500">
                         {wishlist.length}개 과목으로 {targetCredits}학점 맞춤 조합 생성
                       </div>
                       <button 
                         onClick={handleRunGenerator} 
                         disabled={isGenerating}
-                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
                         {isGenerating ? (
                           <span className="flex items-center justify-center gap-2">
@@ -1416,7 +1820,7 @@ function AppContent() {
                             생성 중...
                           </span>
                         ) : (
-                          `🚀 RUN! ${targetCredits}학점 시간표 생성`
+                          `${targetCredits}학점 조합 만들기`
                         )}
                       </button>
                     </div>
