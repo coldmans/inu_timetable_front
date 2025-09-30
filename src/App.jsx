@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -8,7 +8,10 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
-import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
+import CommunityBoard from './components/CommunityBoard';
+import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI, statisticsAPI, boardAPI } from './services/api';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 
 // --- Helper Functions & Constants ---
@@ -225,6 +228,42 @@ const displayTimeSlots = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
 
+const mockBoardPosts = [
+  {
+    id: 'mock-1',
+    title: '운영체제 과제 스터디 구합니다',
+    content: '운영체제 수업 듣는 분들과 주말에 모여 과제를 함께 진행하려고 해요. 토요일 오후 2시에 도서관 스터디룸 예약했습니다. 관심 있으시면 댓글 남겨주세요!',
+    authorNickname: '김코딩',
+    authorMajor: '컴퓨터공학부',
+    authorGrade: 3,
+    createdAt: '2024-03-02T12:30:00+09:00',
+    likes: 12,
+    tags: ['스터디', '운영체제'],
+  },
+  {
+    id: 'mock-2',
+    title: '컴공필수 전공 추천 부탁드려요',
+    content: '이번 학기에 들을만한 컴공 필수 전공 추천 부탁드려요. 난이도랑 과제량도 알려주시면 감사하겠습니다!',
+    authorNickname: '홍길동',
+    authorMajor: '컴퓨터공학부',
+    authorGrade: 2,
+    createdAt: '2024-02-27T21:10:00+09:00',
+    likes: 7,
+    tags: ['수강신청', '전공추천'],
+  },
+  {
+    id: 'mock-3',
+    title: '데이터베이스 중간고사 범위 공유',
+    content: '데베 중간 시험 범위가 1~6장까지로 확정됐어요. 교수님이 쿼리 실습 문제 비중이 높다고 하셨으니 참고하세요!',
+    authorNickname: '박DB',
+    authorMajor: '컴퓨터공학부',
+    authorGrade: 4,
+    createdAt: '2024-03-05T09:05:00+09:00',
+    likes: 18,
+    tags: ['시험정보', '데이터베이스'],
+  },
+];
+
 const portalRegisteredCourses = [
   {
     grade: '전체',
@@ -379,7 +418,18 @@ const LoadingOverlay = ({ isGenerating }) => {
     );
 };
 
-const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, onViewCourseDetails, onClearAll, onShowTimetableList }) => {
+const MiniTimetable = ({ 
+  courses, 
+  onExportPDF, 
+  onRemoveCourse, 
+  onAddToWishlist, 
+  onViewCourseDetails, 
+  onClearAll, 
+  onShowTimetableList,
+  timetableRef,
+  isExportingPDF,
+  aggregateStats
+}) => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showMenu, setShowMenu] = useState(false);
@@ -400,6 +450,8 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
     setShowMenu(false);
     setSelectedCourse(null);
   };
+  const timeColumnWidth = '12%';
+  const dayColumnWidth = `${(100 - 12) / daysOfWeek.length}%`;
   const grid = useMemo(() => {
     const newGrid = {};
     daysOfWeek.forEach(day => {
@@ -448,7 +500,7 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
   }, [courses]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
+    <div ref={timetableRef} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
@@ -459,6 +511,17 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
             )}
           </div>
           <div className="flex items-center gap-1 text-slate-500">
+            {/* PDF 저장 버튼 */}
+            {courses.length > 0 && onExportPDF && (
+              <button
+                onClick={onExportPDF}
+                disabled={isExportingPDF}
+                className="p-2 rounded-full transition-colors hover:bg-slate-100 disabled:opacity-60 disabled:hover:bg-transparent"
+                title="시간표를 PDF로 저장"
+              >
+                <Download size={18} />
+              </button>
+            )}
             {/* 리스트 보기 버튼 */}
             {courses.length > 0 && onShowTimetableList && (
               <button
@@ -482,12 +545,44 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
             )}
           </div>
         </div>
+        {courses.length > 0 && aggregateStats && (
+          aggregateStats.coursesWithStats > 0 ? (
+            <div className="mb-4 grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-3">
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span className="font-medium text-slate-500">총 인원</span>
+                <span className="text-sm font-semibold text-slate-900">{aggregateStats.totalStudents.toLocaleString()}명</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span className="font-medium text-slate-500">같은 과</span>
+                <span className="text-sm font-semibold text-slate-900">{aggregateStats.sameMajor.toLocaleString()}명</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <span className="font-medium text-slate-500">같은 과·학년</span>
+                <span className="text-sm font-semibold text-slate-900">{aggregateStats.sameMajorSameGrade.toLocaleString()}명</span>
+              </div>
+              <div className="col-span-full text-right text-[11px] text-slate-400">
+                {aggregateStats.coursesWithStats}/{aggregateStats.totalCourses}개 과목 기준
+                {aggregateStats.coursesWithErrors > 0 && (
+                  <span className="ml-1 text-rose-400">(실패 {aggregateStats.coursesWithErrors}개)</span>
+                )}
+              </div>
+            </div>
+          ) : aggregateStats.coursesWithErrors === aggregateStats.totalCourses ? (
+            <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">
+              통계 정보를 불러오는 데 실패했어요. 다시 시도하거나 새로고침해 주세요.
+            </div>
+          ) : (
+            <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              수강 인원 통계를 불러오는 중이에요...
+            </div>
+          )
+        )}
         <div className="w-full">
-          <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
+          <table className="w-full border-collapse border border-slate-200 text-xs text-slate-700">
             <colgroup>
-              <col className="w-10" />
+              <col style={{ width: timeColumnWidth }} />
               {daysOfWeek.map(day => (
-                <col key={day} />
+                <col key={day} style={{ width: dayColumnWidth }} />
               ))}
             </colgroup>
             <thead>
@@ -531,10 +626,15 @@ const MiniTimetable = ({ courses, onExportPDF, onRemoveCourse, onAddToWishlist, 
                           <td 
                             key={`${day}-${slot}`}
                             rowSpan={course.span || 1}
-                            className={`align-top p-1 text-[11px] leading-tight ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95`}
+                            className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95`}
                             onClick={(e) => handleCourseClick(e, course)}
                           >
-                            <div className="text-center font-medium">{course.name}</div>
+                            <div className="flex h-full flex-col items-center justify-center gap-0.5 text-center">
+                              <div className="truncate text-[11px] font-semibold leading-tight">{course.name}</div>
+                              {course.professor && (
+                                <div className="truncate text-[10px] leading-none opacity-80">{course.professor}</div>
+                              )}
+                            </div>
                           </td>
                         );
                       } else if (course && !course.isStart) {
@@ -636,6 +736,15 @@ function AppContent() {
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
+  const timetableRef = useRef(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [courseStatsMap, setCourseStatsMap] = useState({});
+  const [loadingStats, setLoadingStats] = useState({});
+  const [statsErrorMap, setStatsErrorMap] = useState({});
+  const [boardPosts, setBoardPosts] = useState([]);
+  const [isBoardLoading, setIsBoardLoading] = useState(false);
+  const [boardError, setBoardError] = useState(null);
+  const [likedBoardPosts, setLikedBoardPosts] = useState({});
   
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
@@ -654,6 +763,105 @@ function AppContent() {
   // 목표 학점 설정
   const [targetCredits, setTargetCredits] = useState(18);
 
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+  }, []);
+
+  const loadCourseStatistics = useCallback(async (course, { force = false } = {}) => {
+    const courseId = course?.id;
+    if (!courseId) return;
+
+    if (!force && courseStatsMap[courseId]) return;
+    if (loadingStats[courseId]) return;
+
+    setLoadingStats(prev => ({ ...prev, [courseId]: true }));
+
+    try {
+      const stats = await statisticsAPI.getSubjectStats(courseId, CURRENT_SEMESTER);
+      setCourseStatsMap(prev => ({ ...prev, [courseId]: stats }));
+      setStatsErrorMap(prev => {
+        const { [courseId]: _ignored, ...rest } = prev;
+        return rest;
+      });
+    } catch (error) {
+      console.error(`과목 통계 조회 실패 (ID: ${courseId}):`, error);
+      setStatsErrorMap(prev => ({ ...prev, [courseId]: error.message || '통계 정보를 불러오지 못했어요.' }));
+    } finally {
+      setLoadingStats(prev => ({ ...prev, [courseId]: false }));
+    }
+  }, [courseStatsMap, loadingStats]);
+
+  const normalizeBoardPost = useCallback((post) => {
+    if (!post) return null;
+
+    const rawTags = Array.isArray(post.tags)
+      ? post.tags
+      : typeof post.tags === 'string'
+        ? post.tags.split(/[,#]/)
+        : [];
+
+    const tags = rawTags
+      .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+      .filter(Boolean);
+
+    const createdRaw = post.createdAt || post.created_at || post.createdDate || post.created_time || new Date().toISOString();
+    const createdDate = new Date(createdRaw);
+    const createdAt = Number.isNaN(createdDate.getTime()) ? new Date().toISOString() : createdDate.toISOString();
+
+    return {
+      id: post.id ?? `tmp-${Math.random().toString(36).slice(2, 9)}`,
+      title: post.title || '제목 없음',
+      content: post.content || '',
+      author: post.authorNickname || post.author || post.writer || '익명',
+      major: post.authorMajor || post.major || null,
+      grade: post.authorGrade || post.grade || null,
+      createdAt,
+      likes: Number(post.likes ?? 0),
+      tags,
+    };
+  }, []);
+
+  const loadBoardPosts = useCallback(async () => {
+    setIsBoardLoading(true);
+    setBoardError(null);
+    try {
+      const response = await boardAPI.list(0, 20);
+      const rawPosts = Array.isArray(response?.content)
+        ? response.content
+        : Array.isArray(response)
+          ? response
+          : [];
+
+      if (!rawPosts.length) {
+        const fallback = mockBoardPosts
+          .map(normalizeBoardPost)
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setBoardPosts(fallback);
+        return;
+      }
+
+      const normalized = rawPosts
+        .map(normalizeBoardPost)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setBoardPosts(normalized);
+    } catch (error) {
+      console.error('게시판 데이터 로드 실패:', error);
+      setBoardError(error.message || '게시판 데이터를 불러오지 못했어요.');
+      showToast('게시판 데이터를 불러오지 못했어요. 예시 데이터를 보여줄게요.', 'warning');
+      const fallback = mockBoardPosts
+        .map(normalizeBoardPost)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setBoardPosts(fallback);
+    } finally {
+      setIsBoardLoading(false);
+    }
+  }, [normalizeBoardPost, showToast]);
+
   // 과목 검색 및 로드
   useEffect(() => {
     loadCourses();
@@ -667,6 +875,20 @@ function AppContent() {
       loadUserData();
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (!timetable || timetable.length === 0) return;
+
+    timetable.forEach(course => {
+      if (course && course.id) {
+        loadCourseStatistics(course);
+      }
+    });
+  }, [timetable, loadCourseStatistics]);
+
+  useEffect(() => {
+    loadBoardPosts();
+  }, [loadBoardPosts]);
 
   const loadCourses = async (page = 0) => {
     try {
@@ -750,12 +972,11 @@ function AppContent() {
       console.log('🚫 loadUserData: user가 없어서 리턴');
       return;
     }
-    
-    console.log('🔄 loadUserData 시작, user:', user.id);
-    
+
     try {
-      // 위시리스트 로드
-      console.log('📋 위시리스트 API 호출 중...');
+      console.log('🔄 loadUserData 시작, user:', user.id);
+      setIsLoading(true);
+
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
       console.log('✅ 위시리스트 데이터 받음:', wishlistData);
       
@@ -809,6 +1030,8 @@ function AppContent() {
       setTimetable(formattedTimetable);
     } catch (error) {
       console.log('사용자 데이터 로드 실패:', error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -832,7 +1055,7 @@ function AppContent() {
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
-  
+
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -841,9 +1064,154 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+  const aggregateStats = useMemo(() => {
+    if (!timetable || timetable.length === 0) return null;
+
+    const summary = timetable.reduce((acc, course) => {
+      const courseId = course.id;
+      const stats = courseStatsMap[courseId];
+
+      if (stats) {
+        acc.totalStudents += Number(stats.totalStudents || 0);
+        acc.sameMajor += Number(stats.sameMajor || 0);
+        acc.sameMajorSameGrade += Number(stats.sameMajorSameGrade || 0);
+        acc.coursesWithStats += 1;
+      } else if (statsErrorMap[courseId]) {
+        acc.coursesWithErrors += 1;
+      }
+
+      return acc;
+    }, { totalStudents: 0, sameMajor: 0, sameMajorSameGrade: 0, coursesWithStats: 0, coursesWithErrors: 0 });
+
+    return {
+      ...summary,
+      totalCourses: timetable.length,
+    };
+  }, [timetable, courseStatsMap, statsErrorMap]);
+
+  const handleExportTimetablePDF = async () => {
+    if (!timetable || timetable.length === 0) {
+      showToast('시간표에 과목을 먼저 담아주세요.', 'warning');
+      return;
+    }
+
+    if (!timetableRef.current) {
+      showToast('시간표 화면을 찾을 수 없어요.', 'warning');
+      return;
+    }
+
+    try {
+      setIsExportingPDF(true);
+      const canvas = await html2canvas(timetableRef.current, {
+        scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const aspectRatio = canvas.width / canvas.height;
+
+      let renderWidth = pageWidth - 20;
+      let renderHeight = renderWidth / aspectRatio;
+
+      if (renderHeight > pageHeight - 20) {
+        renderHeight = pageHeight - 20;
+        renderWidth = renderHeight * aspectRatio;
+      }
+
+      const offsetX = (pageWidth - renderWidth) / 2;
+      const offsetY = (pageHeight - renderHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
+      const today = new Date().toISOString().slice(0, 10);
+      pdf.save(`inu-timetable-${today}.pdf`);
+      showToast('시간표를 PDF로 저장했어요!');
+    } catch (error) {
+      console.error('시간표 PDF 저장 실패:', error);
+      showToast('PDF 저장에 실패했어요. 잠시 후 다시 시도해주세요.', 'error');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
+  const handleCreateBoardPost = async ({ title, content, tags }) => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      throw new Error('게시글을 작성하려면 로그인이 필요합니다.');
+    }
+
+    const formattedTags = Array.isArray(tags)
+      ? tags
+      : typeof tags === 'string'
+        ? tags.split(/[,#]/).map(tag => tag.trim()).filter(Boolean)
+        : [];
+
+    const payload = {
+      title,
+      content,
+      tags: formattedTags,
+      userId: user.id,
+      authorNickname: user.nickname,
+      authorMajor: user.major,
+      authorGrade: user.grade,
+    };
+
+    try {
+      const created = await boardAPI.create(payload);
+      const normalized = normalizeBoardPost(created);
+      if (normalized) {
+        setBoardPosts(prev => [normalized, ...prev]);
+      }
+      showToast('게시글을 등록했어요!');
+      return true;
+    } catch (error) {
+      console.error('게시글 등록 실패:', error);
+      const fallback = normalizeBoardPost({
+        ...payload,
+        id: `local-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+      });
+      if (fallback) {
+        setBoardPosts(prev => [fallback, ...prev]);
+      }
+      showToast('네트워크 문제로 임시 게시글을 추가했어요.', 'warning');
+      return true;
+    }
+  };
+
+  const handleToggleBoardLike = async (post) => {
+    if (!post?.id) return;
+
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    const hasLiked = Boolean(likedBoardPosts[post.id]);
+
+    setBoardPosts(prev => prev.map(item => {
+      if (item.id !== post.id) return item;
+      const nextLikes = Math.max(0, Number(item.likes || 0) + (hasLiked ? -1 : 1));
+      return { ...item, likes: nextLikes };
+    }));
+    setLikedBoardPosts(prev => ({ ...prev, [post.id]: !hasLiked }));
+
+    try {
+      await boardAPI.toggleLike(post.id);
+    } catch (error) {
+      console.error('게시글 좋아요 반영 실패:', error);
+      setBoardPosts(prev => prev.map(item => {
+        if (item.id !== post.id) return item;
+        const rollbackLikes = Math.max(0, Number(item.likes || 0) + (hasLiked ? 1 : -1));
+        return { ...item, likes: rollbackLikes };
+      }));
+      setLikedBoardPosts(prev => ({ ...prev, [post.id]: hasLiked }));
+      showToast('좋아요 반영에 실패했어요.', 'warning');
+    }
   };
 
   const handleAddToTimetable = async (courseToAdd) => {
@@ -1176,6 +1544,7 @@ function AppContent() {
   // 과목 상세 정보 보기
   const handleViewCourseDetails = (course) => {
     setSelectedCourseForDetail(course);
+    loadCourseStatistics(course);
     setShowCourseDetailModal(true);
   };
 
@@ -1516,6 +1885,14 @@ function AppContent() {
           setSelectedCourseForDetail(null);
         }}
         course={selectedCourseForDetail}
+        stats={selectedCourseForDetail ? courseStatsMap[selectedCourseForDetail.id] : null}
+        statsLoading={selectedCourseForDetail ? Boolean(loadingStats[selectedCourseForDetail.id]) : false}
+        statsError={selectedCourseForDetail ? statsErrorMap[selectedCourseForDetail.id] : null}
+        onRetryStats={() => {
+          if (selectedCourseForDetail) {
+            loadCourseStatistics(selectedCourseForDetail, { force: true });
+          }
+        }}
       />
       <TimetableListModal
         isOpen={showTimetableListModal}
@@ -1524,6 +1901,10 @@ function AppContent() {
         onRemoveCourse={handleRemoveFromTimetable}
         onAddToWishlist={handleMoveToWishlistFromTimetable}
         onViewCourseDetails={handleViewCourseDetails}
+        statsMap={courseStatsMap}
+        statsLoadingMap={loadingStats}
+        statsErrorMap={statsErrorMap}
+        onRequestStats={(course) => loadCourseStatistics(course, { force: true })}
       />
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
@@ -1705,11 +2086,15 @@ function AppContent() {
               <div className="hidden lg:block">
                 <MiniTimetable 
                   courses={timetable} 
+                  onExportPDF={handleExportTimetablePDF}
                   onRemoveCourse={handleRemoveFromTimetable}
                   onAddToWishlist={handleMoveToWishlistFromTimetable}
                   onViewCourseDetails={handleViewCourseDetails}
                   onClearAll={handleClearAllTimetable}
                   onShowTimetableList={handleShowTimetableList}
+                  timetableRef={timetableRef}
+                  isExportingPDF={isExportingPDF}
+                  aggregateStats={aggregateStats}
                 />
               </div>
 
@@ -1830,6 +2215,19 @@ function AppContent() {
             </div>
           </aside>
         </div>
+      </div>
+
+      <div className="mt-12">
+        <CommunityBoard
+          posts={boardPosts}
+          isLoading={isBoardLoading}
+          error={boardError}
+          canPost={isLoggedIn}
+          onCreatePost={handleCreateBoardPost}
+          onRefresh={loadBoardPosts}
+          onToggleLike={handleToggleBoardLike}
+          likedPostMap={likedBoardPosts}
+        />
       </div>
       
       {/* Mobile: Floating Button to View Timetable */}

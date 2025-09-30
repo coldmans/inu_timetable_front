@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag } from 'lucide-react';
+import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Users, UserCheck, GraduationCap, AlertTriangle, RotateCcw } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (schedules) => {
@@ -39,8 +39,17 @@ const formatTimeDisplay = (schedules) => {
   }).join(', ');
 };
 
-const CourseDetailModal = ({ isOpen, onClose, course }) => {
+const CourseDetailModal = ({ isOpen, onClose, course, stats, statsLoading, statsError, onRetryStats }) => {
   if (!isOpen || !course) return null;
+
+  const totalStudents = stats?.totalStudents ?? 0;
+  const sameMajor = stats?.sameMajor ?? 0;
+  const sameMajorSameGrade = stats?.sameMajorSameGrade ?? 0;
+  const updatedAt = stats?.updatedAt || stats?.lastUpdatedAt || null;
+  const updatedAtDate = updatedAt ? new Date(updatedAt) : null;
+  const updatedAtLabel = updatedAtDate && !Number.isNaN(updatedAtDate.getTime())
+    ? updatedAtDate.toLocaleString()
+    : null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -145,6 +154,69 @@ const CourseDetailModal = ({ isOpen, onClose, course }) => {
                     <p className="font-medium text-purple-600">야간 수업</p>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* 수강 인원 통계 */}
+            <div className="p-4 bg-slate-50 rounded-lg">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="text-slate-500" size={20} />
+                  <h3 className="text-sm font-semibold text-slate-800">수강 인원 통계</h3>
+                </div>
+                {statsError && onRetryStats && (
+                  <button
+                    type="button"
+                    onClick={onRetryStats}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-white"
+                  >
+                    <RotateCcw size={14} /> 다시 시도
+                  </button>
+                )}
+              </div>
+
+              {statsLoading ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {[1, 2, 3].map((key) => (
+                    <div key={key} className="rounded-lg bg-white px-3 py-3 shadow-sm">
+                      <div className="h-4 w-16 rounded bg-slate-200/80 animate-pulse"></div>
+                      <div className="mt-2 h-6 w-20 rounded bg-slate-200/80 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : stats ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg bg-white px-3 py-3 shadow-sm">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-slate-500">
+                      <Users size={16} className="text-blue-500" /> 총 인원
+                    </div>
+                    <p className="text-lg font-semibold text-slate-900">{totalStudents.toLocaleString()}명</p>
+                  </div>
+                  <div className="rounded-lg bg-white px-3 py-3 shadow-sm">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-slate-500">
+                      <UserCheck size={16} className="text-emerald-500" /> 같은 과
+                    </div>
+                    <p className="text-lg font-semibold text-slate-900">{sameMajor.toLocaleString()}명</p>
+                  </div>
+                  <div className="rounded-lg bg-white px-3 py-3 shadow-sm">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-slate-500">
+                      <GraduationCap size={16} className="text-purple-500" /> 같은 과·학년
+                    </div>
+                    <p className="text-lg font-semibold text-slate-900">{sameMajorSameGrade.toLocaleString()}명</p>
+                  </div>
+                  {updatedAtLabel && (
+                    <p className="col-span-full text-right text-[11px] text-slate-400">
+                      기준 시각: {updatedAtLabel}
+                    </p>
+                  )}
+                </div>
+              ) : statsError ? (
+                <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                  <AlertTriangle size={16} />
+                  <span>{statsError}</span>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">통계 데이터를 준비 중이에요. 잠시 후 다시 열어 주세요.</p>
               )}
             </div>
 
