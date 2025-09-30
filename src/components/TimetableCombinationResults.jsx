@@ -115,6 +115,8 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   };
 
   const { grid, daysOfWeek, timeSlots, displayTimeSlots } = createTimetableGrid(combination);
+  const timeColumnWidth = '12%';
+  const dayColumnWidth = `${(100 - 12) / daysOfWeek.length}%`;
 
   const handlePrevious = () => {
     setCurrentCombination(prev => Math.max(0, prev - 1));
@@ -178,10 +180,10 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                   </span>
                 </div>
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                  <table className="w-full table-fixed border-collapse text-xs text-slate-700">
+                  <table className="w-full border-collapse text-xs text-slate-700">
                     <colgroup>
-                      <col className="w-10" />
-                      {daysOfWeek.map(day => <col key={day} />)}
+                      <col style={{ width: timeColumnWidth }} />
+                      {daysOfWeek.map(day => <col key={day} style={{ width: dayColumnWidth }} />)}
                     </colgroup>
                     <thead>
                       <tr>
@@ -227,10 +229,14 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                                   <td
                                     key={`${day}-${slot}`}
                                     rowSpan={cell.span}
-                                    className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border text-[11px] leading-tight`}
+                                    className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border`}
                                   >
-                                    <div className="font-medium">{cell.subject.subjectName}</div>
-                                    <div className="text-[10px] opacity-70">{cell.subject.professor}</div>
+                                    <div className="flex h-full flex-col items-center justify-center gap-0.5 text-center">
+                                      <div className="truncate text-[11px] font-semibold leading-tight">{cell.subject.subjectName}</div>
+                                      {cell.subject.professor && (
+                                        <div className="truncate text-[10px] leading-none opacity-70">{cell.subject.professor}</div>
+                                      )}
+                                    </div>
                                   </td>
                                 );
                               }

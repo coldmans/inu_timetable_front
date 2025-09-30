@@ -192,3 +192,45 @@ export const combinationAPI = {
     return handleResponse(response);
   },
 };
+
+// 과목 통계 API
+export const statisticsAPI = {
+  // 과목별 참여자 통계 조회
+  getSubjectStats: async (subjectId, semester = '2024-2') => {
+    if (!subjectId) {
+      throw new Error('과목 ID가 필요합니다.');
+    }
+
+    const response = await fetch(`${BASE_URL}/subjects/${subjectId}/statistics?semester=${semester}`);
+    return handleResponse(response);
+  },
+};
+
+// 게시판 API
+export const boardAPI = {
+  // 게시글 목록 조회
+  list: async (page = 0, size = 10) => {
+    const response = await fetch(`${BASE_URL}/board/posts?page=${page}&size=${size}`);
+    return handleResponse(response);
+  },
+
+  // 새 게시글 생성
+  create: async (data) => {
+    const response = await fetch(`${BASE_URL}/board/posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  // 게시글 좋아요 토글
+  toggleLike: async (postId) => {
+    const response = await fetch(`${BASE_URL}/board/posts/${postId}/like`, {
+      method: 'POST',
+    });
+    return handleResponse(response);
+  },
+};
