@@ -8,8 +8,7 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
-import CommunityBoard from './components/CommunityBoard';
-import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI, statisticsAPI, boardAPI } from './services/api';
+import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI, boardAPI } from './services/api';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -418,17 +417,16 @@ const LoadingOverlay = ({ isGenerating }) => {
     );
 };
 
-const MiniTimetable = ({ 
-  courses, 
-  onExportPDF, 
-  onRemoveCourse, 
-  onAddToWishlist, 
-  onViewCourseDetails, 
-  onClearAll, 
+const MiniTimetable = ({
+  courses,
+  onExportPDF,
+  onRemoveCourse,
+  onAddToWishlist,
+  onViewCourseDetails,
+  onClearAll,
   onShowTimetableList,
   timetableRef,
-  isExportingPDF,
-  aggregateStats
+  isExportingPDF
 }) => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -545,38 +543,6 @@ const MiniTimetable = ({
             )}
           </div>
         </div>
-        {courses.length > 0 && aggregateStats && (
-          aggregateStats.coursesWithStats > 0 ? (
-            <div className="mb-4 grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-3">
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span className="font-medium text-slate-500">총 인원</span>
-                <span className="text-sm font-semibold text-slate-900">{aggregateStats.totalStudents.toLocaleString()}명</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span className="font-medium text-slate-500">같은 과</span>
-                <span className="text-sm font-semibold text-slate-900">{aggregateStats.sameMajor.toLocaleString()}명</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span className="font-medium text-slate-500">같은 과·학년</span>
-                <span className="text-sm font-semibold text-slate-900">{aggregateStats.sameMajorSameGrade.toLocaleString()}명</span>
-              </div>
-              <div className="col-span-full text-right text-[11px] text-slate-400">
-                {aggregateStats.coursesWithStats}/{aggregateStats.totalCourses}개 과목 기준
-                {aggregateStats.coursesWithErrors > 0 && (
-                  <span className="ml-1 text-rose-400">(실패 {aggregateStats.coursesWithErrors}개)</span>
-                )}
-              </div>
-            </div>
-          ) : aggregateStats.coursesWithErrors === aggregateStats.totalCourses ? (
-            <div className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">
-              통계 정보를 불러오는 데 실패했어요. 다시 시도하거나 새로고침해 주세요.
-            </div>
-          ) : (
-            <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-              수강 인원 통계를 불러오는 중이에요...
-            </div>
-          )
-        )}
         <div className="w-full">
           <table className="w-full border-collapse border border-slate-200 text-xs text-slate-700">
             <colgroup>
@@ -615,34 +581,47 @@ const MiniTimetable = ({
                     )}
                     {daysOfWeek.map(day => {
                       const course = grid[day]?.[slot];
-                      if (slot.endsWith('-1') && (!course || !course.span)) {
-                        return <td key={`${day}-${slot}-empty`} className="border border-slate-200 bg-white"></td>;
-                      }
-                      if (course && course.isStart) {
-                        const backgroundColor = course.color || 'bg-blue-100';
-                        const borderColor = course.borderColor || 'border-blue-300';
-                        const textColor = course.textColor || 'text-slate-900';
+
+                      // -1 슬롯: 각 교시의 시작
+                      if (slot.endsWith('-1')) {
+                        // 과목이 있고 시작 지점인 경우
+                        if (course && course.isStart) {
+                          const backgroundColor = course.color || 'bg-blue-100';
+                          const borderColor = course.borderColor || 'border-blue-300';
+                          const textColor = course.textColor || 'text-slate-900';
+                          return (
+                            <td
+                              key={`${day}-${slot}`}
+                              rowSpan={course.span || 2}
+                              className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
+                              onClick={(e) => handleCourseClick(e, course)}
+                            >
+                              <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
+                                <div className="w-full px-0.5 text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.name}</div>
+                                {course.professor && (
+                                  <div className="w-full px-0.5 text-[10px] leading-none opacity-80 truncate">{course.professor}</div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        }
+                        // 과목이 없는 경우 빈 칸 (2개 행을 차지)
                         return (
-                          <td 
-                            key={`${day}-${slot}`}
-                            rowSpan={course.span || 1}
-                            className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95`}
-                            onClick={(e) => handleCourseClick(e, course)}
-                          >
-                            <div className="flex h-full flex-col items-center justify-center gap-0.5 text-center">
-                              <div className="truncate text-[11px] font-semibold leading-tight">{course.name}</div>
-                              {course.professor && (
-                                <div className="truncate text-[10px] leading-none opacity-80">{course.professor}</div>
-                              )}
-                            </div>
-                          </td>
+                          <td
+                            key={`${day}-${slot}-empty`}
+                            rowSpan={2}
+                            className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}
+                          ></td>
                         );
-                      } else if (course && !course.isStart) {
+                      }
+
+                      // -2 슬롯: 이미 -1에서 rowSpan으로 처리했으므로 항상 null
+                      if (slot.endsWith('-2')) {
                         return null;
                       }
-                      return (
-                        <td key={`${day}-${slot}`} className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}></td>
-                      );
+
+                      // 예외 처리 (도달하지 않아야 함)
+                      return null;
                     })}
                   </tr>
                 );
@@ -738,9 +717,6 @@ function AppContent() {
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
   const timetableRef = useRef(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [courseStatsMap, setCourseStatsMap] = useState({});
-  const [loadingStats, setLoadingStats] = useState({});
-  const [statsErrorMap, setStatsErrorMap] = useState({});
   const [boardPosts, setBoardPosts] = useState([]);
   const [isBoardLoading, setIsBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState(null);
@@ -767,30 +743,6 @@ function AppContent() {
     setToast({ show: true, message, type });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
   }, []);
-
-  const loadCourseStatistics = useCallback(async (course, { force = false } = {}) => {
-    const courseId = course?.id;
-    if (!courseId) return;
-
-    if (!force && courseStatsMap[courseId]) return;
-    if (loadingStats[courseId]) return;
-
-    setLoadingStats(prev => ({ ...prev, [courseId]: true }));
-
-    try {
-      const stats = await statisticsAPI.getSubjectStats(courseId, CURRENT_SEMESTER);
-      setCourseStatsMap(prev => ({ ...prev, [courseId]: stats }));
-      setStatsErrorMap(prev => {
-        const { [courseId]: _ignored, ...rest } = prev;
-        return rest;
-      });
-    } catch (error) {
-      console.error(`과목 통계 조회 실패 (ID: ${courseId}):`, error);
-      setStatsErrorMap(prev => ({ ...prev, [courseId]: error.message || '통계 정보를 불러오지 못했어요.' }));
-    } finally {
-      setLoadingStats(prev => ({ ...prev, [courseId]: false }));
-    }
-  }, [courseStatsMap, loadingStats]);
 
   const normalizeBoardPost = useCallback((post) => {
     if (!post) return null;
@@ -875,16 +827,6 @@ function AppContent() {
       loadUserData();
     }
   }, [user, authLoading]);
-
-  useEffect(() => {
-    if (!timetable || timetable.length === 0) return;
-
-    timetable.forEach(course => {
-      if (course && course.id) {
-        loadCourseStatistics(course);
-      }
-    });
-  }, [timetable, loadCourseStatistics]);
 
   useEffect(() => {
     loadBoardPosts();
@@ -1063,31 +1005,6 @@ function AppContent() {
     // 페이지 변경 시 맨 위로 스크롤
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const aggregateStats = useMemo(() => {
-    if (!timetable || timetable.length === 0) return null;
-
-    const summary = timetable.reduce((acc, course) => {
-      const courseId = course.id;
-      const stats = courseStatsMap[courseId];
-
-      if (stats) {
-        acc.totalStudents += Number(stats.totalStudents || 0);
-        acc.sameMajor += Number(stats.sameMajor || 0);
-        acc.sameMajorSameGrade += Number(stats.sameMajorSameGrade || 0);
-        acc.coursesWithStats += 1;
-      } else if (statsErrorMap[courseId]) {
-        acc.coursesWithErrors += 1;
-      }
-
-      return acc;
-    }, { totalStudents: 0, sameMajor: 0, sameMajorSameGrade: 0, coursesWithStats: 0, coursesWithErrors: 0 });
-
-    return {
-      ...summary,
-      totalCourses: timetable.length,
-    };
-  }, [timetable, courseStatsMap, statsErrorMap]);
 
   const handleExportTimetablePDF = async () => {
     if (!timetable || timetable.length === 0) {
@@ -1544,7 +1461,6 @@ function AppContent() {
   // 과목 상세 정보 보기
   const handleViewCourseDetails = (course) => {
     setSelectedCourseForDetail(course);
-    loadCourseStatistics(course);
     setShowCourseDetailModal(true);
   };
 
@@ -1885,14 +1801,6 @@ function AppContent() {
           setSelectedCourseForDetail(null);
         }}
         course={selectedCourseForDetail}
-        stats={selectedCourseForDetail ? courseStatsMap[selectedCourseForDetail.id] : null}
-        statsLoading={selectedCourseForDetail ? Boolean(loadingStats[selectedCourseForDetail.id]) : false}
-        statsError={selectedCourseForDetail ? statsErrorMap[selectedCourseForDetail.id] : null}
-        onRetryStats={() => {
-          if (selectedCourseForDetail) {
-            loadCourseStatistics(selectedCourseForDetail, { force: true });
-          }
-        }}
       />
       <TimetableListModal
         isOpen={showTimetableListModal}
@@ -1901,10 +1809,6 @@ function AppContent() {
         onRemoveCourse={handleRemoveFromTimetable}
         onAddToWishlist={handleMoveToWishlistFromTimetable}
         onViewCourseDetails={handleViewCourseDetails}
-        statsMap={courseStatsMap}
-        statsLoadingMap={loadingStats}
-        statsErrorMap={statsErrorMap}
-        onRequestStats={(course) => loadCourseStatistics(course, { force: true })}
       />
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
@@ -1917,17 +1821,9 @@ function AppContent() {
       <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
         <header className="mb-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center">
-              <button
-                onClick={goToLogin}
-                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-5 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-700"
-              >
-                인천대 수강신청으로 이동
-              </button>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
-                <p className="mt-2 text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 깔끔하게 조합을 만들어 보세요.</p>
-              </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
+              <p className="mt-2 text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 깔끔하게 조합을 만들어 보세요.</p>
             </div>
             <div className="flex-shrink-0">
               {isLoggedIn ? (
@@ -2084,8 +1980,8 @@ function AppContent() {
             <div className="sticky top-28">
               {/* Desktop: Mini Timetable */}
               <div className="hidden lg:block">
-                <MiniTimetable 
-                  courses={timetable} 
+                <MiniTimetable
+                  courses={timetable}
                   onExportPDF={handleExportTimetablePDF}
                   onRemoveCourse={handleRemoveFromTimetable}
                   onAddToWishlist={handleMoveToWishlistFromTimetable}
@@ -2094,7 +1990,6 @@ function AppContent() {
                   onShowTimetableList={handleShowTimetableList}
                   timetableRef={timetableRef}
                   isExportingPDF={isExportingPDF}
-                  aggregateStats={aggregateStats}
                 />
               </div>
 
@@ -2217,19 +2112,6 @@ function AppContent() {
         </div>
       </div>
 
-      <div className="mt-12">
-        <CommunityBoard
-          posts={boardPosts}
-          isLoading={isBoardLoading}
-          error={boardError}
-          canPost={isLoggedIn}
-          onCreatePost={handleCreateBoardPost}
-          onRefresh={loadBoardPosts}
-          onToggleLike={handleToggleBoardLike}
-          likedPostMap={likedBoardPosts}
-        />
-      </div>
-      
       {/* Mobile: Floating Button to View Timetable */}
       <div className="lg:hidden fixed bottom-6 right-6">
           <button className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2">
