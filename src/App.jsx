@@ -658,36 +658,36 @@ const MiniTimetable = ({
 };
 
 const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
-  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-    <div className="p-5">
-      <div className="mb-3 flex items-start justify-between">
-        <p className="text-lg font-semibold text-slate-900">{course.name} ({course.credits}학점)</p>
-        <div className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${course.color} ${course.textColor}`}>
+  <div className="overflow-hidden rounded-lg md:rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="p-2 md:p-5">
+      <div className="mb-1.5 md:mb-3 flex items-start justify-between gap-1.5">
+        <p className="text-sm md:text-lg font-semibold text-slate-900 leading-tight">{course.name} <span className="text-xs md:text-base">({course.credits}학점)</span></p>
+        <div className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] md:text-xs font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
             {course.type}
         </div>
       </div>
-      <div className="space-y-2 text-sm text-slate-600">
-        <div className="flex items-center gap-1.5">
-          <MapPin size={14} className="text-slate-400" />
-          <span>{course.department} | {course.professor}</span>
+      <div className="space-y-0.5 md:space-y-2 text-[11px] md:text-sm text-slate-600">
+        <div className="flex items-center gap-1">
+          <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+          <span className="truncate">{course.department} | {course.professor}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Clock size={14} className="text-slate-400" />
-          <span>{course.time}</span>
+        <div className="flex items-center gap-1">
+          <Clock size={12} className="text-slate-400 flex-shrink-0" />
+          <span className="text-[11px] md:text-sm">{course.time}</span>
         </div>
       </div>
-      <div className="mt-4 flex justify-end gap-2 border-t border-slate-200 pt-4">
+      <div className="mt-2 md:mt-4 flex justify-end gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
         <button
           onClick={() => onAddToWishlist(course)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
+          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-2 py-1 text-[11px] md:text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
         >
-          <ShoppingCart size={14} /> 담기
+          <ShoppingCart size={12} /> 담기
         </button>
         <button
           onClick={() => onAddToTimetable(course)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-2 py-1 text-[11px] md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
         >
-          <Plus size={14} /> 바로 추가
+          <Plus size={12} /> 바로 추가
         </button>
       </div>
     </div>
@@ -738,6 +738,9 @@ function AppContent() {
   
   // 목표 학점 설정
   const [targetCredits, setTargetCredits] = useState(18);
+
+  // 희망 공강 요일 설정
+  const [freeDays, setFreeDays] = useState([]);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -1244,7 +1247,8 @@ function AppContent() {
         userId: user.id,
         semester: CURRENT_SEMESTER,
         targetCredits: targetCredits,
-        maxCombinations: 20
+        maxCombinations: 20,
+        freeDays: freeDays
       });
       
       setTimeout(() => {
@@ -1791,8 +1795,12 @@ function AppContent() {
         onRemoveFromWishlist={handleRemoveFromWishlist}
         onToggleRequired={handleToggleRequired}
         onAddToTimetable={handleAddToTimetable}
+        onViewCourseDetails={handleViewCourseDetails}
         targetCredits={targetCredits}
         setTargetCredits={setTargetCredits}
+        freeDays={freeDays}
+        setFreeDays={setFreeDays}
+        onRunGenerator={handleRunGenerator}
       />
       <CourseDetailModal
         isOpen={showCourseDetailModal}
@@ -1801,6 +1809,7 @@ function AppContent() {
           setSelectedCourseForDetail(null);
         }}
         course={selectedCourseForDetail}
+        onAddToTimetable={handleAddToTimetable}
       />
       <TimetableListModal
         isOpen={showTimetableListModal}
@@ -1818,33 +1827,33 @@ function AppContent() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
-        <header className="mb-10">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10">
+        <header className="mb-2 md:mb-10">
+          <div className="flex flex-col gap-2 md:gap-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
-              <p className="mt-2 text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 깔끔하게 조합을 만들어 보세요.</p>
+              <h1 className="text-lg md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
+              <p className="hidden md:block mt-1 text-sm md:text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 조합을 만들어 보세요.</p>
             </div>
             <div className="flex-shrink-0">
               {isLoggedIn ? (
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
+                <div className="flex items-center gap-2 md:gap-4">
+                  <div className="text-right hidden md:block">
                     <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
                     <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                    className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-slate-900 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                   >
-                    <LogOut size={16} /> 로그아웃
+                    <LogOut size={14} /> <span className="hidden md:inline">로그아웃</span><span className="md:hidden">로그아웃</span>
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={handleLogin}
-                  className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                  className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-blue-600 px-3 py-1.5 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
                 >
-                  <LogIn size={16} /> 로그인 하기
+                  <LogIn size={14} /> 로그인
                 </button>
               )}
             </div>
@@ -1852,34 +1861,35 @@ function AppContent() {
         </header>
 
         {/* 검색 바 */}
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-7">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 flex gap-2">
+        <div className="mb-2 md:mb-8 rounded-lg md:rounded-2xl border border-slate-200 bg-white p-2 md:p-6 shadow-sm">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
+            <div className="flex-1 flex gap-1.5">
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                <Search className="absolute left-3 top-2.5 md:left-4 md:top-3.5 text-slate-400" size={16} />
                 <input
                   type="text"
-                  placeholder="과목명 또는 교수명 입력 후 엔터키 또는 검색 버튼 클릭..."
+                  placeholder="과목명 또는 교수명..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleSearchKeyPress}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-12 py-3 text-sm text-slate-900 shadow-inner shadow-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
+                  className="w-full rounded-lg md:rounded-xl border border-slate-200 bg-white px-9 py-2 md:px-12 md:py-3 text-sm text-slate-900 shadow-inner shadow-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
                 />
               </div>
               <button
                 onClick={executeSearch}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="inline-flex items-center gap-1.5 rounded-lg md:rounded-xl bg-blue-600 px-3 py-2 md:px-5 md:py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
               >
-                <Search size={20} />
-                검색
+                <Search size={16} className="md:hidden" />
+                <span className="hidden md:inline">검색</span>
+                <span className="md:hidden">검색</span>
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               <select
                 value={filters.department}
                 onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                className="min-w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[80px] md:min-w-[120px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {departments.map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
@@ -1888,7 +1898,7 @@ function AppContent() {
               <select
                 value={filters.subjectType}
                 onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {courseTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
@@ -1897,7 +1907,7 @@ function AppContent() {
               <select
                 value={filters.grade}
                 onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
-                className="min-w-[90px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[60px] md:min-w-[90px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
@@ -1906,7 +1916,7 @@ function AppContent() {
               <select
                 value={filters.dayOfWeek}
                 onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-                className="min-w-[80px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {filterDaysOfWeek.map(day => (
                   <option key={day} value={day}>{day}</option>
@@ -1915,7 +1925,7 @@ function AppContent() {
               <select
                 value={filters.startTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {timeOptions.map(time => (
                   <option key={time} value={time}>
@@ -1926,7 +1936,7 @@ function AppContent() {
               <select
                 value={filters.endTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-                className="min-w-[100px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {timeOptions.map(time => (
                   <option key={time} value={time}>
@@ -1939,21 +1949,21 @@ function AppContent() {
         </div>
         
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
+        <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Left: Course List */}
           <main className="lg:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-900">
-                검색 결과 
+            <div className="mb-2 md:mb-4 flex items-center justify-between">
+              <h2 className="text-base md:text-xl font-semibold text-slate-900">
+                검색 결과
                 {totalElements > 0 && (
-                  <span className="text-slate-400">
+                  <span className="text-xs md:text-base text-slate-400">
                     (총 {totalElements.toLocaleString()}개 중 {filteredCourses.length}개 표시)
                   </span>
                 )}
-                {isLoading && <span className="ml-2 text-sm text-blue-500">로딩 중...</span>}
+                {isLoading && <span className="ml-2 text-xs md:text-sm text-blue-500">로딩 중...</span>}
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 md:gap-4">
               {filteredCourses.map(course => (
                 <CourseCard 
                   key={course.id} 

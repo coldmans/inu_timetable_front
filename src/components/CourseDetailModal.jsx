@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Users, UserCheck, GraduationCap, AlertTriangle, RotateCcw } from 'lucide-react';
+import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Users, UserCheck, GraduationCap, AlertTriangle, RotateCcw, Plus } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (schedules) => {
@@ -39,7 +39,7 @@ const formatTimeDisplay = (schedules) => {
   }).join(', ');
 };
 
-const CourseDetailModal = ({ isOpen, onClose, course, stats, statsLoading, statsError, onRetryStats }) => {
+const CourseDetailModal = ({ isOpen, onClose, course, stats, statsLoading, statsError, onRetryStats, onAddToTimetable }) => {
   if (!isOpen || !course) return null;
 
   const totalStudents = stats?.totalStudents ?? 0;
@@ -232,7 +232,18 @@ const CourseDetailModal = ({ isOpen, onClose, course, stats, statsLoading, stats
 
         {/* 푸터 */}
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-xl">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            {onAddToTimetable && (
+              <button
+                onClick={() => {
+                  onAddToTimetable(course);
+                  onClose();
+                }}
+                className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-semibold"
+              >
+                <Plus size={18} /> 시간표에 추가
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
