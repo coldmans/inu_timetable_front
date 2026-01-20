@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -227,42 +227,6 @@ const displayTimeSlots = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
 
-const mockBoardPosts = [
-  {
-    id: 'mock-1',
-    title: '운영체제 과제 스터디 구합니다',
-    content: '운영체제 수업 듣는 분들과 주말에 모여 과제를 함께 진행하려고 해요. 토요일 오후 2시에 도서관 스터디룸 예약했습니다. 관심 있으시면 댓글 남겨주세요!',
-    authorNickname: '김코딩',
-    authorMajor: '컴퓨터공학부',
-    authorGrade: 3,
-    createdAt: '2024-03-02T12:30:00+09:00',
-    likes: 12,
-    tags: ['스터디', '운영체제'],
-  },
-  {
-    id: 'mock-2',
-    title: '컴공필수 전공 추천 부탁드려요',
-    content: '이번 학기에 들을만한 컴공 필수 전공 추천 부탁드려요. 난이도랑 과제량도 알려주시면 감사하겠습니다!',
-    authorNickname: '홍길동',
-    authorMajor: '컴퓨터공학부',
-    authorGrade: 2,
-    createdAt: '2024-02-27T21:10:00+09:00',
-    likes: 7,
-    tags: ['수강신청', '전공추천'],
-  },
-  {
-    id: 'mock-3',
-    title: '데이터베이스 중간고사 범위 공유',
-    content: '데베 중간 시험 범위가 1~6장까지로 확정됐어요. 교수님이 쿼리 실습 문제 비중이 높다고 하셨으니 참고하세요!',
-    authorNickname: '박DB',
-    authorMajor: '컴퓨터공학부',
-    authorGrade: 4,
-    createdAt: '2024-03-05T09:05:00+09:00',
-    likes: 18,
-    tags: ['시험정보', '데이터베이스'],
-  },
-];
-
 const portalRegisteredCourses = [
   {
     grade: '전체',
@@ -448,8 +412,6 @@ const MiniTimetable = ({
     setShowMenu(false);
     setSelectedCourse(null);
   };
-  const timeColumnWidth = '12%';
-  const dayColumnWidth = `${(100 - 12) / daysOfWeek.length}%`;
   const grid = useMemo(() => {
     const newGrid = {};
     daysOfWeek.forEach(day => {
@@ -498,7 +460,7 @@ const MiniTimetable = ({
   }, [courses]);
 
   return (
-    <div ref={timetableRef} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
@@ -509,17 +471,6 @@ const MiniTimetable = ({
             )}
           </div>
           <div className="flex items-center gap-1 text-slate-500">
-            {/* PDF 저장 버튼 */}
-            {courses.length > 0 && onExportPDF && (
-              <button
-                onClick={onExportPDF}
-                disabled={isExportingPDF}
-                className="p-2 rounded-full transition-colors hover:bg-slate-100 disabled:opacity-60 disabled:hover:bg-transparent"
-                title="시간표를 PDF로 저장"
-              >
-                <Download size={18} />
-              </button>
-            )}
             {/* 리스트 보기 버튼 */}
             {courses.length > 0 && onShowTimetableList && (
               <button
@@ -544,11 +495,11 @@ const MiniTimetable = ({
           </div>
         </div>
         <div className="w-full">
-          <table className="w-full border-collapse border border-slate-200 text-xs text-slate-700">
+          <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
             <colgroup>
-              <col style={{ width: timeColumnWidth }} />
+              <col className="w-10" />
               {daysOfWeek.map(day => (
-                <col key={day} style={{ width: dayColumnWidth }} />
+                <col key={day} />
               ))}
             </colgroup>
             <thead>
@@ -917,11 +868,12 @@ function AppContent() {
       console.log('🚫 loadUserData: user가 없어서 리턴');
       return;
     }
-
+    
+    console.log('🔄 loadUserData 시작, user:', user.id);
+    
     try {
-      console.log('🔄 loadUserData 시작, user:', user.id);
-      setIsLoading(true);
-
+      // 위시리스트 로드
+      console.log('📋 위시리스트 API 호출 중...');
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
       console.log('✅ 위시리스트 데이터 받음:', wishlistData);
       
@@ -975,8 +927,6 @@ function AppContent() {
       setTimetable(formattedTimetable);
     } catch (error) {
       console.log('사용자 데이터 로드 실패:', error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -1000,7 +950,7 @@ function AppContent() {
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
-
+  
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
