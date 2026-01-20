@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Clock, Star, Trash2, Eye } from 'lucide-react';
+import { X, Clock, Star, Trash2, Eye, Info, Plus } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (schedules) => {
@@ -31,19 +31,32 @@ const formatTimeDisplay = (schedules) => {
   }).join(', ');
 };
 
-const WishlistModal = ({ 
-  isOpen, 
-  onClose, 
-  wishlist, 
-  onRemoveFromWishlist, 
-  onToggleRequired, 
+const WishlistModal = ({
+  isOpen,
+  onClose,
+  wishlist,
+  onRemoveFromWishlist,
+  onToggleRequired,
   onAddToTimetable,
+  onViewCourseDetails,
   targetCredits,
-  setTargetCredits
+  setTargetCredits,
+  freeDays,
+  setFreeDays,
+  onRunGenerator
 }) => {
   if (!isOpen) return null;
 
   const totalCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
+  const daysOfWeek = ['월', '화', '수', '목', '금'];
+
+  const handleToggleFreeDay = (day) => {
+    if (freeDays.includes(day)) {
+      setFreeDays(freeDays.filter(d => d !== day));
+    } else {
+      setFreeDays([...freeDays, day]);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
@@ -62,28 +75,63 @@ const WishlistModal = ({
             </button>
           </div>
 
-          <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-            <span className="text-sm font-medium text-slate-700">목표 학점</span>
-            <select
-              value={targetCredits}
-              onChange={(e) => setTargetCredits(parseInt(e.target.value))}
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value={12}>12학점</option>
-              <option value={13}>13학점</option>
-              <option value={14}>14학점</option>
-              <option value={15}>15학점</option>
-              <option value={16}>16학점</option>
-              <option value={17}>17학점</option>
-              <option value={18}>18학점 (권장)</option>
-              <option value={19}>19학점</option>
-              <option value={20}>20학점</option>
-              <option value={21}>21학점</option>
-              <option value={22}>22학점</option>
-              <option value={23}>23학점</option>
-              <option value={24}>24학점</option>
-            </select>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+              <span className="text-sm font-medium text-slate-700">목표 학점</span>
+              <select
+                value={targetCredits}
+                onChange={(e) => setTargetCredits(parseInt(e.target.value))}
+                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={12}>12학점</option>
+                <option value={13}>13학점</option>
+                <option value={14}>14학점</option>
+                <option value={15}>15학점</option>
+                <option value={16}>16학점</option>
+                <option value={17}>17학점</option>
+                <option value={18}>18학점 (권장)</option>
+                <option value={19}>19학점</option>
+                <option value={20}>20학점</option>
+                <option value={21}>21학점</option>
+                <option value={22}>22학점</option>
+                <option value={23}>23학점</option>
+                <option value={24}>24학점</option>
+              </select>
+            </div>
+
+            <div className="rounded-xl bg-blue-50 px-4 py-3">
+              <div className="mb-2">
+                <span className="text-sm font-medium text-blue-900">희망 공강 (선택)</span>
+                <span className="ml-2 text-xs text-blue-600">원하는 공강 요일을 선택하세요</span>
+              </div>
+              <div className="flex gap-2">
+                {daysOfWeek.map(day => (
+                  <button
+                    key={day}
+                    onClick={() => handleToggleFreeDay(day)}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                      freeDays.includes(day)
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-300'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {wishlist.length > 0 && onRunGenerator && (
+            <div className="mt-4">
+              <button
+                onClick={onRunGenerator}
+                className="w-full rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+              >
+                {totalCredits}학점 조합 만들기
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -96,75 +144,79 @@ const WishlistModal = ({
                     course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-slate-900">{course.name}</h3>
-                        {course.isRequired && (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
-                            필수
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mb-3 grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
-                        <div className="flex items-center gap-2">
-                          <Star size={16} className="text-amber-500" />
-                          <span>{course.credits}학점</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-700">{course.professor}</span>
-                        </div>
-                      </div>
-
-                      <div className="mb-3 flex items-start gap-2 text-sm text-blue-600">
-                        <Clock size={16} className="mt-0.5" />
-                        <span className="font-medium">{formatTimeDisplay(course.schedules)}</span>
-                      </div>
-
-                      {course.location && (
-                        <div className="mb-1 text-sm text-slate-600">
-                          강의실: {course.location}
-                        </div>
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-slate-900">{course.name}</h3>
+                      {course.isRequired && (
+                        <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                          필수
+                        </span>
                       )}
-
-                      {course.type && (
-                        <div className="text-sm text-slate-500">
-                          이수구분: {course.type}
-                        </div>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`required-modal-${course.id}`}
-                          checked={course.isRequired || false}
-                          onChange={() => onToggleRequired(course.id, course.isRequired)}
-                          className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                        />
-                        <label
-                          htmlFor={`required-modal-${course.id}`}
-                          className="cursor-pointer text-sm text-slate-600"
-                        >
-                          필수 포함 과목
-                        </label>
-                      </div>
                     </div>
+                    <button
+                      onClick={() => onViewCourseDetails(course)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 whitespace-nowrap"
+                    >
+                      <Info size={16} /> 상세보기
+                    </button>
+                  </div>
 
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => onAddToTimetable(course)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
-                      >
-                        <Eye size={16} /> 시간표에 추가
-                      </button>
-                      <button
-                        onClick={() => onRemoveFromWishlist(course.id)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-rose-600"
-                      >
-                        <Trash2 size={16} /> 제거
-                      </button>
+                  <div className="mb-3 grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
+                    <div className="flex items-center gap-2">
+                      <Star size={16} className="text-amber-500" />
+                      <span>{course.credits}학점</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-700">{course.professor}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-3 flex items-start gap-2 text-sm text-blue-600">
+                    <Clock size={16} className="mt-0.5" />
+                    <span className="font-medium">{formatTimeDisplay(course.schedules)}</span>
+                  </div>
+
+                  {course.location && (
+                    <div className="mb-1 text-sm text-slate-600">
+                      강의실: {course.location}
+                    </div>
+                  )}
+
+                  {course.type && (
+                    <div className="mb-3 text-sm text-slate-500">
+                      이수구분: {course.type}
+                    </div>
+                  )}
+
+                  <div className="mb-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`required-modal-${course.id}`}
+                      checked={course.isRequired || false}
+                      onChange={() => onToggleRequired(course.id, course.isRequired)}
+                      className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                    />
+                    <label
+                      htmlFor={`required-modal-${course.id}`}
+                      className="cursor-pointer text-sm text-slate-600"
+                    >
+                      필수 포함 과목
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2 border-t border-slate-200 pt-3">
+                    <button
+                      onClick={() => onAddToTimetable(course)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                    >
+                      <Plus size={16} /> 시간표 추가
+                    </button>
+                    <button
+                      onClick={() => onRemoveFromWishlist(course.id)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                    >
+                      <Trash2 size={16} /> 제거
+                    </button>
                   </div>
                 </div>
               ))}
