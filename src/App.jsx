@@ -24,22 +24,46 @@ const parseTime = (schedules) => {
   if (!schedules || !Array.isArray(schedules)) return [];
 
   const dayMapping = {
-    'MONDAY': '월',
-    'TUESDAY': '화',
-    'WEDNESDAY': '수',
-    'THURSDAY': '목',
-    'FRIDAY': '금',
-    'SATURDAY': '토',
-    'SUNDAY': '일'
+    'MONDAY': '월', 'Monday': '월',
+    'TUESDAY': '화', 'Tuesday': '화',
+    'WEDNESDAY': '수', 'Wednesday': '수',
+    'THURSDAY': '목', 'Thursday': '목',
+    'FRIDAY': '금', 'Friday': '금',
+    'SATURDAY': '토', 'Saturday': '토',
+    'SUNDAY': '일', 'Sunday': '일'
   };
 
   return schedules.map(schedule => {
-    let startPeriod = parseFloat(schedule.startTime); // Ensure it's a number
-    let endPeriod = parseFloat(schedule.endTime);   // Ensure it's a number
+    let startPeriod = parseFloat(schedule.startTime);
+    let endPeriod = parseFloat(schedule.endTime);
+
+    // [Bugfix] 24시간제 시간(예: 15:00, 09:30) 처리
+    // 문자열에 ':'가 포함된 경우 (예: "09:30", "15:00")
+    if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
+      const parts = schedule.startTime.split(':');
+      // 시간 + 분(0.5단위 근사치) - 8
+      // 예: 09:30 -> 9.5 - 8 = 1.5교시
+      startPeriod = parseFloat(parts[0]) + (parseFloat(parts[1]) / 60) - 8;
+    }
+    if (typeof schedule.endTime === 'string' && schedule.endTime.includes(':')) {
+      const parts = schedule.endTime.split(':');
+      endPeriod = parseFloat(parts[0]) + (parseFloat(parts[1]) / 60) - 8;
+    }
+
+    // [Safety] 숫자로만 들어왔는데 13 이상이면 24시간제(Real Time)로 간주하고 변환
+    // 예: startTime: 15 -> 15 - 8 = 7교시
+    // 단, 1~12 사이는 교시로 간주 (기존 데이터 호환)
+    if (startPeriod >= 13) startPeriod -= 8;
+    if (endPeriod >= 13) endPeriod -= 8;
 
     // Handle cases where parsing results in NaN
     if (isNaN(startPeriod)) startPeriod = 0;
     if (isNaN(endPeriod)) endPeriod = 0;
+
+    // 교시는 0.5 단위로 반올림 (Grid 매핑을 위해)
+    // 예: 1.45 -> 1.5, 1.1 -> 1.0
+    startPeriod = Math.round(startPeriod * 2) / 2;
+    endPeriod = Math.round(endPeriod * 2) / 2;
 
     // 요일 변환 - 영어를 한국어로 변환 또는 원본 유지
     const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
@@ -58,8 +82,26 @@ const parseTimeString = (timeString) => {
   return timeString.split(',').map(part => {
     const trimmed = part.trim();
     const day = trimmed[0];
-    const hours = trimmed.substring(2).split('-').map(Number);
-    return { day, start: hours[0], end: hours[hours.length - 1] };
+    const timePart = trimmed.substring(2);
+
+    let start, end;
+
+    // [Bugfix] 15:00-18:00 같은 시간 형식 처리
+    if (timePart.includes(':')) {
+      const times = timePart.split('-').map(t => {
+        const hour = parseFloat(t.split(':')[0]);
+        return hour - 8;
+      });
+      start = times[0];
+      end = times[times.length - 1];
+    } else {
+      // 기존 1-2, 3-4 형식
+      const hours = timePart.split('-').map(Number);
+      start = hours[0];
+      end = hours[hours.length - 1];
+    }
+
+    return { day, start, end };
   });
 };
 
@@ -211,7 +253,8 @@ const grades = ['전체', '1학년', '2학년', '3학년', '4학년'];
 // 요일 및 시간대 필터링을 위한 상수
 const filterDaysOfWeek = ['전체', '월', '화', '수', '목', '금', '토'];
 const timeOptions = ['전체', 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
-const daysOfWeek = ['월', '화', '수', '목', '금'];
+const daysOfWeek = ['월', '화', '수', '목', '금', '토'];
+
 // 정수 교시 + 야간 교시
 // 그리드를 2배로 만들기 (30분 단위)
 const timeSlots = [
@@ -395,7 +438,7 @@ const MiniTimetable = ({
 }) => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const timeColumnWidth = '40px';
-  const dayColumnWidth = `calc((100% - ${timeColumnWidth}) / 5)`;
+  const dayColumnWidth = `calc((100% - ${timeColumnWidth}) / ${daysOfWeek.length})`;
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showMenu, setShowMenu] = useState(false);
 
@@ -511,7 +554,7 @@ const MiniTimetable = ({
         </div>
       </div>
       <div className="w-full">
-        <table className="w-full border-collapse border border-slate-200 text-xs text-slate-700">
+        <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
           <colgroup>
             <col style={{ width: timeColumnWidth }} />
             {daysOfWeek.map(day => (
@@ -548,18 +591,18 @@ const MiniTimetable = ({
                   )}
                   {daysOfWeek.map(day => {
                     const course = grid[day]?.[slot];
+                    const isFirstHalf = slot.endsWith('-1');
 
-                    // -1 슬롯: 각 교시의 시작
-                    if (slot.endsWith('-1')) {
-                      // 과목이 있고 시작 지점인 경우
-                      if (course && course.isStart) {
+                    // Case 1: Course exists
+                    if (course) {
+                      if (course.isStart) {
                         const backgroundColor = course.color || 'bg-blue-100';
                         const borderColor = course.borderColor || 'border-blue-300';
                         const textColor = course.textColor || 'text-slate-900';
                         return (
                           <td
                             key={`${day}-${slot}`}
-                            rowSpan={course.span || 2}
+                            rowSpan={course.span || 1}
                             className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
                             onClick={(e) => handleCourseClick(e, course)}
                           >
@@ -572,23 +615,58 @@ const MiniTimetable = ({
                           </td>
                         );
                       }
-                      // 과목이 없는 경우 빈 칸 (2개 행을 차지)
-                      return (
-                        <td
-                          key={`${day}-${slot}-empty`}
-                          rowSpan={2}
-                          className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}
-                        ></td>
-                      );
-                    }
-
-                    // -2 슬롯: 이미 -1에서 rowSpan으로 처리했으므로 항상 null
-                    if (slot.endsWith('-2')) {
+                      // If course exists but not start, it's covered by previous rowSpan
                       return null;
                     }
 
-                    // 예외 처리 (도달하지 않아야 함)
-                    return null;
+                    // Case 2: Empty cell
+                    const emptyClass = `border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`;
+
+                    if (isFirstHalf) {
+                      const nextSlotIndex = index + 1;
+                      const nextSlot = timeSlots[nextSlotIndex];
+                      const nextCourse = grid[day]?.[nextSlot];
+
+                      // If next slot has a course starting, do NOT merge. Render just this 30min slot.
+                      if (nextCourse && nextCourse.isStart) {
+                        return (
+                          <td key={`${day}-${slot}-empty`} rowSpan={1} className={emptyClass}></td>
+                        );
+                      }
+
+                      // Otherwise (next slot is empty or part of a spanning course?), merge 1 hour (2 slots)
+                      // Note: If next slot is part of a spanning course (not start), that means THIS slot should have been occupied? 
+                      // Impossible. If next slot is occupied by spread, this slot must have been occupied too.
+                      // So if nextCourse exists and !isStart, it implies this slot is also occupied.
+                      // But we are in `if (!course)` block. So this slot is empty.
+                      // So nextSlot can only be: Empty, or Start of new course.
+
+                      return (
+                        <td key={`${day}-${slot}-empty`} rowSpan={2} className={emptyClass}></td>
+                      );
+                    } else {
+                      // Second half (-2)
+                      // We only render if we didn't merge in the previous half.
+                      // We merged if previuos slot was empty.
+                      const prevSlotIndex = index - 1;
+                      const prevSlot = timeSlots[prevSlotIndex];
+                      const prevCourse = grid[day]?.[prevSlot];
+
+                      if (!prevCourse) {
+                        // Previous slot was empty, so it rendered rowSpan=2 (merged us).
+                        // Unless we prevented merge?
+                        // We prevented merge if `current` (this slot) was a course start.
+                        // But we are here because `course` is null (empty).
+                        // So previous slot MUST have merged us.
+                        return null;
+                      }
+
+                      // Previous slot was occupied (so it didn't merge us).
+                      // Render single empty cell.
+                      return (
+                        <td key={`${day}-${slot}-empty`} rowSpan={1} className={emptyClass}></td>
+                      );
+                    }
                   })}
                 </tr>
               );
