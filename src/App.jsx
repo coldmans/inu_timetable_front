@@ -227,11 +227,7 @@ const displayTimeSlots = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
 
-<<<<<<< Updated upstream
-=======
 
-
->>>>>>> Stashed changes
 const portalRegisteredCourses = [
   {
     grade: '전체',
@@ -398,6 +394,8 @@ const MiniTimetable = ({
   isExportingPDF
 }) => {
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const timeColumnWidth = '40px';
+  const dayColumnWidth = `calc((100% - ${timeColumnWidth}) / 5)`;
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [showMenu, setShowMenu] = useState(false);
 
@@ -465,80 +463,6 @@ const MiniTimetable = ({
   }, [courses]);
 
   return (
-<<<<<<< Updated upstream
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
-            {courses.length > 0 && (
-              <p className="mt-1 text-sm text-slate-500">
-                총 {courses.reduce((total, course) => total + (course.credits || 0), 0)}학점
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-slate-500">
-            {/* 리스트 보기 버튼 */}
-            {courses.length > 0 && onShowTimetableList && (
-              <button
-                onClick={onShowTimetableList}
-                className="p-2 rounded-full transition-colors hover:bg-slate-100"
-                title="시간표 리스트 보기"
-              >
-                <CalendarDays size={18} />
-              </button>
-            )}
-            
-            {/* 전체 삭제 버튼 */}
-            {courses.length > 0 && onClearAll && (
-              <button
-                onClick={onClearAll}
-                className="p-2 rounded-full transition-colors hover:bg-rose-100"
-                title="시간표 전체 삭제"
-              >
-                <X size={18} className="text-rose-500" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="w-full">
-          <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
-            <colgroup>
-              <col className="w-10" />
-              {daysOfWeek.map(day => (
-                <col key={day} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr>
-                <th className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-500 border border-slate-200"></th>
-                {daysOfWeek.map(day => (
-                  <th key={day} className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-600 border border-slate-200">
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {timeSlots.map((slot, index) => {
-                const isTopBorder = index > 0 && slot.endsWith('-1') && !slot.startsWith('야1');
-                const isNightTopBorder = slot === '야1-1';
-                return (
-                  <tr
-                    key={slot}
-                    style={{height: '24px'}}
-                    className={`${isTopBorder ? 'border-t border-slate-200' : ''} ${isNightTopBorder ? 'border-t border-blue-200' : ''}`}
-                  >
-                    {slot.endsWith('-1') && (
-                      <td
-                        rowSpan={2}
-                        className={`text-center p-1 font-medium text-[11px] border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
-                      >
-                        {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
-                      </td>
-                    )}
-                    {daysOfWeek.map(day => {
-                      const course = grid[day]?.[slot];
-=======
     <div ref={timetableRef} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -571,18 +495,19 @@ const MiniTimetable = ({
               <CalendarDays size={18} />
             </button>
           )}
->>>>>>> Stashed changes
 
           {/* 전체 삭제 버튼 */}
-          {courses.length > 0 && onClearAll && (
-            <button
-              onClick={onClearAll}
-              className="p-2 rounded-full transition-colors hover:bg-rose-100"
-              title="시간표 전체 삭제"
-            >
-              <X size={18} className="text-rose-500" />
-            </button>
-          )}
+          {
+            courses.length > 0 && onClearAll && (
+              <button
+                onClick={onClearAll}
+                className="p-2 rounded-full transition-colors hover:bg-rose-100"
+                title="시간표 전체 삭제"
+              >
+                <X size={18} className="text-rose-500" />
+              </button>
+            )
+          }
         </div>
       </div>
       <div className="w-full">
@@ -888,9 +813,9 @@ function AppContent() {
       console.log('🚫 loadUserData: user가 없어서 리턴');
       return;
     }
-    
+
     console.log('🔄 loadUserData 시작, user:', user.id);
-    
+
     try {
       // 위시리스트 로드
       console.log('📋 위시리스트 API 호출 중...');
@@ -970,7 +895,7 @@ function AppContent() {
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
-  
+
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);

@@ -192,8 +192,6 @@ export const combinationAPI = {
     return handleResponse(response);
   },
 };
-<<<<<<< Updated upstream
-=======
 
 // 과목 통계 API
 export const statisticsAPI = {
@@ -209,4 +207,3 @@ export const statisticsAPI = {
 };
 
 
->>>>>>> Stashed changes
