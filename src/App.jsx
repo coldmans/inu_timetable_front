@@ -8,7 +8,7 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
-import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI, boardAPI } from './services/api';
+import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -22,28 +22,28 @@ const CURRENT_SEMESTER = '2024-2';
 // API 응답 시간 데이터를 파싱하여 객체 배열로 변환
 const parseTime = (schedules) => {
   if (!schedules || !Array.isArray(schedules)) return [];
-  
+
   const dayMapping = {
     'MONDAY': '월',
-    'TUESDAY': '화', 
+    'TUESDAY': '화',
     'WEDNESDAY': '수',
     'THURSDAY': '목',
     'FRIDAY': '금',
     'SATURDAY': '토',
     'SUNDAY': '일'
   };
-  
+
   return schedules.map(schedule => {
     let startPeriod = parseFloat(schedule.startTime); // Ensure it's a number
     let endPeriod = parseFloat(schedule.endTime);   // Ensure it's a number
 
     // Handle cases where parsing results in NaN
-    if (isNaN(startPeriod)) startPeriod = 0; 
-    if (isNaN(endPeriod)) endPeriod = 0;     
+    if (isNaN(startPeriod)) startPeriod = 0;
+    if (isNaN(endPeriod)) endPeriod = 0;
 
     // 요일 변환 - 영어를 한국어로 변환 또는 원본 유지
     const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-    
+
     return {
       day: day,
       start: startPeriod,
@@ -94,12 +94,12 @@ const formatCourse = (subject, index = 0) => {
     { color: 'bg-red-200', textColor: 'text-red-800', borderColor: 'border-red-400' },
     { color: 'bg-orange-200', textColor: 'text-orange-800', borderColor: 'border-orange-400' },
   ];
-  
+
   const colorScheme = colors[index % colors.length];
-  const timeString = subject.schedules && Array.isArray(subject.schedules) ? 
+  const timeString = subject.schedules && Array.isArray(subject.schedules) ?
     subject.schedules.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`).join(', ') :
     subject.time || '';
-  
+
   return {
     id: subject.id,
     name: subject.subjectName || subject.name,
@@ -227,6 +227,11 @@ const displayTimeSlots = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
 
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 const portalRegisteredCourses = [
   {
     grade: '전체',
@@ -334,7 +339,7 @@ const Toast = ({ message, show, type, onDismiss }) => {
   };
 
   return (
-    <div 
+    <div
       className={`fixed top-5 right-5 flex items-center text-white px-6 py-3 rounded-lg shadow-lg transition-transform duration-300 z-50 ${show ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'} ${getToastStyles()}`}
     >
       {(type === 'warning' || type === 'error') && <AlertTriangle className="mr-2" />}
@@ -345,40 +350,40 @@ const Toast = ({ message, show, type, onDismiss }) => {
 };
 
 const LoadingOverlay = ({ isGenerating }) => {
-    if (!isGenerating) return null;
-    const [progress, setProgress] = useState(0);
+  if (!isGenerating) return null;
+  const [progress, setProgress] = useState(0);
 
-    useEffect(() => {
-        if (isGenerating) {
-            setProgress(0);
-            const interval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 100) {
-                        clearInterval(interval);
-                        return 100;
-                    }
-                    return prev + 1;
-                });
-            }, 30); // 3초 동안 100% 채우기
-            return () => clearInterval(interval);
-        }
-    }, [isGenerating]);
+  useEffect(() => {
+    if (isGenerating) {
+      setProgress(0);
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 1;
+        });
+      }, 30); // 3초 동안 100% 채우기
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
 
-    return (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/60 px-8 py-6 shadow-lg">
-                <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" aria-hidden="true"></div>
-                <div className="text-center">
-                    <p className="text-gray-900 text-lg font-semibold">시간표 조합을 준비하고 있어요</p>
-                    <p className="text-sm text-gray-500">잠시만 기다려 주세요</p>
-                </div>
-                <div className="w-52 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress}%` }}></div>
-                </div>
-                <span className="text-xs font-medium text-gray-500">{Math.round(progress)}%</span>
-            </div>
+  return (
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/60 px-8 py-6 shadow-lg">
+        <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" aria-hidden="true"></div>
+        <div className="text-center">
+          <p className="text-gray-900 text-lg font-semibold">시간표 조합을 준비하고 있어요</p>
+          <p className="text-sm text-gray-500">잠시만 기다려 주세요</p>
         </div>
-    );
+        <div className="w-52 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+          <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress}%` }}></div>
+        </div>
+        <span className="text-xs font-medium text-gray-500">{Math.round(progress)}%</span>
+      </div>
+    </div>
+  );
 };
 
 const MiniTimetable = ({
@@ -399,7 +404,7 @@ const MiniTimetable = ({
   const handleCourseClick = (event, course) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     setSelectedCourse(course);
     setMenuPosition({
       x: event.clientX,
@@ -424,10 +429,10 @@ const MiniTimetable = ({
     const getSlotIndex = (period) => {
       // period는 1.0, 1.5, 2.0, ..., 9.0, 10.0(야1), 10.5(야1.5) 등
       if (isNaN(period) || period < 1) return -1; // 유효하지 않은 교시
-      
+
       // 1교시 = 인덱스 0, 1.5교시 = 인덱스 1, ..., 9교시 = 인덱스 16, 9.5교시 = 인덱스 17
       // 야1교시 = 인덱스 18, 야1.5교시 = 인덱스 19
-      return Math.round((period - 1) * 2); 
+      return Math.round((period - 1) * 2);
     };
 
     courses.forEach(course => {
@@ -460,6 +465,7 @@ const MiniTimetable = ({
   }, [courses]);
 
   return (
+<<<<<<< Updated upstream
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -532,78 +538,163 @@ const MiniTimetable = ({
                     )}
                     {daysOfWeek.map(day => {
                       const course = grid[day]?.[slot];
+=======
+    <div ref={timetableRef} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mini-timetable">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
+          {courses.length > 0 && (
+            <p className="mt-1 text-sm text-slate-500">
+              총 {courses.reduce((total, course) => total + (course.credits || 0), 0)}학점
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 text-slate-500">
+          {/* PDF 저장 버튼 */}
+          {courses.length > 0 && onExportPDF && (
+            <button
+              onClick={onExportPDF}
+              disabled={isExportingPDF}
+              className="p-2 rounded-full transition-colors hover:bg-slate-100 disabled:opacity-60 disabled:hover:bg-transparent"
+              title="시간표를 PDF로 저장"
+            >
+              <Download size={18} />
+            </button>
+          )}
+          {/* 리스트 보기 버튼 */}
+          {courses.length > 0 && onShowTimetableList && (
+            <button
+              onClick={onShowTimetableList}
+              className="p-2 rounded-full transition-colors hover:bg-slate-100"
+              title="시간표 리스트 보기"
+            >
+              <CalendarDays size={18} />
+            </button>
+          )}
+>>>>>>> Stashed changes
 
-                      // -1 슬롯: 각 교시의 시작
-                      if (slot.endsWith('-1')) {
-                        // 과목이 있고 시작 지점인 경우
-                        if (course && course.isStart) {
-                          const backgroundColor = course.color || 'bg-blue-100';
-                          const borderColor = course.borderColor || 'border-blue-300';
-                          const textColor = course.textColor || 'text-slate-900';
-                          return (
-                            <td
-                              key={`${day}-${slot}`}
-                              rowSpan={course.span || 2}
-                              className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
-                              onClick={(e) => handleCourseClick(e, course)}
-                            >
-                              <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
-                                <div className="w-full px-0.5 text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.name}</div>
-                                {course.professor && (
-                                  <div className="w-full px-0.5 text-[10px] leading-none opacity-80 truncate">{course.professor}</div>
-                                )}
-                              </div>
-                            </td>
-                          );
-                        }
-                        // 과목이 없는 경우 빈 칸 (2개 행을 차지)
+          {/* 전체 삭제 버튼 */}
+          {courses.length > 0 && onClearAll && (
+            <button
+              onClick={onClearAll}
+              className="p-2 rounded-full transition-colors hover:bg-rose-100"
+              title="시간표 전체 삭제"
+            >
+              <X size={18} className="text-rose-500" />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="w-full">
+        <table className="w-full border-collapse border border-slate-200 text-xs text-slate-700">
+          <colgroup>
+            <col style={{ width: timeColumnWidth }} />
+            {daysOfWeek.map(day => (
+              <col key={day} style={{ width: dayColumnWidth }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              <th className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-500 border border-slate-200"></th>
+              {daysOfWeek.map(day => (
+                <th key={day} className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-600 border border-slate-200">
+                  {day}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {timeSlots.map((slot, index) => {
+              const isTopBorder = index > 0 && slot.endsWith('-1') && !slot.startsWith('야1');
+              const isNightTopBorder = slot === '야1-1';
+              return (
+                <tr
+                  key={slot}
+                  style={{ height: '24px' }}
+                  className={`${isTopBorder ? 'border-t border-slate-200' : ''} ${isNightTopBorder ? 'border-t border-blue-200' : ''}`}
+                >
+                  {slot.endsWith('-1') && (
+                    <td
+                      rowSpan={2}
+                      className={`text-center p-1 font-medium text-[11px] border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                    >
+                      {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
+                    </td>
+                  )}
+                  {daysOfWeek.map(day => {
+                    const course = grid[day]?.[slot];
+
+                    // -1 슬롯: 각 교시의 시작
+                    if (slot.endsWith('-1')) {
+                      // 과목이 있고 시작 지점인 경우
+                      if (course && course.isStart) {
+                        const backgroundColor = course.color || 'bg-blue-100';
+                        const borderColor = course.borderColor || 'border-blue-300';
+                        const textColor = course.textColor || 'text-slate-900';
                         return (
                           <td
-                            key={`${day}-${slot}-empty`}
-                            rowSpan={2}
-                            className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}
-                          ></td>
+                            key={`${day}-${slot}`}
+                            rowSpan={course.span || 2}
+                            className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
+                            onClick={(e) => handleCourseClick(e, course)}
+                          >
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
+                              <div className="w-full px-0.5 text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.name}</div>
+                              {course.professor && (
+                                <div className="w-full px-0.5 text-[10px] leading-none opacity-80 truncate">{course.professor}</div>
+                              )}
+                            </div>
+                          </td>
                         );
                       }
+                      // 과목이 없는 경우 빈 칸 (2개 행을 차지)
+                      return (
+                        <td
+                          key={`${day}-${slot}-empty`}
+                          rowSpan={2}
+                          className={`border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`}
+                        ></td>
+                      );
+                    }
 
-                      // -2 슬롯: 이미 -1에서 rowSpan으로 처리했으므로 항상 null
-                      if (slot.endsWith('-2')) {
-                        return null;
-                      }
-
-                      // 예외 처리 (도달하지 않아야 함)
+                    // -2 슬롯: 이미 -1에서 rowSpan으로 처리했으므로 항상 null
+                    if (slot.endsWith('-2')) {
                       return null;
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {/* 범례 */}
-        <div className="mt-4 pt-4 border-t border-slate-200">
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-3 rounded-sm bg-white border border-slate-200"></span>
-              <span>주간</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-3 rounded-sm bg-slate-100 border border-slate-200"></span>
-              <span>야간</span>
-            </div>
+                    }
+
+                    // 예외 처리 (도달하지 않아야 함)
+                    return null;
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {/* 범례 */}
+      <div className="mt-4 pt-4 border-t border-slate-200">
+        <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-3 rounded-sm bg-white border border-slate-200"></span>
+            <span>주간</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-3 rounded-sm bg-slate-100 border border-slate-200"></span>
+            <span>야간</span>
           </div>
         </div>
+      </div>
 
-        {/* 시간표 과목 메뉴 */}
-        <TimetableCourseMenu
-          isOpen={showMenu}
-          onClose={handleCloseMenu}
-          course={selectedCourse}
-          position={menuPosition}
-          onRemove={onRemoveCourse}
-          onViewDetails={() => onViewCourseDetails(selectedCourse)}
-          onAddToWishlist={onAddToWishlist}
-        />
+      {/* 시간표 과목 메뉴 */}
+      <TimetableCourseMenu
+        isOpen={showMenu}
+        onClose={handleCloseMenu}
+        course={selectedCourse}
+        position={menuPosition}
+        onRemove={onRemoveCourse}
+        onViewDetails={() => onViewCourseDetails(selectedCourse)}
+        onAddToWishlist={onAddToWishlist}
+      />
     </div>
   );
 };
@@ -614,7 +705,7 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
       <div className="mb-1.5 md:mb-3 flex items-start justify-between gap-1.5">
         <p className="text-sm md:text-lg font-semibold text-slate-900 leading-tight">{course.name} <span className="text-xs md:text-base">({course.credits}학점)</span></p>
         <div className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] md:text-xs font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
-            {course.type}
+          {course.type}
         </div>
       </div>
       <div className="space-y-0.5 md:space-y-2 text-[11px] md:text-sm text-slate-600">
@@ -651,42 +742,39 @@ function AppContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
-  
+
   // 페이지 상태 관리
   const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
-  
+
   // 상태 관리
   const [courses, setCourses] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [showWishlistModal, setShowWishlistModal] = useState(false);
   const [timetable, setTimetable] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // 모달 상태
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
   const timetableRef = useRef(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-  const [boardPosts, setBoardPosts] = useState([]);
-  const [isBoardLoading, setIsBoardLoading] = useState(false);
-  const [boardError, setBoardError] = useState(null);
-  const [likedBoardPosts, setLikedBoardPosts] = useState({});
-  
+
+
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize] = useState(20); // 페이지당 20개 항목
-  
+
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
+
   // 시간표 조합 결과
   const [combinationResults, setCombinationResults] = useState(null);
   const [showCombinationResults, setShowCombinationResults] = useState(false);
-  
+
   // 목표 학점 설정
   const [targetCredits, setTargetCredits] = useState(18);
 
@@ -698,75 +786,9 @@ function AppContent() {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
   }, []);
 
-  const normalizeBoardPost = useCallback((post) => {
-    if (!post) return null;
 
-    const rawTags = Array.isArray(post.tags)
-      ? post.tags
-      : typeof post.tags === 'string'
-        ? post.tags.split(/[,#]/)
-        : [];
 
-    const tags = rawTags
-      .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
-      .filter(Boolean);
 
-    const createdRaw = post.createdAt || post.created_at || post.createdDate || post.created_time || new Date().toISOString();
-    const createdDate = new Date(createdRaw);
-    const createdAt = Number.isNaN(createdDate.getTime()) ? new Date().toISOString() : createdDate.toISOString();
-
-    return {
-      id: post.id ?? `tmp-${Math.random().toString(36).slice(2, 9)}`,
-      title: post.title || '제목 없음',
-      content: post.content || '',
-      author: post.authorNickname || post.author || post.writer || '익명',
-      major: post.authorMajor || post.major || null,
-      grade: post.authorGrade || post.grade || null,
-      createdAt,
-      likes: Number(post.likes ?? 0),
-      tags,
-    };
-  }, []);
-
-  const loadBoardPosts = useCallback(async () => {
-    setIsBoardLoading(true);
-    setBoardError(null);
-    try {
-      const response = await boardAPI.list(0, 20);
-      const rawPosts = Array.isArray(response?.content)
-        ? response.content
-        : Array.isArray(response)
-          ? response
-          : [];
-
-      if (!rawPosts.length) {
-        const fallback = mockBoardPosts
-          .map(normalizeBoardPost)
-          .filter(Boolean)
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setBoardPosts(fallback);
-        return;
-      }
-
-      const normalized = rawPosts
-        .map(normalizeBoardPost)
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setBoardPosts(normalized);
-    } catch (error) {
-      console.error('게시판 데이터 로드 실패:', error);
-      setBoardError(error.message || '게시판 데이터를 불러오지 못했어요.');
-      showToast('게시판 데이터를 불러오지 못했어요. 예시 데이터를 보여줄게요.', 'warning');
-      const fallback = mockBoardPosts
-        .map(normalizeBoardPost)
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setBoardPosts(fallback);
-    } finally {
-      setIsBoardLoading(false);
-    }
-  }, [normalizeBoardPost, showToast]);
 
   // 과목 검색 및 로드
   useEffect(() => {
@@ -782,15 +804,13 @@ function AppContent() {
     }
   }, [user, authLoading]);
 
-  useEffect(() => {
-    loadBoardPosts();
-  }, [loadBoardPosts]);
+
 
   const loadCourses = async (page = 0) => {
     try {
       setIsLoading(true);
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
-      const gradeFilter = filters.grade === '전체' ? undefined : 
+      const gradeFilter = filters.grade === '전체' ? undefined :
         parseInt(filters.grade.replace('학년', ''));
 
       const response = await subjectAPI.filter({
@@ -802,10 +822,10 @@ function AppContent() {
         startTime: filters.startTime === '전체' ? undefined : filters.startTime,
         endTime: filters.endTime === '전체' ? undefined : filters.endTime
       }, page, pageSize);
-      
+
       // 페이징 응답 처리
       console.log('📥 API 응답 데이터:', response);
-      
+
       if (response.content) {
         // 백엔드에서 페이징 응답이 온 경우
         console.log(`✅ 페이징 응답: ${response.content.length}개 항목, 총 ${response.totalElements}개 중 ${response.number + 1}/${response.totalPages} 페이지`);
@@ -852,7 +872,7 @@ function AppContent() {
       const startIndex = page * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedMockData = mockData.slice(startIndex, endIndex);
-      
+
       const formattedCourses = paginatedMockData.map((subject, index) => formatCourse(subject, index));
       setCourses(formattedCourses);
       setTotalPages(Math.ceil(mockData.length / pageSize));
@@ -876,10 +896,10 @@ function AppContent() {
       console.log('📋 위시리스트 API 호출 중...');
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
       console.log('✅ 위시리스트 데이터 받음:', wishlistData);
-      
+
       const formattedWishlist = wishlistData.map((item, index) => {
         console.log('위시리스트 아이템:', item);
-        
+
         // 색상 배열 (formatCourse에서 가져옴)
         const colors = [
           { color: 'bg-blue-200', textColor: 'text-blue-800', borderColor: 'border-blue-400' },
@@ -893,7 +913,7 @@ function AppContent() {
           { color: 'bg-red-200', textColor: 'text-red-800', borderColor: 'border-red-400' },
           { color: 'bg-orange-200', textColor: 'text-orange-800', borderColor: 'border-orange-400' },
         ];
-        
+
         // 새로운 API 응답: 아이템 자체가 모든 과목 정보를 포함
         return {
           // 위시리스트 고유 ID는 wishlistId로 저장하고, 과목 ID는 subjectId 사용
@@ -908,7 +928,7 @@ function AppContent() {
           classMethod: item.classMethod,
           isNight: item.isNight,
           schedules: item.schedules,
-          time: item.schedules && Array.isArray(item.schedules) ? 
+          time: item.schedules && Array.isArray(item.schedules) ?
             item.schedules.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`).join(', ') : '',
           rating: 4.0, // 기본값
           reviews: 0, // 기본값
@@ -921,7 +941,7 @@ function AppContent() {
 
       // 개인 시간표 로드
       const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
-      const formattedTimetable = timetableData.map((item, index) => 
+      const formattedTimetable = timetableData.map((item, index) =>
         formatCourse(item.subject, index)
       );
       setTimetable(formattedTimetable);
@@ -1007,82 +1027,9 @@ function AppContent() {
     }
   };
 
-  const handleCreateBoardPost = async ({ title, content, tags }) => {
-    if (!isLoggedIn) {
-      setShowAuthModal(true);
-      throw new Error('게시글을 작성하려면 로그인이 필요합니다.');
-    }
 
-    const formattedTags = Array.isArray(tags)
-      ? tags
-      : typeof tags === 'string'
-        ? tags.split(/[,#]/).map(tag => tag.trim()).filter(Boolean)
-        : [];
 
-    const payload = {
-      title,
-      content,
-      tags: formattedTags,
-      userId: user.id,
-      authorNickname: user.nickname,
-      authorMajor: user.major,
-      authorGrade: user.grade,
-    };
 
-    try {
-      const created = await boardAPI.create(payload);
-      const normalized = normalizeBoardPost(created);
-      if (normalized) {
-        setBoardPosts(prev => [normalized, ...prev]);
-      }
-      showToast('게시글을 등록했어요!');
-      return true;
-    } catch (error) {
-      console.error('게시글 등록 실패:', error);
-      const fallback = normalizeBoardPost({
-        ...payload,
-        id: `local-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-      });
-      if (fallback) {
-        setBoardPosts(prev => [fallback, ...prev]);
-      }
-      showToast('네트워크 문제로 임시 게시글을 추가했어요.', 'warning');
-      return true;
-    }
-  };
-
-  const handleToggleBoardLike = async (post) => {
-    if (!post?.id) return;
-
-    if (!isLoggedIn) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    const hasLiked = Boolean(likedBoardPosts[post.id]);
-
-    setBoardPosts(prev => prev.map(item => {
-      if (item.id !== post.id) return item;
-      const nextLikes = Math.max(0, Number(item.likes || 0) + (hasLiked ? -1 : 1));
-      return { ...item, likes: nextLikes };
-    }));
-    setLikedBoardPosts(prev => ({ ...prev, [post.id]: !hasLiked }));
-
-    try {
-      await boardAPI.toggleLike(post.id);
-    } catch (error) {
-      console.error('게시글 좋아요 반영 실패:', error);
-      setBoardPosts(prev => prev.map(item => {
-        if (item.id !== post.id) return item;
-        const rollbackLikes = Math.max(0, Number(item.likes || 0) + (hasLiked ? 1 : -1));
-        return { ...item, likes: rollbackLikes };
-      }));
-      setLikedBoardPosts(prev => ({ ...prev, [post.id]: hasLiked }));
-      showToast('좋아요 반영에 실패했어요.', 'warning');
-    }
-  };
 
   const handleAddToTimetable = async (courseToAdd) => {
     if (!isLoggedIn) {
@@ -1158,20 +1105,20 @@ function AppContent() {
         subjectId: courseId,
         isRequired: !currentIsRequired
       });
-      
-      setWishlist(wishlist.map(course => 
-        course.id === courseId 
+
+      setWishlist(wishlist.map(course =>
+        course.id === courseId
           ? { ...course, isRequired: !currentIsRequired }
           : course
       ));
-      
+
       const course = wishlist.find(c => c.id === courseId);
       showToast(`'${course.name}' 과목을 ${!currentIsRequired ? '필수' : '선택'} 과목으로 변경했어요!`);
     } catch (error) {
       showToast(error.message, 'warning');
     }
   };
-  
+
   const handleRunGenerator = async () => {
     if (!isLoggedIn || wishlist.length === 0) {
       showToast('로그인 후 위시리스트에 과목을 추가해주세요!', 'warning');
@@ -1200,7 +1147,7 @@ function AppContent() {
         maxCombinations: 20,
         freeDays: freeDays
       });
-      
+
       setTimeout(() => {
         setIsGenerating(false);
         setCombinationResults(response);
@@ -1210,7 +1157,7 @@ function AppContent() {
     } catch (error) {
       setIsGenerating(false);
       console.log('시간표 조합 생성 실패, Mock 데이터 사용:', error.message);
-      
+
       // 필수 과목이 있으면 Mock 데이터에도 반영
       const requiredCoursesInMock = requiredCourses.slice(0, 2); // 최대 2개만 사용
       const mockOptionalCourses = [
@@ -1258,7 +1205,7 @@ function AppContent() {
           grade: 3,
           department: course.department || "컴퓨터공학부"
         })),
-        ...mockOptionalCourses.slice(0, Math.max(1, targetCredits/3 - requiredCoursesInMock.length))
+        ...mockOptionalCourses.slice(0, Math.max(1, targetCredits / 3 - requiredCoursesInMock.length))
       ];
 
       const mockCombinationResults = {
@@ -1278,7 +1225,7 @@ function AppContent() {
           }
         ]
       };
-      
+
       setTimeout(() => {
         setIsGenerating(false);
         setCombinationResults(mockCombinationResults);
@@ -1287,17 +1234,17 @@ function AppContent() {
       }, 3000);
     }
   };
-  
+
   // 시간표 조합 선택 핸들러
   const handleSelectCombination = async (selectedCombination) => {
     try {
       console.log('🔄 조합 선택:', selectedCombination);
-      
+
       // 기존 시간표 클리어
       for (const course of timetable) {
         await timetableAPI.remove(user.id, course.id);
       }
-      
+
       // 새로운 조합 추가
       for (const subject of selectedCombination) {
         await timetableAPI.add({
@@ -1307,7 +1254,7 @@ function AppContent() {
           memo: ''
         });
       }
-      
+
       // 로컬 상태 업데이트
       const formattedCombination = selectedCombination.map((subject, index) => {
         console.log('📝 포맷팅 중인 과목:', subject);
@@ -1315,10 +1262,10 @@ function AppContent() {
         console.log('✅ 포맷된 결과:', formatted);
         return formatted;
       });
-      
+
       console.log('Selected timetable combination:', formattedCombination);
       setTimetable(formattedCombination);
-      
+
       setShowCombinationResults(false);
       showToast('시간표에 선택한 조합이 적용되었습니다!');
     } catch (error) {
@@ -1353,12 +1300,12 @@ function AppContent() {
     try {
       await timetableAPI.remove(user.id, courseToRemove.id);
       console.log('✅ 시간표 제거 성공:', courseToRemove.name);
-      
+
       // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
       setTimeout(async () => {
         try {
           const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
-          const formattedTimetable = timetableData.map((item, index) => 
+          const formattedTimetable = timetableData.map((item, index) =>
             formatCourse(item.subject, index)
           );
           setTimetable(formattedTimetable);
@@ -1367,10 +1314,10 @@ function AppContent() {
           console.warn('시간표 동기화 실패:', syncError.message);
         }
       }, 1000);
-      
+
     } catch (error) {
       console.error('❌ 시간표 제거 실패:', error);
-      
+
       // Rollback: 실패시 이전 상태로 되돌리기
       setTimetable(previousTimetable);
       showToast(`시간표 제거 실패: ${error.message}`, 'error');
@@ -1380,7 +1327,7 @@ function AppContent() {
   // 시간표 전체 삭제
   const handleClearAllTimetable = async () => {
     if (!isLoggedIn) return;
-    
+
     if (!window.confirm('시간표를 전체 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       return;
     }
@@ -1392,13 +1339,13 @@ function AppContent() {
 
     try {
       // 각 과목을 개별적으로 삭제 (API에 bulk delete가 없다면)
-      const deletePromises = previousTimetable.map(course => 
+      const deletePromises = previousTimetable.map(course =>
         timetableAPI.remove(user.id, course.id)
       );
-      
+
       await Promise.all(deletePromises);
       console.log('✅ 시간표 전체 삭제 성공');
-      
+
     } catch (error) {
       console.error('❌ 시간표 전체 삭제 실패:', error);
       // 실패 시 이전 상태로 롤백
@@ -1436,7 +1383,7 @@ function AppContent() {
         priority: 3,
         isRequired: false
       });
-      
+
       // 위시리스트에 추가
       const colors = [
         { color: 'bg-blue-200', textColor: 'text-blue-800', borderColor: 'border-blue-400' },
@@ -1446,7 +1393,7 @@ function AppContent() {
         { color: 'bg-purple-200', textColor: 'text-purple-800', borderColor: 'border-purple-400' },
       ];
       const colorScheme = colors[wishlist.length % colors.length];
-      
+
       setWishlist([...wishlist, { ...course, ...colorScheme, isRequired: false }]);
       showToast(`'${course.name}' 과목을 위시리스트에 담았어요!`);
     } catch (error) {
@@ -1472,29 +1419,29 @@ function AppContent() {
             <div className="text-center mb-6">
               <h2 className="text-3xl font-bold">LOGIN</h2>
             </div>
-            
+
             <div className="flex gap-6">
               {/* 좌측 - 입력 폼 */}
               <div className="flex-1 space-y-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">학번 (ID)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="w-full px-3 py-2 text-gray-800 rounded border focus:outline-none focus:border-blue-300"
                     placeholder=""
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">비밀번호 (PW)</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     className="w-full px-3 py-2 text-gray-800 rounded border focus:outline-none focus:border-blue-300"
                     placeholder=""
                   />
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <button 
+                    <button
                       type="button"
                       onClick={onLogin}
                       className="w-full bg-white text-blue-800 font-semibold py-3 px-4 rounded hover:bg-gray-100 transition-colors text-sm"
@@ -1543,7 +1490,7 @@ function AppContent() {
 
           {/* 모의 수강신청 버튼 */}
           <div className="text-center mt-8">
-            <button 
+            <button
               onClick={() => setCurrentView('timetable')}
               className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
             >
@@ -1583,14 +1530,14 @@ function AppContent() {
               <p className="text-sm text-gray-500">INU Course Registration System</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button 
+              <button
                 type="button"
                 onClick={onBackToLogin}
                 className="px-4 py-2 text-sm font-semibold text-slate-700 rounded-md border border-slate-200 bg-white transition-colors hover:border-slate-300 hover:bg-slate-50"
               >
                 로그아웃
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={onGoToTimetable}
                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 transition"
@@ -1627,7 +1574,7 @@ function AppContent() {
 
               <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
                 {quickMenus.map(menu => (
-                  <div 
+                  <div
                     key={menu.label}
                     className="bg-blue-800/60 border border-blue-700 rounded-md px-3 py-2 text-center leading-tight"
                   >
@@ -1728,13 +1675,13 @@ function AppContent() {
       />
     );
   }
-  
+
   return (
     <div className="bg-[#f6f7fb] min-h-screen font-sans">
       <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
       <LoadingOverlay isGenerating={isGenerating} />
-      <AuthModal 
-        isOpen={showAuthModal} 
+      <AuthModal
+        isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         showToast={showToast}
       />
@@ -1897,7 +1844,7 @@ function AppContent() {
             </div>
           </div>
         </div>
-        
+
         {/* Main Content Area */}
         <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Left: Course List */}
@@ -1915,15 +1862,15 @@ function AppContent() {
             </div>
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 md:gap-4">
               {filteredCourses.map(course => (
-                <CourseCard 
-                  key={course.id} 
-                  course={course} 
+                <CourseCard
+                  key={course.id}
+                  course={course}
                   onAddToTimetable={handleAddToTimetable}
                   onAddToWishlist={handleAddToWishlist}
                 />
               ))}
             </div>
-            
+
             {/* 페이징 컴포넌트 */}
             <Pagination
               currentPage={currentPage}
@@ -1971,7 +1918,7 @@ function AppContent() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* 목표 학점 선택 */}
                   <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
                     <span className="text-sm font-medium text-slate-700">목표 학점</span>
@@ -1997,51 +1944,51 @@ function AppContent() {
                   </div>
                 </div>
                 <div className="max-h-60 overflow-y-auto p-3">
-                    {wishlist.length > 0 ? (
-                        <ul className="space-y-3">
-                        {wishlist.map(course => (
-                            <li key={course.id} className={`rounded-xl border p-3 ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-semibold text-slate-900">{course.name}</p>
-                                    {course.isRequired && (
-                                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
-                                        필수
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-slate-500">{course.credits}학점 | {course.professor}</p>
-                                  
-                                  
-                                  {/* 필수 과목 체크박스 */}
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      id={`required-${course.id}`}
-                                      checked={course.isRequired || false}
-                                      onChange={() => handleToggleRequired(course.id, course.isRequired)}
-                                      className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                                    />
-                                    <label 
-                                      htmlFor={`required-${course.id}`}
-                                      className="cursor-pointer text-sm text-slate-600"
-                                    >
-                                      필수 포함 과목
-                                    </label>
-                                  </div>
-                                </div>
-                                <button 
-                                  onClick={() => handleRemoveFromWishlist(course.id)} 
-                                  className="ml-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500"
-                                >
-                                  <X size={18} />
-                                </button>
+                  {wishlist.length > 0 ? (
+                    <ul className="space-y-3">
+                      {wishlist.map(course => (
+                        <li key={course.id} className={`rounded-xl border p-3 ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-slate-900">{course.name}</p>
+                                {course.isRequired && (
+                                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                    필수
+                                  </span>
+                                )}
                               </div>
-                            </li>
-                        ))}
-                        </ul>
-                    ) : <div className="py-8 text-center text-sm text-slate-400">담은 과목이 없어요.</div>}
+                              <p className="text-sm text-slate-500">{course.credits}학점 | {course.professor}</p>
+
+
+                              {/* 필수 과목 체크박스 */}
+                              <div className="mt-2 flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`required-${course.id}`}
+                                  checked={course.isRequired || false}
+                                  onChange={() => handleToggleRequired(course.id, course.isRequired)}
+                                  className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                                />
+                                <label
+                                  htmlFor={`required-${course.id}`}
+                                  className="cursor-pointer text-sm text-slate-600"
+                                >
+                                  필수 포함 과목
+                                </label>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveFromWishlist(course.id)}
+                              className="ml-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <div className="py-8 text-center text-sm text-slate-400">담은 과목이 없어요.</div>}
                 </div>
                 {wishlist.length > 0 && (
                   <div className="border-t border-slate-200 p-5">
@@ -2049,8 +1996,8 @@ function AppContent() {
                       <div className="text-center text-xs text-slate-500">
                         {wishlist.length}개 과목으로 {targetCredits}학점 맞춤 조합 생성
                       </div>
-                      <button 
-                        onClick={handleRunGenerator} 
+                      <button
+                        onClick={handleRunGenerator}
                         disabled={isGenerating}
                         className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
@@ -2074,10 +2021,10 @@ function AppContent() {
 
       {/* Mobile: Floating Button to View Timetable */}
       <div className="lg:hidden fixed bottom-6 right-6">
-          <button className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2">
-              <CalendarDays size={20} />
-              <span>내 시간표 보기 ({timetable.length})</span>
-          </button>
+        <button className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2">
+          <CalendarDays size={20} />
+          <span>내 시간표 보기 ({timetable.length})</span>
+        </button>
       </div>
     </div>
   );

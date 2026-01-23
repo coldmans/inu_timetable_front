@@ -3,7 +3,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 // API 응답 처리 헬퍼
 const handleResponse = async (response) => {
   console.log(`API 응답: ${response.status} ${response.statusText} - ${response.url}`);
-  
+
   if (!response.ok) {
     let errorMessage = '서버 오류가 발생했습니다.';
     try {
@@ -57,22 +57,22 @@ export const subjectAPI = {
   // 과목 필터링 (페이징 지원)
   filter: async (filters, page = 0, size = 20) => {
     const params = new URLSearchParams();
-    
+
     // 페이징 파라미터 추가
     params.append('page', page.toString());
     params.append('size', size.toString());
-    
+
     // 필터 파라미터 추가
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== '전체') {
         params.append(key, value);
       }
     });
-    
+
     const finalURL = `${BASE_URL}/subjects/filter?${params}`;
     console.log(`API 요청: ${finalURL}`);
     console.log(`📄 페이지: ${page}, 크기: ${size}`);
-    
+
     const response = await fetch(finalURL);
     return handleResponse(response);
   },
@@ -192,3 +192,21 @@ export const combinationAPI = {
     return handleResponse(response);
   },
 };
+<<<<<<< Updated upstream
+=======
+
+// 과목 통계 API
+export const statisticsAPI = {
+  // 과목별 참여자 통계 조회
+  getSubjectStats: async (subjectId, semester = '2024-2') => {
+    if (!subjectId) {
+      throw new Error('과목 ID가 필요합니다.');
+    }
+
+    const response = await fetch(`${BASE_URL}/subjects/${subjectId}/statistics?semester=${semester}`);
+    return handleResponse(response);
+  },
+};
+
+
+>>>>>>> Stashed changes
