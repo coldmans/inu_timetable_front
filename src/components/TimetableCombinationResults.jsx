@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check, MessageSquare } from 'lucide-react';
 
 // --- Helper Functions & Constants (Ported from App.jsx) ---
 
@@ -353,6 +353,16 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                             <div className="space-y-0.5 text-xs text-slate-600">
                               <div className="flex items-center gap-1"><User size={10} className="text-slate-400" />{subject.professor}</div>
                               <div className="flex items-center gap-1 truncate"><Clock size={10} className="text-slate-400" />{formatTimeDisplay(subject.schedules)}</div>
+                            </div>
+                            <div className="mt-1.5">
+                              <a
+                                href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(subject.subjectName)}&condition=name`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 font-medium transition-colors"
+                              >
+                                <MessageSquare size={10} /> 강의평 보기
+                              </a>
                             </div>
                           </div>
                           <div className="flex-shrink-0 text-xs sm:text-sm font-medium text-slate-700">{subject.credits}학점</div>
