@@ -712,26 +712,26 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
           <span className="text-[11px] md:text-sm">{course.time}</span>
         </div>
       </div>
-      <div className="mt-2 md:mt-4 flex justify-end gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
+      <div className="mt-2 md:mt-4 flex justify-end gap-1 md:gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
         <a
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-0.5 rounded-md bg-green-100 px-2 py-1 text-[11px] md:text-sm font-medium text-green-700 transition-colors hover:bg-green-200"
+          className="inline-flex items-center gap-0.5 rounded-md bg-green-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-green-700 transition-colors hover:bg-green-200"
         >
-          <MessageSquare size={12} /> 강의평
+          <MessageSquare size={11} className="md:w-3 md:h-3" /> <span className="hidden sm:inline">강의평</span>
         </a>
         <button
           onClick={() => onAddToWishlist(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-2 py-1 text-[11px] md:text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
+          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
         >
-          <ShoppingCart size={12} /> 담기
+          <ShoppingCart size={11} className="md:w-3 md:h-3" /> 담기
         </button>
         <button
           onClick={() => onAddToTimetable(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-2 py-1 text-[11px] md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
         >
-          <Plus size={12} /> 바로 추가
+          <Plus size={11} className="md:w-3 md:h-3" /> 바로 추가
         </button>
       </div>
     </div>
