@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -713,6 +713,14 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
         </div>
       </div>
       <div className="mt-2 md:mt-4 flex justify-end gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
+        <a
+          href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 rounded-md bg-green-100 px-2 py-1 text-[11px] md:text-sm font-medium text-green-700 transition-colors hover:bg-green-200"
+        >
+          <MessageSquare size={12} /> 강의평
+        </a>
         <button
           onClick={() => onAddToWishlist(course)}
           className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-2 py-1 text-[11px] md:text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
@@ -739,6 +747,9 @@ function AppContent() {
 
   // 페이지 상태 관리
   const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
+
+  /* New State for Wishlist Modal Mode */
+  const [wishlistModalMode, setWishlistModalMode] = useState('list'); // 'list' | 'setup'
 
   // 상태 관리
   const [courses, setCourses] = useState([]);
@@ -1692,6 +1703,7 @@ function AppContent() {
         freeDays={freeDays}
         setFreeDays={setFreeDays}
         onRunGenerator={handleRunGenerator}
+        initialStep={wishlistModalMode}
       />
       <CourseDetailModal
         isOpen={showCourseDetailModal}
@@ -1904,7 +1916,10 @@ function AppContent() {
                         총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
                       </div>
                       <button
-                        onClick={() => setShowWishlistModal(true)}
+                        onClick={() => {
+                          setWishlistModalMode('list');
+                          setShowWishlistModal(true);
+                        }}
                         className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
                         title="위시리스트 확장 보기"
                       >
@@ -1991,7 +2006,10 @@ function AppContent() {
                         {wishlist.length}개 과목으로 {targetCredits}학점 맞춤 조합 생성
                       </div>
                       <button
-                        onClick={handleRunGenerator}
+                        onClick={() => {
+                          setWishlistModalMode('setup');
+                          setShowWishlistModal(true);
+                        }}
                         disabled={isGenerating}
                         className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
@@ -2014,8 +2032,11 @@ function AppContent() {
       </div>
 
       {/* Mobile: Floating Button to View Timetable */}
-      <div className="lg:hidden fixed bottom-6 right-6">
-        <button className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2">
+      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+        <button
+          onClick={handleShowTimetableList}
+          className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
+        >
           <CalendarDays size={20} />
           <span>내 시간표 보기 ({timetable.length})</span>
         </button>
