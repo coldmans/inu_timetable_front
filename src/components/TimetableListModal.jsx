@@ -1,5 +1,6 @@
-import React from 'react';
-import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutList, Grid } from 'lucide-react';
+import TimetableGrid from './TimetableGrid';
 
 // 시간 표시를 위한 헬퍼 함수
 const formatTimeDisplay = (schedules) => {
@@ -47,6 +48,8 @@ const TimetableListModal = ({
   onAddToWishlist,
   onViewCourseDetails
 }) => {
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+
   if (!isOpen) return null;
 
   const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
@@ -55,17 +58,39 @@ const TimetableListModal = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen / Desktop: Centered card */}
       <div className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
-          <div className="min-w-0">
-            <h2 className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">내 시간표</h2>
-            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">총 {courses.length}개 과목 • {totalCredits}학점</p>
+        <div className="sticky top-0 z-10 flex flex-col border-b border-slate-200 bg-white">
+          <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">내 시간표</h2>
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">총 {courses.length}개 과목 • {totalCredits}학점</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+            >
+              <X size={22} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
-          >
-            <X size={22} />
-          </button>
+
+          {/* View Mode Toggle */}
+          <div className="flex border-t border-slate-100 px-4 py-2 sm:px-6">
+            <div className="flex w-full rounded-lg bg-slate-100 p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <LayoutList size={14} />
+                목록 보기
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Grid size={14} />
+                시간표 보기
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
@@ -74,7 +99,7 @@ const TimetableListModal = ({
               <p className="text-base sm:text-lg font-medium text-slate-600">아직 추가된 과목이 없어요</p>
               <p className="mt-2 text-xs sm:text-sm text-slate-400">과목을 검색해서 시간표에 담아보세요.</p>
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
             <div className="space-y-3 sm:space-y-4">
               {courses.map((course, index) => (
                 <div
@@ -145,6 +170,17 @@ const TimetableListModal = ({
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="h-full">
+              <TimetableGrid
+                courses={courses}
+                onRemoveCourse={onRemoveCourse}
+                onAddToWishlist={onAddToWishlist}
+                onViewCourseDetails={onViewCourseDetails}
+                showTitle={false}
+                isMobile={true}
+              />
             </div>
           )}
         </div>
