@@ -99,7 +99,7 @@ const TimetableGrid = ({
         setSelectedCourse(null);
     };
 
-    const grid = useMemo(() => {
+    const { grid, unscheduledCourses } = useMemo(() => {
         const newGrid = {};
         daysOfWeek.forEach(day => {
             newGrid[day] = {};
@@ -113,8 +113,17 @@ const TimetableGrid = ({
             return Math.round((period - 1) * 2);
         };
 
+        const unscheduled = [];
+
         courses.forEach(course => {
             const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
+
+            if (times.length === 0) {
+                unscheduled.push(course);
+                return;
+            }
+
+            let mapped = false;
             times.forEach(({ day, start, end }) => {
                 if (newGrid[day]) {
                     const startIndex = getSlotIndex(start);
@@ -124,6 +133,7 @@ const TimetableGrid = ({
                     if (totalSlots <= 0) return;
 
                     let isFirstSlot = true;
+                    mapped = true;
 
                     for (let i = startIndex; i < endIndex; i++) {
                         const slotKey = timeSlots[i];
@@ -138,8 +148,12 @@ const TimetableGrid = ({
                     }
                 }
             });
+
+            if (!mapped) {
+                unscheduled.push(course);
+            }
         });
-        return newGrid;
+        return { grid: newGrid, unscheduledCourses: unscheduled };
     }, [courses]);
 
     return (
@@ -252,6 +266,30 @@ const TimetableGrid = ({
                     </div>
                 </div>
             </div>
+
+            {/* Unscheduled / Online Courses */}
+            {unscheduledCourses.length > 0 && (
+                <div className="mt-6">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">온라인 / 시간외 과목</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {unscheduledCourses.map((course, idx) => (
+                            <div
+                                key={course.id || idx}
+                                className={`flex items-center justify-between p-3 rounded-xl border ${course.color} ${course.borderColor} ${course.textColor} cursor-pointer hover:brightness-95 transition-all shadow-sm`}
+                                onClick={(e) => handleCourseClick(e, course)}
+                            >
+                                <div className="min-w-0 pr-2">
+                                    <div className="text-[11px] font-bold truncate">{course.name}</div>
+                                    <div className="text-[10px] opacity-80 truncate">
+                                        {course.professor} • 온라인
+                                    </div>
+                                </div>
+                                <CalendarDays size={14} className="flex-shrink-0 opacity-60" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <TimetableCourseMenu
                 isOpen={showMenu}

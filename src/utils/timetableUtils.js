@@ -2,15 +2,43 @@ export const CURRENT_SEMESTER = '2024-2';
 
 export const convertToPeriod = (timeValue) => {
     const PERIOD_START_HOUR_OFFSET = 8;
-    const REAL_TIME_THRESHOLD = 13;
-    let period = parseFloat(timeValue);
 
-    if (typeof timeValue === 'string' && timeValue.includes(':')) {
-        const [hour, minute] = timeValue.split(':').map(parseFloat);
-        period = hour + (minute / 60) - PERIOD_START_HOUR_OFFSET;
+    if (!timeValue) return 0;
+
+    let period;
+    let isRealTime = false;
+
+    if (typeof timeValue === 'string') {
+        const cleaned = timeValue.trim();
+
+        // Handle Night prefix (야1, 야2, ...)
+        if (cleaned.startsWith('야')) {
+            const numPart = cleaned.replace(/[^0-9.]/g, '');
+            const num = parseFloat(numPart);
+            return isNaN(num) ? 0 : num + 9;
+        }
+
+        // Handle colons (18:00, 21:00, ...)
+        if (cleaned.includes(':')) {
+            const [hour, minute] = cleaned.split(':').map(parseFloat);
+            period = hour + (minute / 60) - PERIOD_START_HOUR_OFFSET;
+            isRealTime = true;
+        } else {
+            // Handle bracket system and suffixes (2A, 5B, 10교시, ...)
+            const cleanedNum = cleaned.replace(/[A-Za-zㄱ-ㅎ가-힣]/g, (match) => {
+                if (match.toUpperCase() === 'A') return '';
+                if (match.toUpperCase() === 'B') return '.5';
+                return '';
+            });
+            period = parseFloat(cleanedNum);
+        }
+    } else {
+        period = parseFloat(timeValue);
     }
 
-    if (period >= REAL_TIME_THRESHOLD) {
+    // Only subtract offset if it's a large raw number (representing an hour like 15)
+    // Avoid subtracting from period numbers (1-13)
+    if (!isRealTime && period >= 14) {
         period -= PERIOD_START_HOUR_OFFSET;
     }
 
@@ -48,26 +76,41 @@ export const parseTime = (schedules) => {
 };
 
 export const parseTimeString = (timeString) => {
-    if (!timeString) return [];
-    return timeString.split(',').map(part => {
-        const trimmed = part.trim();
-        const day = trimmed[0];
-        const timePart = trimmed.substring(2);
+    if (!timeString || typeof timeString !== 'string') return [];
 
-        let start, end;
+    // Remove location info like (07-504)
+    const cleanedString = timeString.replace(/\([^)]+\)/g, '').trim();
+    if (!cleanedString || cleanedString.includes('온라인')) return [];
 
-        if (timePart.includes(':')) {
-            const periods = timePart.split('-').map(t => convertToPeriod(t));
-            start = periods[0];
-            end = periods[periods.length - 1];
-        } else {
-            const hours = timePart.split('-').map(Number);
-            start = hours[0];
-            end = hours[hours.length - 1];
+    const results = [];
+    const dayRegex = /([월화수목금토일])\s*([^월화수목금토일]+)/g;
+    let match;
+
+    while ((match = dayRegex.exec(cleanedString)) !== null) {
+        const day = match[1];
+        const timePart = match[2].trim();
+
+        // Split by various separators including comma, space, dash, tilde, slash
+        const parts = timePart.split(/[\s,~,/-]+/).filter(Boolean);
+
+        if (parts.length > 0) {
+            const periods = parts.map(n => convertToPeriod(n));
+            const start = Math.min(...periods);
+            let end = Math.max(...periods);
+
+            const isRange = timePart.includes('-') || timePart.includes('~') || timePart.includes('/');
+            const isPeriodBased = !timePart.includes(':');
+
+            if (isPeriodBased) {
+                // If it's a period (1-3 or 10,11,12), the duration includes the last period
+                end = end + 1;
+            }
+
+            results.push({ day, start, end });
         }
+    }
 
-        return { day, start, end };
-    });
+    return results;
 };
 
 export const formatCourse = (subject, index = 0) => {

@@ -46,7 +46,9 @@ const TimetableListModal = ({
   courses,
   onRemoveCourse,
   onAddToWishlist,
-  onViewCourseDetails
+  onViewCourseDetails,
+  onClearAll,
+  onExportPDF
 }) => {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
 
@@ -178,6 +180,8 @@ const TimetableListModal = ({
                 onRemoveCourse={onRemoveCourse}
                 onAddToWishlist={onAddToWishlist}
                 onViewCourseDetails={onViewCourseDetails}
+                onClearAll={onClearAll}
+                onExportPDF={onExportPDF}
                 showTitle={false}
                 isMobile={true}
               />

@@ -1215,6 +1215,8 @@ function AppContent() {
         onRemoveCourse={handleRemoveFromTimetable}
         onAddToWishlist={handleMoveToWishlistFromTimetable}
         onViewCourseDetails={handleViewCourseDetails}
+        onClearAll={handleClearAllTimetable}
+        onExportPDF={handleExportTimetablePDF}
       />
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
