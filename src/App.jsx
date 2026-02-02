@@ -257,6 +257,7 @@ function AppContent() {
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
   const timetableRef = useRef(null);
+  const lastClickRefs = useRef({}); // { [courseId]: timestamp }
   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
 
@@ -536,6 +537,15 @@ function AppContent() {
       return;
     }
 
+    // 따닥(더블 클릭) 방지: 0.5초 이내 동일 과목 요청 무시
+    const now = Date.now();
+    const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
+    if (now - lastClick < 500) {
+      console.log(`[Throttle] 중복 시간표 추가 요청 방지: ${courseToAdd.name}`);
+      return;
+    }
+    lastClickRefs.current[courseToAdd.id] = now;
+
     // 프론트 중복/충돌 검사 및 Optimistic UI 업데이트 제거
     try {
       await timetableAPI.add({
@@ -566,6 +576,15 @@ function AppContent() {
       setShowAuthModal(true);
       return;
     }
+
+    // 따닥(더블 클릭) 방지: 0.5초 이내 동일 과목 요청 무시
+    const now = Date.now();
+    const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
+    if (now - lastClick < 500) {
+      console.log(`[Throttle] 중복 위시리스트 요청 방지: ${courseToAdd.name}`);
+      return;
+    }
+    lastClickRefs.current[courseToAdd.id] = now;
 
     if (wishlist.find(c => c.id === courseToAdd.id)) {
       showToast(`'${courseToAdd.name}' 과목은 이미 위시리스트에 있어요.`, 'warning');
