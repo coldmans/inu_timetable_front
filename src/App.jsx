@@ -22,7 +22,8 @@ import {
   courseTypes,
   grades,
   filterDaysOfWeek,
-  timeOptions
+  timeOptions,
+  creditOptions
 } from './utils/timetableUtils';
 
 
@@ -237,7 +238,7 @@ function AppContent() {
   const { user, isLoggedIn, isLoading: authLoading, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
 
   // 페이지 상태 관리
   const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
@@ -318,6 +319,7 @@ function AppContent() {
         department: filters.department,
         subjectType: filters.subjectType,
         grade: gradeFilter,
+        credits: filters.credits === '전체' ? undefined : parseInt(filters.credits.replace('학점', '')),
         dayOfWeek: filters.dayOfWeek === '전체' ? undefined : filters.dayOfWeek,
         startTime: filters.startTime === '전체' ? undefined : filters.startTime,
         endTime: filters.endTime === '전체' ? undefined : filters.endTime
@@ -801,7 +803,7 @@ function AppContent() {
     setWishlist([]);
     setTimetable([]);
     // 필터 초기화
-    setFilters({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+    setFilters({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
     showToast('로그아웃되었습니다.');
   };
 
@@ -1329,6 +1331,15 @@ function AppContent() {
               >
                 {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+              <select
+                value={filters.credits}
+                onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
+                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {creditOptions.map(credit => (
+                  <option key={credit} value={credit}>{credit}</option>
                 ))}
               </select>
               <select
