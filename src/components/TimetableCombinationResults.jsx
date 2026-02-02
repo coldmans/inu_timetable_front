@@ -1,69 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check, MessageSquare } from 'lucide-react';
 
-// --- Helper Functions & Constants (Ported from App.jsx) ---
+import {
+  parseTime,
+  daysOfWeek as utilDaysOfWeek,
+  timeSlots,
+  displayTimeSlots
+} from '../utils/timetableUtils';
 
-const convertToPeriod = (timeValue) => {
-  const PERIOD_START_HOUR_OFFSET = 8;
-  const REAL_TIME_THRESHOLD = 13;
-  let period = parseFloat(timeValue);
-
-  if (typeof timeValue === 'string' && timeValue.includes(':')) {
-    const [hour, minute] = timeValue.split(':').map(parseFloat);
-    period = hour + (minute / 60) - PERIOD_START_HOUR_OFFSET;
-  }
-
-  // [Safety] 숫자로만 들어왔는데 13 이상이면 24시간제(Real Time)로 간주하고 변환
-  if (period >= REAL_TIME_THRESHOLD) {
-    period -= PERIOD_START_HOUR_OFFSET;
-  }
-
-  if (isNaN(period)) return 0;
-
-  // 교시는 0.5 단위로 반올림 (Grid 매핑을 위해)
-  return Math.round(period * 2) / 2;
-};
-
-const parseTime = (schedules) => {
-  if (!schedules || !Array.isArray(schedules)) return [];
-
-  const dayMapping = {
-    'MONDAY': '월',
-    'TUESDAY': '화',
-    'WEDNESDAY': '수',
-    'THURSDAY': '목',
-    'FRIDAY': '금',
-    'SATURDAY': '토',
-    'SUNDAY': '일'
-  };
-
-  return schedules.map(schedule => {
-    const startPeriod = convertToPeriod(schedule.startTime);
-    const endPeriod = convertToPeriod(schedule.endTime);
-
-    // 요일 변환 - 대문자 변환 후 매핑 또는 원본 유지
-    const dayKey = schedule.dayOfWeek ? schedule.dayOfWeek.toUpperCase() : schedule.dayOfWeek;
-    const day = dayMapping[dayKey] || schedule.dayOfWeek;
-
-    return {
-      day: day,
-      start: startPeriod,
-      end: endPeriod,
-    };
-  });
-};
-
-const timeSlots = [
-  // 주간 교시: 각 교시마다 2개 슬롯 (상반부, 하반부)
-  '1-1', '1-2', '2-1', '2-2', '3-1', '3-2', '4-1', '4-2', '5-1', '5-2',
-  '6-1', '6-2', '7-1', '7-2', '8-1', '8-2', '9-1', '9-2',
-  // 야간 교시: 각 교시마다 2개 슬롯
-  '야1-1', '야1-2', '야2-1', '야2-2', '야3-1', '야3-2', '야4-1', '야4-2'
-];
-
-const displayTimeSlots = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
-];
+// --- Helper Functions (Local formatting) ---
 
 const TimeSlotCell = ({ day, slot, index, grid }) => {
   const course = grid[day]?.[slot];
@@ -139,13 +84,13 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   const combination = results.combinations[currentCombination];
   const stats = results.statistics[currentCombination];
 
-  const createTimetableGrid = (subjects) => {
-    const daysOfWeek = ['월', '화', '수', '목', '금'];
-    const grid = {};
-    daysOfWeek.forEach(day => {
-      grid[day] = {};
+  const { grid, daysOfWeek, unscheduledCourses } = useMemo(() => {
+    const activeDays = ['월', '화', '수', '목', '금'];
+    const newGrid = {};
+    activeDays.forEach(day => {
+      newGrid[day] = {};
       timeSlots.forEach(slot => {
-        grid[day][slot] = null;
+        newGrid[day][slot] = null;
       });
     });
 
@@ -154,7 +99,9 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
       return Math.round((period - 1) * 2);
     };
 
-    subjects.forEach((subject, index) => {
+    const unscheduled = [];
+
+    combination.forEach((subject, index) => {
       const colors = [
         { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800' },
         { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800' },
@@ -169,10 +116,16 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
       ];
 
       const colorScheme = colors[index % colors.length];
-
       const times = parseTime(subject.schedules);
+
+      if (times.length === 0) {
+        unscheduled.push({ subject, colorScheme });
+        return;
+      }
+
+      let mapped = false;
       times.forEach(({ day, start, end }) => {
-        if (grid[day]) {
+        if (newGrid[day]) {
           const startIndex = getSlotIndex(start);
           const endIndex = getSlotIndex(end);
           const totalSlots = endIndex - startIndex;
@@ -180,10 +133,11 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           if (totalSlots <= 0) return;
 
           let isFirstSlot = true;
+          mapped = true;
           for (let i = startIndex; i < endIndex; i++) {
             const slotKey = timeSlots[i];
-            if (slotKey && grid[day][slotKey] === null) {
-              grid[day][slotKey] = {
+            if (slotKey && newGrid[day][slotKey] === null) {
+              newGrid[day][slotKey] = {
                 subject,
                 isStart: isFirstSlot,
                 span: totalSlots,
@@ -194,12 +148,14 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           }
         }
       });
+
+      if (!mapped) {
+        unscheduled.push({ subject, colorScheme });
+      }
     });
 
-    return { grid, daysOfWeek };
-  };
-
-  const { grid, daysOfWeek } = createTimetableGrid(combination);
+    return { grid: newGrid, daysOfWeek: activeDays, unscheduledCourses: unscheduled };
+  }, [combination]);
 
   const handlePrevious = () => {
     setCurrentCombination(prev => Math.max(0, prev - 1));
@@ -321,6 +277,26 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                     </table>
                   </div>
                 </div>
+
+                {/* Unscheduled / Online Courses */}
+                {unscheduledCourses.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">온라인 / 시간외 과목</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {unscheduledCourses.map(({ subject, colorScheme }, idx) => (
+                        <div
+                          key={subject.id || idx}
+                          className={`flex items-center justify-between p-2 rounded-lg border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="text-[10px] font-bold truncate">{subject.subjectName}</div>
+                            <div className="text-[9px] opacity-80 truncate">온라인 과목</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
