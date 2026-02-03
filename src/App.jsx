@@ -22,7 +22,8 @@ import {
   courseTypes,
   grades,
   filterDaysOfWeek,
-  timeOptions
+  timeOptions,
+  creditOptions
 } from './utils/timetableUtils';
 
 
@@ -237,7 +238,7 @@ function AppContent() {
   const { user, isLoggedIn, isLoading: authLoading, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+  const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
 
   // 페이지 상태 관리
   const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
@@ -318,6 +319,7 @@ function AppContent() {
         department: filters.department,
         subjectType: filters.subjectType,
         grade: gradeFilter,
+        credits: filters.credits === '전체' ? undefined : parseInt(filters.credits.replace('학점', '')),
         dayOfWeek: filters.dayOfWeek === '전체' ? undefined : filters.dayOfWeek,
         startTime: filters.startTime === '전체' ? undefined : filters.startTime,
         endTime: filters.endTime === '전체' ? undefined : filters.endTime
@@ -801,7 +803,7 @@ function AppContent() {
     setWishlist([]);
     setTimetable([]);
     // 필터 초기화
-    setFilters({ department: '전체', subjectType: '전체', grade: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+    setFilters({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
     showToast('로그아웃되었습니다.');
   };
 
@@ -1246,6 +1248,23 @@ function AppContent() {
       )}
 
       <div className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10">
+        {/* Top Notice Banner */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 text-amber-800">
+            <span className="text-lg">⚠️</span>
+            <span className="text-sm font-medium">개발자가 에브리타임 외부 도메인 연결로 인해 영구정지 당했습니다.</span>
+          </div>
+          <a
+            href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors"
+          >
+            <span>📷</span>
+            <span>문의: Instagram DM</span>
+          </a>
+        </div>
+
         <header className="mb-2 md:mb-10">
           <div className="flex flex-col gap-2 md:gap-6 md:flex-row md:items-center md:justify-between">
             <div>
@@ -1329,6 +1348,15 @@ function AppContent() {
               >
                 {grades.map(grade => (
                   <option key={grade} value={grade}>{grade}</option>
+                ))}
+              </select>
+              <select
+                value={filters.credits}
+                onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
+                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {creditOptions.map(credit => (
+                  <option key={credit} value={credit}>{credit}</option>
                 ))}
               </select>
               <select
@@ -1557,6 +1585,29 @@ function AppContent() {
           <span>내 시간표 보기 ({timetable.length})</span>
         </button>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-slate-800 text-slate-300 py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-slate-400">
+              <p>© 2025 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
+              <p className="text-xs text-slate-500 mt-1">⚠️ 개발자가 에브리타임 홍보로 영구정지 당했습니다. 에타 문의는 불가능합니다.</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <a
+                href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm hover:text-white transition-colors flex items-center gap-2"
+              >
+                <span>📷</span>
+                <span>Instagram DM 문의</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

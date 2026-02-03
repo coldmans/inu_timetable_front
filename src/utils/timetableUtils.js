@@ -279,3 +279,5 @@ export const timeSlots = [
 export const displayTimeSlots = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, '야1', '야2', '야3', '야4'
 ];
+
+export const creditOptions = ['전체', '1학점', '2학점', '3학점'];
