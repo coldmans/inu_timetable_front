@@ -51,6 +51,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const withdraw = async (password) => {
+    if (!user?.id) throw new Error('로그인 정보가 없습니다.');
+
+    await authAPI.withdraw({
+      userId: String(user.id),
+      password,
+    });
+
+    setUser(null);
+    localStorage.removeItem('user');
+  };
+
   const value = {
     user,
     isLoggedIn: !!user,
@@ -58,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    withdraw,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
