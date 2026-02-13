@@ -235,7 +235,7 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
 
 // 메인 애플리케이션 컴포넌트
 function AppContent() {
-  const { user, isLoggedIn, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoggedIn, isLoading: authLoading, logout, withdraw } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
@@ -610,7 +610,7 @@ function AppContent() {
 
   const handleRemoveFromWishlist = async (courseId) => {
     try {
-      await wishlistAPI.remove(user.id, courseId);
+      await wishlistAPI.remove(user.id, courseId, CURRENT_SEMESTER);
       setWishlist(wishlist.filter(c => c.id !== courseId));
       showToast('위시리스트에서 제거했어요!');
     } catch (error) {
@@ -762,7 +762,7 @@ function AppContent() {
 
       // 기존 시간표 클리어
       for (const course of timetable) {
-        await timetableAPI.remove(user.id, course.id);
+        await timetableAPI.remove(user.id, course.id, CURRENT_SEMESTER);
       }
 
       // 새로운 조합 추가
@@ -798,6 +798,30 @@ function AppContent() {
     setShowAuthModal(true);
   };
 
+  const handleWithdraw = async () => {
+    if (!isLoggedIn) return;
+
+    const confirmed = window.confirm('정말 회원탈퇴 하시겠습니까?
+시간표/위시리스트 데이터가 모두 삭제됩니다.');
+    if (!confirmed) return;
+
+    const password = window.prompt('본인 확인을 위해 비밀번호를 입력해주세요.');
+    if (!password) {
+      showToast('회원탈퇴가 취소되었습니다.', 'warning');
+      return;
+    }
+
+    try {
+      await withdraw(password);
+      setWishlist([]);
+      setTimetable([]);
+      setFilters({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+      showToast('회원탈퇴가 완료되었습니다.');
+    } catch (error) {
+      showToast(error.message || '회원탈퇴에 실패했습니다.', 'error');
+    }
+  };
+
   const handleLogout = () => {
     logout();
     setWishlist([]);
@@ -818,7 +842,7 @@ function AppContent() {
     showToast(`'${courseToRemove.name}' 과목을 시간표에서 제거했어요!`);
 
     try {
-      await timetableAPI.remove(user.id, courseToRemove.id);
+      await timetableAPI.remove(user.id, courseToRemove.id, CURRENT_SEMESTER);
       console.log('✅ 시간표 제거 성공:', courseToRemove.name);
 
       // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
@@ -860,7 +884,7 @@ function AppContent() {
     try {
       // 각 과목을 개별적으로 삭제 (API에 bulk delete가 없다면)
       const deletePromises = previousTimetable.map(course =>
-        timetableAPI.remove(user.id, course.id)
+        timetableAPI.remove(user.id, course.id, CURRENT_SEMESTER)
       );
 
       await Promise.all(deletePromises);
@@ -1275,9 +1299,15 @@ function AppContent() {
               {isLoggedIn ? (
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
+                    <p className="text-sm font-semibold text-slate-900">{(user.nickname || user.username)}님</p>
                     <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
                   </div>
+                  <button
+                    onClick={handleWithdraw}
+                    className="inline-flex items-center gap-1.5 md:gap-2 rounded-full border border-red-200 bg-white px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    회원탈퇴
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-slate-900 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"

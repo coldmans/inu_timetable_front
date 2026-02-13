@@ -44,6 +44,18 @@ export const authAPI = {
     });
     return handleResponse(response);
   },
+
+  // 회원탈퇴
+  withdraw: async (data) => {
+    const response = await fetch(`${BASE_URL}/auth/withdraw`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
 };
 
 // 과목 조회 API
@@ -105,8 +117,9 @@ export const wishlistAPI = {
   },
 
   // 위시리스트에서 제거
-  remove: async (userId, subjectId) => {
-    const response = await fetch(`${BASE_URL}/wishlist/remove?userId=${userId}&subjectId=${subjectId}`, {
+  remove: async (userId, subjectId, semester) => {
+    const semParam = semester ? `&semester=${encodeURIComponent(semester)}` : "";
+    const response = await fetch(`${BASE_URL}/wishlist/remove?userId=${userId}&subjectId=${subjectId}${semParam}`, {
       method: 'DELETE',
     });
     return handleResponse(response);
@@ -158,8 +171,9 @@ export const timetableAPI = {
   },
 
   // 시간표에서 과목 제거
-  remove: async (userId, subjectId) => {
-    const response = await fetch(`${BASE_URL}/timetable/remove?userId=${userId}&subjectId=${subjectId}`, {
+  remove: async (userId, subjectId, semester) => {
+    const semParam = semester ? `&semester=${encodeURIComponent(semester)}` : "";
+    const response = await fetch(`${BASE_URL}/timetable/remove?userId=${userId}&subjectId=${subjectId}${semParam}`, {
       method: 'DELETE',
     });
     return handleResponse(response);
