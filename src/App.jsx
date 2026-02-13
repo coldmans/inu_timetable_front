@@ -801,8 +801,7 @@ function AppContent() {
   const handleWithdraw = async () => {
     if (!isLoggedIn) return;
 
-    const confirmed = window.confirm('정말 회원탈퇴 하시겠습니까?
-시간표/위시리스트 데이터가 모두 삭제됩니다.');
+    const confirmed = window.confirm('정말 회원탈퇴 하시겠습니까?\n시간표/위시리스트 데이터가 모두 삭제됩니다.');
     if (!confirmed) return;
 
     const password = window.prompt('본인 확인을 위해 비밀번호를 입력해주세요.');
