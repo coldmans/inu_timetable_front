@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     if (!user?.id) throw new Error('로그인 정보가 없습니다.');
 
     await authAPI.withdraw({
-      userId: String(user.id),
+      username: user.username,
       password,
     });
 

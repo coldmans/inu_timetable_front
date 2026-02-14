@@ -48,7 +48,7 @@ export const authAPI = {
   // 회원탈퇴
   withdraw: async (data) => {
     const response = await fetch(`${BASE_URL}/auth/withdraw`, {
-      method: 'DELETE',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
