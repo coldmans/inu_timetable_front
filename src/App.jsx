@@ -8,6 +8,7 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
+
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -257,6 +258,7 @@ function AppContent() {
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
+
   const timetableRef = useRef(null);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -921,6 +923,8 @@ function AppContent() {
     }
   };
 
+
+
   // 인천대 로그인 페이지 컴포넌트
   const LoginPage = ({ onLogin }) => (
     <div className="bg-gray-50 min-h-screen font-sans">
@@ -1239,6 +1243,7 @@ function AppContent() {
         onClearAll={handleClearAllTimetable}
         onExportPDF={handleExportTimetablePDF}
       />
+
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
           results={combinationResults}
@@ -1547,7 +1552,7 @@ function AppContent() {
                   <div className="border-t border-slate-200 p-5">
                     <div className="space-y-2">
                       <div className="text-center text-xs text-slate-500">
-                        {wishlist.length}개 과목으로 {targetCredits}학점 맞춤 조합 생성
+                        {wishlist.length}개 과목 • 총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
                       </div>
                       <button
                         onClick={() => {
@@ -1563,7 +1568,7 @@ function AppContent() {
                             생성 중...
                           </span>
                         ) : (
-                          `${targetCredits}학점 조합 만들기`
+                          `${wishlist.reduce((acc, c) => acc + c.credits, 0)}학점 조합 만들기`
                         )}
                       </button>
                     </div>
