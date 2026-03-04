@@ -206,4 +206,19 @@ export const statisticsAPI = {
   },
 };
 
+// 설문조사 API
+export const surveyAPI = {
+  // 설문 응답 제출
+  submit: async (surveyData) => {
+    const response = await fetch(`${BASE_URL}/surveys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(surveyData),
+    });
+    return handleResponse(response);
+  },
+};
+
 
