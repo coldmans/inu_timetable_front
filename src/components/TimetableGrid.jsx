@@ -157,23 +157,23 @@ const TimetableGrid = ({
     }, [courses]);
 
     return (
-        <div ref={timetableRef} className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mini-timetable ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
+        <div ref={timetableRef} className={`mini-timetable rounded-[2rem] border border-white/60 bg-[rgba(255,250,243,0.82)] p-4 shadow-[0_24px_80px_rgba(17,32,51,0.09)] backdrop-blur-md sm:p-5 ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
             {showTitle && (
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
+                        <h3 className="text-base font-semibold tracking-tight text-[var(--ink)]">내 시간표</h3>
                         {courses.length > 0 && (
-                            <p className="mt-1 text-sm text-slate-500">
+                            <p className="mt-1 text-sm text-[var(--muted-ink)]">
                                 총 {courses.reduce((total, course) => total + (course.credits || 0), 0)}학점
                             </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 text-slate-500">
+                    <div className="flex items-center gap-1 text-[var(--muted-ink)]">
                         {courses.length > 0 && onExportPDF && (
                             <button
                                 onClick={onExportPDF}
                                 disabled={isExportingPDF}
-                                className="p-2 rounded-full transition-colors hover:bg-slate-100 disabled:opacity-60 disabled:hover:bg-transparent"
+                                className="rounded-full p-2 transition-colors hover:bg-white disabled:opacity-60 disabled:hover:bg-transparent"
                                 title="시간표를 PDF로 저장"
                             >
                                 <Download size={18} />
@@ -182,7 +182,7 @@ const TimetableGrid = ({
                         {courses.length > 0 && onShowTimetableList && (
                             <button
                                 onClick={onShowTimetableList}
-                                className="p-2 rounded-full transition-colors hover:bg-slate-100 lg:hidden"
+                                className="rounded-full p-2 transition-colors hover:bg-white lg:hidden"
                                 title="시간표 리스트 보기"
                             >
                                 <CalendarDays size={18} />
@@ -191,7 +191,7 @@ const TimetableGrid = ({
                         {courses.length > 0 && onClearAll && (
                             <button
                                 onClick={onClearAll}
-                                className="p-2 rounded-full transition-colors hover:bg-rose-100"
+                                className="rounded-full p-2 transition-colors hover:bg-rose-100"
                                 title="시간표 전체 삭제"
                             >
                                 <X size={18} className="text-rose-500" />
@@ -202,7 +202,7 @@ const TimetableGrid = ({
             )}
 
             <div className={isMobile ? 'min-w-[500px]' : 'w-full'}>
-                <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
+                <table className="w-full table-fixed border-collapse border border-[rgba(17,32,51,0.08)] text-xs text-slate-700">
                     <colgroup>
                         <col style={{ width: timeColumnWidth }} />
                         {daysOfWeek.map(day => (
