@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React-based university timetable application for INU (Incheon National University) built with Vite and Tailwind CSS. The application connects to a Spring Boot backend API and allows students to search for courses, manage a wishlist, and generate optimal timetable combinations using AI.
+This is a React-based university timetable application for INU (Incheon National University) built with Vite and Tailwind CSS. The application connects to a Spring Boot backend API and allows students to search for courses, manage a wishlist, generate timetable combinations, and export their timetable for sharing.
 
 ## Development Commands
 
