@@ -1294,7 +1294,7 @@ function AppContent() {
                 <Search className="absolute left-3 top-2.5 md:left-4 md:top-3.5 text-slate-400" size={16} />
                 <input
                   type="text"
-                  placeholder="과목명 또는 교수명..."
+                  placeholder="과목명으로 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleSearchKeyPress}
