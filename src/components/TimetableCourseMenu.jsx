@@ -37,7 +37,7 @@ const TimetableCourseMenu = ({
   return (
     <div
       ref={menuRef}
-      className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[180px]"
+      className="fixed z-[120] min-w-[180px] rounded-lg border border-gray-200 bg-white py-2 shadow-xl"
       style={{
         left: Math.min(position.x, window.innerWidth - 200),
         top: Math.min(position.y, window.innerHeight - 200),

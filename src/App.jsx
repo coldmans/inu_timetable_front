@@ -190,47 +190,111 @@ const LoadingOverlay = ({ isGenerating }) => {
 // Timetable components moved to components/TimetableGrid.jsx
 
 const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
-  <div className="overflow-hidden rounded-lg md:rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-    <div className="p-2 md:p-5">
-      <div className="mb-1.5 md:mb-3 flex items-start justify-between gap-1.5">
-        <p className="text-sm md:text-lg font-semibold text-slate-900 leading-tight">{course.name} <span className="text-xs md:text-base">({course.credits}학점)</span></p>
-        <div className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] md:text-xs font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
+  <div className="group overflow-hidden rounded-[1.6rem] border border-[rgba(18,32,51,0.08)] bg-[rgba(255,248,239,0.88)] shadow-[0_20px_45px_rgba(18,32,51,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(18,32,51,0.14)]">
+    <div className="p-3 md:p-5">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold leading-tight text-[var(--ink)] md:text-lg">{course.name} <span className="text-xs text-[var(--muted-ink)] md:text-base">({course.credits}학점)</span></p>
+        <div className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap md:text-xs ${course.color} ${course.textColor}`}>
           {course.type}
         </div>
       </div>
-      <div className="space-y-0.5 md:space-y-2 text-[11px] md:text-sm text-slate-600">
-        <div className="flex items-center gap-1">
-          <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+      <div className="space-y-1.5 text-[11px] text-[var(--muted-ink)] md:text-sm">
+        <div className="flex items-center gap-1.5">
+          <MapPin size={12} className="flex-shrink-0 text-[var(--accent-blue)]" />
           <span className="truncate">{course.department} | {course.professor}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock size={12} className="text-slate-400 flex-shrink-0" />
-          <span className="text-[11px] md:text-sm">{course.time}</span>
+        <div className="flex items-center gap-1.5">
+          <Clock size={12} className="flex-shrink-0 text-[var(--accent-copper)]" />
+          <span>{course.time}</span>
         </div>
       </div>
-      <div className="mt-2 md:mt-4 flex justify-end gap-1 md:gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
+      <div className="mt-3 flex justify-end gap-1.5 border-t border-[rgba(18,32,51,0.08)] pt-3 md:mt-4 md:pt-4">
         <a
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-0.5 rounded-md bg-green-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-green-700 transition-colors hover:bg-green-200"
+          className="inline-flex items-center gap-1 rounded-full border border-[rgba(31,112,84,0.18)] bg-[rgba(237,249,241,0.85)] px-2 py-1.5 text-[10px] font-medium text-[#236b4b] transition-colors hover:bg-[rgba(237,249,241,1)] md:px-3 md:text-xs"
         >
-          <MessageSquare size={11} className="md:w-3 md:h-3" /> <span className="hidden sm:inline">강의평</span>
+          <MessageSquare size={11} className="md:h-3 md:w-3" /> <span className="hidden sm:inline">강의평</span>
         </a>
         <button
           onClick={() => onAddToWishlist(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+          className="inline-flex items-center gap-1 rounded-full border border-[rgba(18,32,51,0.08)] bg-white px-2 py-1.5 text-[10px] font-medium text-[var(--ink)] transition-colors hover:bg-[rgba(18,32,51,0.04)] md:px-3 md:text-xs"
         >
-          <ShoppingCart size={11} className="md:w-3 md:h-3" /> 담기
+          <ShoppingCart size={11} className="md:h-3 md:w-3" /> 담기
         </button>
         <button
           onClick={() => onAddToTimetable(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+          className="inline-flex items-center gap-1 rounded-full bg-[var(--ink)] px-2 py-1.5 text-[10px] font-semibold text-white shadow-sm transition-all hover:bg-[var(--accent-blue)] md:px-3 md:text-xs"
         >
-          <Plus size={11} className="md:w-3 md:h-3" /> 바로 추가
+          <Plus size={11} className="md:h-3 md:w-3" /> 바로 추가
         </button>
       </div>
     </div>
+  </div>
+);
+
+const heroPreviewCourses = [
+  { name: '운영체제', professor: '김교수', day: 0, start: 1, end: 3, tone: 'from-[#9fd4ff] to-[#3a73ff]' },
+  { name: '자료구조', professor: '이교수', day: 1, start: 2, end: 4, tone: 'from-[#ffd29f] to-[#ff8d5d]' },
+  { name: '데이터베이스', professor: '박교수', day: 2, start: 1, end: 2.5, tone: 'from-[#b0f0cf] to-[#2f9b7a]' },
+  { name: '알고리즘', professor: '최교수', day: 3, start: 3.5, end: 5.5, tone: 'from-[#d4c4ff] to-[#6170ff]' },
+  { name: '네트워크', professor: '정교수', day: 4, start: 2, end: 4.5, tone: 'from-[#ffe89a] to-[#ffb448]' },
+];
+
+const heroDays = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+
+const HeroBackdrop = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="hero-aurora absolute inset-0" />
+    <div className="absolute inset-y-0 left-[34%] right-0 hidden border-l border-white/15 md:block" />
+    <div className="absolute inset-x-0 bottom-0 top-[48%] opacity-80 md:top-0 md:left-[38%] md:opacity-100">
+      <div className="hero-product-plane absolute inset-0">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,20,37,0.08),rgba(8,20,37,0.32))]" />
+        <div className="absolute inset-x-0 top-0 grid h-20 grid-cols-5 border-b border-white/12 bg-[rgba(8,20,37,0.18)] px-4">
+          {heroDays.map((day) => (
+            <div key={day} className="flex items-end justify-center border-l border-white/10 pb-4 text-[0.65rem] font-semibold tracking-[0.35em] text-white/70 first:border-l-0">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 top-20">
+          {Array.from({ length: 8 }).map((_, rowIndex) => (
+            <div
+              key={rowIndex}
+              className="hero-grid-line absolute inset-x-0 border-t border-white/10"
+              style={{ top: `${(rowIndex / 8) * 100}%` }}
+            />
+          ))}
+          {Array.from({ length: 5 }).map((_, columnIndex) => (
+            <div
+              key={columnIndex}
+              className="absolute inset-y-0 border-l border-white/10"
+              style={{ left: `${(columnIndex / 5) * 100}%` }}
+            />
+          ))}
+          {heroPreviewCourses.map((course) => {
+            const left = course.day * 20 + 2;
+            const width = 16;
+            const top = ((course.start - 1) / 8) * 100 + 2;
+            const height = ((course.end - course.start) / 8) * 100 + 4;
+
+            return (
+              <div
+                key={`${course.name}-${course.day}`}
+                className={`hero-course-block absolute flex flex-col justify-between bg-gradient-to-br ${course.tone}`}
+                style={{ left: `${left}%`, top: `${top}%`, width: `${width}%`, height: `${height}%` }}
+              >
+                <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-white">{course.name}</span>
+                <span className="text-[0.62rem] text-white/80">{course.professor}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,20,32,0.92)_0%,rgba(11,20,32,0.78)_36%,rgba(11,20,32,0.22)_62%,rgba(11,20,32,0.1)_100%)]" />
+    <div className="hero-noise absolute inset-0 opacity-40" />
   </div>
 );
 
@@ -1187,6 +1251,21 @@ function AppContent() {
     setCurrentView('login');
   };
 
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handlePlannerCTA = () => {
+    if (window.innerWidth < 1024) {
+      handleShowTimetableList();
+      return;
+    }
+    scrollToSection('planner-workspace');
+  };
+
   if (currentView === 'login') {
     return <LoginPage onLogin={() => setCurrentView('portal')} />;
   }
@@ -1201,7 +1280,7 @@ function AppContent() {
   }
 
   return (
-    <div className="bg-[#f6f7fb] min-h-screen font-sans">
+    <div className="app-shell min-h-screen overflow-x-hidden text-[var(--ink)]">
       <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
       <LoadingOverlay isGenerating={isGenerating} />
       <AuthModal
@@ -1252,338 +1331,388 @@ function AppContent() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10">
-
-        <header className="mb-2 md:mb-10">
-          <div className="flex flex-col gap-2 md:gap-6 md:flex-row md:items-center md:justify-between">
+      <section className="relative flex min-h-[100svh] flex-col overflow-hidden">
+        <HeroBackdrop />
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-8 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
+          <header className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
-              <p className="hidden md:block mt-1 text-sm md:text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 조합을 만들어 보세요.</p>
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.45em] text-white/55">Incheon National University</p>
+              <p className="mt-2 text-sm font-medium text-white/85">INU Timetable</p>
             </div>
-            <div className="flex-shrink-0">
-              {isLoggedIn ? (
-                <div className="flex items-center gap-2 md:gap-4">
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
-                    <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-slate-900 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
-                  >
-                    <LogOut size={14} /> <span className="hidden md:inline">로그아웃</span><span className="md:hidden">로그아웃</span>
-                  </button>
+            <div className="flex items-center gap-3">
+              {isLoggedIn && (
+                <div className="hidden text-right md:block">
+                  <p className="text-sm font-semibold text-white">{user.nickname}님</p>
+                  <p className="text-xs text-white/60">{user.major} {user.grade}학년</p>
                 </div>
+              )}
+              {isLoggedIn ? (
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/8 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/14"
+                >
+                  <LogOut size={14} /> 로그아웃
+                </button>
               ) : (
                 <button
                   onClick={handleLogin}
-                  className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-blue-600 px-3 py-1.5 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-copper)] px-4 py-2 text-sm font-semibold text-[#1b2430] transition-transform hover:-translate-y-0.5"
                 >
                   <LogIn size={14} /> 로그인
                 </button>
               )}
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* 검색 바 */}
-        <div className="mb-2 md:mb-8 rounded-lg md:rounded-2xl border border-slate-200 bg-white p-2 md:p-6 shadow-sm">
-          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-            <div className="flex-1 flex gap-1.5">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-2.5 md:left-4 md:top-3.5 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  aria-label="과목명 검색"
-                  placeholder="과목명으로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={handleSearchKeyPress}
-                  className="w-full rounded-lg md:rounded-xl border border-slate-200 bg-white px-9 py-2 md:px-12 md:py-3 text-sm text-slate-900 shadow-inner shadow-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
-                />
+          <div className="flex flex-1 items-end pb-6 pt-16 md:items-center md:pb-14 md:pt-20">
+            <div className="max-w-2xl">
+              <h1 className="mt-4 max-w-[14ch] text-[3.3rem] font-black uppercase leading-[0.9] tracking-[0.08em] text-white sm:text-[4.6rem] lg:text-[6.8rem]">
+                INU Timetable
+              </h1>
+              <p className="mt-5 max-w-[20ch] text-xl font-semibold leading-tight text-[var(--sand-soft)] sm:text-2xl lg:text-[2rem]">
+                수강신청 전에, 조합부터 끝내는 시간표.
+              </p>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
+                과목 검색, 위시리스트, 목표 학점, 공강 요일, 자동 시간표 조합까지 한 흐름으로 묶었습니다.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  onClick={() => scrollToSection('search-studio')}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform hover:-translate-y-0.5"
+                >
+                  <Search size={16} />
+                  과목 검색 시작
+                </button>
+                <button
+                  onClick={handlePlannerCTA}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/8 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/14"
+                >
+                  <CalendarDays size={16} />
+                  내 시간표 열기
+                </button>
               </div>
-              <button
-                onClick={executeSearch}
-                disabled={isLoading}
-                className="inline-flex items-center gap-1.5 rounded-lg md:rounded-xl bg-blue-600 px-3 py-2 md:px-5 md:py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
-              >
-                <Search size={16} className="md:hidden" />
-                <span className="hidden md:inline">검색</span>
-                <span className="md:hidden">검색</span>
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5 md:gap-2">
-              <select
-                value={filters.department}
-                onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                className="min-w-[80px] md:min-w-[120px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-              <select
-                value={filters.subjectType}
-                onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {courseTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              <select
-                value={filters.grade}
-                onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
-                className="min-w-[60px] md:min-w-[90px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {grades.map(grade => (
-                  <option key={grade} value={grade}>{grade}</option>
-                ))}
-              </select>
-              <select
-                value={filters.credits}
-                onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
-                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {creditOptions.map(credit => (
-                  <option key={credit} value={credit}>{credit}</option>
-                ))}
-              </select>
-              <select
-                value={filters.dayOfWeek}
-                onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {filterDaysOfWeek.map(day => (
-                  <option key={day} value={day}>{day}</option>
-                ))}
-              </select>
-              <select
-                value={filters.startTime}
-                onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {timeOptions.map(time => (
-                  <option key={time} value={time}>
-                    {time === '전체' ? '시작시간' : `${time}교시`}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filters.endTime}
-                onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {timeOptions.map(time => (
-                  <option key={time} value={time}>
-                    {time === '전체' ? '종료시간' : `${time}교시`}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3 lg:gap-10">
-          {/* Left: Course List */}
-          <main className="lg:col-span-2">
-            <div className="mb-2 md:mb-4 flex items-center justify-between">
-              <h2 className="text-base md:text-xl font-semibold text-slate-900">
-                검색 결과
-                {totalElements > 0 && (
-                  <span className="text-xs md:text-base text-slate-400">
-                    (총 {totalElements.toLocaleString()}개 중 {filteredCourses.length}개 표시)
-                  </span>
-                )}
-                {isLoading && <span className="ml-2 text-xs md:text-sm text-blue-500">로딩 중...</span>}
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 md:gap-4">
-              {filteredCourses.map(course => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  onAddToTimetable={handleAddToTimetable}
-                  onAddToWishlist={handleAddToWishlist}
-                />
-              ))}
-            </div>
+      <main className="relative z-10 pb-16">
+        <section id="search-studio" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 lg:pt-14">
+          <div className="mb-6 max-w-2xl">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-[var(--accent-blue)]">Search Studio</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">조건을 정하고, 바로 조합 가능한 과목만 모읍니다.</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--muted-ink)] sm:text-base">
+              학과, 이수구분, 학년, 학점, 요일, 시작·종료 교시 기준으로 과목을 좁히고 시간표로 바로 보냅니다.
+            </p>
+          </div>
 
-            {/* 페이징 컴포넌트 */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalElements={totalElements}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              isLoading={isLoading}
-            />
-          </main>
-
-          {/* Right: Timetable & Wishlist */}
-          <aside className="space-y-8">
-            <div className="sticky top-28">
-              {/* Desktop: Mini Timetable */}
-              <div className="hidden lg:block">
-                {/* Timetable Grid */}
-                <TimetableGrid
-                  courses={timetable}
-                  onExportPDF={handleExportTimetablePDF}
-                  onRemoveCourse={handleRemoveFromTimetable}
-                  onAddToWishlist={handleMoveToWishlistFromTimetable}
-                  onViewCourseDetails={handleViewCourseDetails}
-                  onClearAll={handleClearAllTimetable}
-                  onShowTimetableList={handleShowTimetableList}
-                  timetableRef={timetableRef}
-                  isExportingPDF={isExportingPDF}
-                />
+          <div className="rounded-[2rem] border border-white/60 bg-[rgba(255,250,243,0.82)] p-3 shadow-[0_24px_80px_rgba(17,32,51,0.09)] backdrop-blur-md md:p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-3.5 text-[var(--muted-ink)]" size={18} />
+                  <input
+                    type="text"
+                    aria-label="과목명 검색"
+                    placeholder="과목명으로 검색..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    className="w-full rounded-full border border-[rgba(17,32,51,0.08)] bg-white/90 px-11 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.14)]"
+                  />
+                </div>
+                <button
+                  onClick={executeSearch}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-blue)] disabled:cursor-not-allowed disabled:bg-[rgba(17,32,51,0.35)]"
+                >
+                  <Search size={16} />
+                  검색
+                </button>
               </div>
 
-              {/* Wishlist */}
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-200 p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-slate-900">위시리스트</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-slate-500">
-                        총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+                <select
+                  value={filters.department}
+                  onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {departments.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.subjectType}
+                  onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {courseTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.grade}
+                  onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {grades.map(grade => (
+                    <option key={grade} value={grade}>{grade}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.credits}
+                  onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {creditOptions.map(credit => (
+                    <option key={credit} value={credit}>{credit}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.dayOfWeek}
+                  onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {filterDaysOfWeek.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+                <select
+                  value={filters.startTime}
+                  onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {timeOptions.map(time => (
+                    <option key={time} value={time}>
+                      {time === '전체' ? '시작시간' : `${time}교시`}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filters.endTime}
+                  onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
+                  className="rounded-2xl border border-[rgba(17,32,51,0.08)] bg-white/88 px-3 py-3 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--accent-blue)] focus:ring-4 focus:ring-[rgba(51,102,255,0.12)] md:text-sm"
+                >
+                  {timeOptions.map(time => (
+                    <option key={time} value={time}>
+                      {time === '전체' ? '종료시간' : `${time}교시`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8 lg:pt-16">
+          <div className="grid gap-10 xl:grid-cols-[minmax(0,1.7fr)_minmax(360px,0.92fr)]">
+            <section>
+              <div className="mb-5 max-w-2xl">
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-[var(--accent-copper)]">Catalog</p>
+                <h2 className="mt-3 text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl">지금 담을 수 있는 과목을 빠르게 훑습니다.</h2>
+                <p className="mt-3 text-sm leading-7 text-[var(--muted-ink)]">
+                  {totalElements > 0
+                    ? `총 ${totalElements.toLocaleString()}개 과목 중 현재 ${filteredCourses.length}개를 표시하고 있습니다.`
+                    : '검색 조건을 바꾸면 자동으로 결과가 다시 정리됩니다.'}
+                  {isLoading && <span className="ml-2 font-semibold text-[var(--accent-blue)]"> 불러오는 중...</span>}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredCourses.map(course => (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    onAddToTimetable={handleAddToTimetable}
+                    onAddToWishlist={handleAddToWishlist}
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalElements={totalElements}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                isLoading={isLoading}
+              />
+            </section>
+
+            <aside id="planner-workspace">
+              <div className="space-y-6 lg:sticky lg:top-8">
+                <div className="max-w-sm">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-[var(--accent-blue)]">Planner</p>
+                  <h2 className="mt-3 text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl">담은 과목을 실제 시간표로 바로 조립합니다.</h2>
+                  <p className="mt-3 text-sm leading-7 text-[var(--muted-ink)]">
+                    위시리스트에서 필수 과목을 고르고 목표 학점과 공강 요일을 정해 조합을 생성할 수 있습니다.
+                  </p>
+                </div>
+
+                <div className="hidden lg:block">
+                  <TimetableGrid
+                    courses={timetable}
+                    onExportPDF={handleExportTimetablePDF}
+                    onRemoveCourse={handleRemoveFromTimetable}
+                    onAddToWishlist={handleMoveToWishlistFromTimetable}
+                    onViewCourseDetails={handleViewCourseDetails}
+                    onClearAll={handleClearAllTimetable}
+                    onShowTimetableList={handleShowTimetableList}
+                    timetableRef={timetableRef}
+                    isExportingPDF={isExportingPDF}
+                  />
+                </div>
+
+                <div className="rounded-[2rem] border border-white/60 bg-[rgba(255,250,243,0.82)] shadow-[0_24px_80px_rgba(17,32,51,0.09)] backdrop-blur-md">
+                  <div className="border-b border-[rgba(17,32,51,0.08)] p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[var(--ink)]">위시리스트</h3>
+                        <p className="mt-1 text-sm text-[var(--muted-ink)]">총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점</p>
                       </div>
                       <button
                         onClick={() => {
                           setWishlistModalMode('list');
                           setShowWishlistModal(true);
                         }}
-                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+                        className="rounded-full border border-[rgba(17,32,51,0.08)] bg-white/80 p-2 text-[var(--ink)] transition-colors hover:bg-white"
                         title="위시리스트 확장 보기"
                       >
-                        <Maximize size={18} className="text-slate-500" />
+                        <Maximize size={18} />
                       </button>
                     </div>
-                  </div>
 
-                  {/* 목표 학점 선택 */}
-                  <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-                    <span className="text-sm font-medium text-slate-700">목표 학점</span>
-                    <select
-                      value={targetCredits}
-                      onChange={(e) => setTargetCredits(parseInt(e.target.value))}
-                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={12}>12학점</option>
-                      <option value={13}>13학점</option>
-                      <option value={14}>14학점</option>
-                      <option value={15}>15학점</option>
-                      <option value={16}>16학점</option>
-                      <option value={17}>17학점</option>
-                      <option value={18}>18학점 (권장)</option>
-                      <option value={19}>19학점</option>
-                      <option value={20}>20학점</option>
-                      <option value={21}>21학점</option>
-                      <option value={22}>22학점</option>
-                      <option value={23}>23학점</option>
-                      <option value={24}>24학점</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="max-h-60 overflow-y-auto p-3">
-                  {wishlist.length > 0 ? (
-                    <ul className="space-y-3">
-                      {wishlist.map(course => (
-                        <li key={course.id} className={`rounded-xl border p-3 ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold text-slate-900">{course.name}</p>
-                                {course.isRequired && (
-                                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
-                                    필수
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-slate-500">{course.credits}학점 | {course.professor}</p>
-
-
-                              {/* 필수 과목 체크박스 */}
-                              <div className="mt-2 flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  id={`required-${course.id}`}
-                                  checked={course.isRequired || false}
-                                  onChange={() => handleToggleRequired(course.id, course.isRequired)}
-                                  className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                                />
-                                <label
-                                  htmlFor={`required-${course.id}`}
-                                  className="cursor-pointer text-sm text-slate-600"
-                                >
-                                  필수 포함 과목
-                                </label>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleRemoveFromWishlist(course.id)}
-                              className="ml-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <div className="py-8 text-center text-sm text-slate-400">담은 과목이 없어요.</div>}
-                </div>
-                {wishlist.length > 0 && (
-                  <div className="border-t border-slate-200 p-5">
-                    <div className="space-y-2">
-                      <div className="text-center text-xs text-slate-500">
-                        {wishlist.length}개 과목 • 총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
-                      </div>
-                      <button
-                        onClick={() => {
-                          setWishlistModalMode('setup');
-                          setShowWishlistModal(true);
-                        }}
-                        disabled={isGenerating}
-                        className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    <div className="flex items-center gap-3 rounded-[1.25rem] border border-[rgba(17,32,51,0.08)] bg-white/80 px-4 py-3">
+                      <span className="text-sm font-medium text-[var(--muted-ink)]">목표 학점</span>
+                      <select
+                        value={targetCredits}
+                        onChange={(e) => setTargetCredits(parseInt(e.target.value))}
+                        className="rounded-full border border-[rgba(17,32,51,0.08)] bg-[rgba(255,248,239,0.95)] px-3 py-1.5 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent-blue)]"
                       >
-                        {isGenerating ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            생성 중...
-                          </span>
-                        ) : (
-                          `${wishlist.reduce((acc, c) => acc + c.credits, 0)}학점 조합 만들기`
-                        )}
-                      </button>
+                        <option value={12}>12학점</option>
+                        <option value={13}>13학점</option>
+                        <option value={14}>14학점</option>
+                        <option value={15}>15학점</option>
+                        <option value={16}>16학점</option>
+                        <option value={17}>17학점</option>
+                        <option value={18}>18학점 (권장)</option>
+                        <option value={19}>19학점</option>
+                        <option value={20}>20학점</option>
+                        <option value={21}>21학점</option>
+                        <option value={22}>22학점</option>
+                        <option value={23}>23학점</option>
+                        <option value={24}>24학점</option>
+                      </select>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </aside>
-        </div>
-      </div>
 
-      {/* Mobile: Floating Button to View Timetable */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+                  <div className="max-h-72 overflow-y-auto p-4">
+                    {wishlist.length > 0 ? (
+                      <ul className="space-y-3">
+                        {wishlist.map(course => (
+                          <li
+                            key={course.id}
+                            className={`rounded-[1.4rem] border p-3 ${course.isRequired ? 'border-[rgba(214,79,84,0.25)] bg-[rgba(255,236,236,0.88)]' : 'border-[rgba(17,32,51,0.08)] bg-white/76'}`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <div className="mb-1 flex items-center gap-2">
+                                  <p className="font-semibold text-[var(--ink)]">{course.name}</p>
+                                  {course.isRequired && (
+                                    <span className="rounded-full bg-[#d64f54] px-2 py-0.5 text-[0.68rem] font-semibold text-white">
+                                      필수
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-[var(--muted-ink)]">{course.credits}학점 | {course.professor}</p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`required-${course.id}`}
+                                    checked={course.isRequired || false}
+                                    onChange={() => handleToggleRequired(course.id, course.isRequired)}
+                                    className="h-4 w-4 rounded border border-[rgba(17,32,51,0.18)] text-[var(--accent-blue)] focus:ring-2 focus:ring-[var(--accent-blue)] focus:ring-offset-0"
+                                  />
+                                  <label
+                                    htmlFor={`required-${course.id}`}
+                                    className="cursor-pointer text-sm text-[var(--muted-ink)]"
+                                  >
+                                    필수 포함 과목
+                                  </label>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveFromWishlist(course.id)}
+                                className="rounded-full p-1 text-[var(--muted-ink)] transition-colors hover:bg-white hover:text-[#d64f54]"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="py-10 text-center text-sm text-[var(--muted-ink)]">담은 과목이 없어요.</div>
+                    )}
+                  </div>
+
+                  {wishlist.length > 0 && (
+                    <div className="border-t border-[rgba(17,32,51,0.08)] p-5">
+                      <div className="space-y-3">
+                        <div className="text-center text-xs text-[var(--muted-ink)]">
+                          {wishlist.length}개 과목 • 총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
+                        </div>
+                        <button
+                          onClick={() => {
+                            setWishlistModalMode('setup');
+                            setShowWishlistModal(true);
+                          }}
+                          disabled={isGenerating}
+                          className="w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-blue)] disabled:cursor-not-allowed disabled:bg-[rgba(17,32,51,0.35)]"
+                        >
+                          {isGenerating ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                              생성 중...
+                            </span>
+                          ) : (
+                            `${wishlist.reduce((acc, c) => acc + c.credits, 0)}학점 조합 만들기`
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <div className="fixed bottom-6 right-6 z-40 lg:hidden">
         <button
           onClick={handleShowTimetableList}
-          className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
+          className="flex items-center gap-2 rounded-full bg-[var(--ink)] px-5 py-3 text-white shadow-[0_18px_30px_rgba(17,32,51,0.26)] transition-transform active:scale-95"
         >
           <CalendarDays size={20} />
           <span>내 시간표 보기 ({timetable.length})</span>
         </button>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-slate-800 text-slate-300 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-slate-400">
+      <footer className="mt-16 border-t border-[rgba(17,32,51,0.08)] bg-[rgba(17,32,51,0.92)] py-8 text-slate-300">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
+          <div className="text-sm text-slate-400">
               <p>© 2025 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
-            </div>
           </div>
+          <a
+            href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-white"
+          >
+            <span>📷</span>
+            <span>Instagram DM 문의</span>
+          </a>
         </div>
       </footer>
     </div>
