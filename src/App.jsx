@@ -1582,18 +1582,6 @@ function AppContent() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-slate-400">
               <p>© 2025 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
-
-            </div>
-            <div className="flex items-center gap-6">
-              <a
-                href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm hover:text-white transition-colors flex items-center gap-2"
-              >
-                <span>📷</span>
-                <span>Instagram DM 문의</span>
-              </a>
             </div>
           </div>
         </div>
