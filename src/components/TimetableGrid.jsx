@@ -17,18 +17,15 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
             return (
                 <td
                     rowSpan={course.span || 1}
-                    className={`align-top p-0 ${backgroundColor} ${borderColor} ${textColor} border overflow-hidden`}
+                    className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
+                    onClick={(e) => onCourseClick(e, course)}
                 >
-                    <button
-                        type="button"
-                        className="flex h-full w-full cursor-pointer select-none flex-col items-center justify-center gap-0.5 overflow-hidden p-1 text-center transition-colors hover:brightness-95"
-                        onClick={(e) => onCourseClick(e, course)}
-                    >
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
                         <div className="w-full px-0.5 text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.name}</div>
                         {course.professor && (
                             <div className="w-full px-0.5 text-[10px] leading-none opacity-80 truncate">{course.professor}</div>
                         )}
-                    </button>
+                    </div>
                 </td>
             );
         }
@@ -278,7 +275,7 @@ const TimetableGrid = ({
                         {unscheduledCourses.map((course, idx) => (
                             <div
                                 key={course.id || idx}
-                                className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 shadow-sm transition-all hover:brightness-95 ${course.color} ${course.borderColor} ${course.textColor}`}
+                                className={`flex items-center justify-between p-3 rounded-xl border ${course.color} ${course.borderColor} ${course.textColor} cursor-pointer hover:brightness-95 transition-all shadow-sm`}
                                 onClick={(e) => handleCourseClick(e, course)}
                             >
                                 <div className="min-w-0 pr-2">
