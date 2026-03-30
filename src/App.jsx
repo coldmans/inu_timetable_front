@@ -1316,67 +1316,67 @@ function AppContent() {
               <select
                 value={filters.department}
                 onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                className="min-w-[80px] md:min-w-[120px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[80px] md:min-w-[120px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.department === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
+                  <option key={dept} value={dept} className="text-slate-700">{dept === '전체' ? '🏫 학과 (전체)' : dept}</option>
                 ))}
               </select>
               <select
                 value={filters.subjectType}
                 onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.subjectType === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {courseTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                  <option key={type} value={type} className="text-slate-700">{type === '전체' ? '📋 구분 (전체)' : type}</option>
                 ))}
               </select>
               <select
                 value={filters.grade}
                 onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
-                className="min-w-[60px] md:min-w-[90px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[60px] md:min-w-[90px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.grade === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {grades.map(grade => (
-                  <option key={grade} value={grade}>{grade}</option>
+                  <option key={grade} value={grade} className="text-slate-700">{grade === '전체' ? '🎓 학년 (전체)' : grade}</option>
                 ))}
               </select>
               <select
                 value={filters.credits}
                 onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
-                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.credits === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {creditOptions.map(credit => (
-                  <option key={credit} value={credit}>{credit}</option>
+                  <option key={credit} value={credit} className="text-slate-700">{credit === '전체' ? '📊 학점 (전체)' : credit}</option>
                 ))}
               </select>
               <select
                 value={filters.dayOfWeek}
                 onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-                className="min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[60px] md:min-w-[80px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.dayOfWeek === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {filterDaysOfWeek.map(day => (
-                  <option key={day} value={day}>{day}</option>
+                  <option key={day} value={day} className="text-slate-700">{day === '전체' ? '📅 요일 (전체)' : day}</option>
                 ))}
               </select>
               <select
                 value={filters.startTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.startTime === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {timeOptions.map(time => (
-                  <option key={time} value={time}>
-                    {time === '전체' ? '시작시간' : `${time}교시`}
+                  <option key={time} value={time} className="text-slate-700">
+                    {time === '전체' ? '⏰ 시작시간' : `${time}교시`}
                   </option>
                 ))}
               </select>
               <select
                 value={filters.endTime}
                 onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-                className="min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`min-w-[70px] md:min-w-[100px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.endTime === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
               >
                 {timeOptions.map(time => (
-                  <option key={time} value={time}>
-                    {time === '전체' ? '종료시간' : `${time}교시`}
+                  <option key={time} value={time} className="text-slate-700">
+                    {time === '전체' ? '⏰ 종료시간' : `${time}교시`}
                   </option>
                 ))}
               </select>
