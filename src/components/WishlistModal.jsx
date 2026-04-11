@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { X, Clock, Star, Trash2, Eye, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수 (기존 유지)
@@ -40,18 +40,30 @@ const WishlistModal = ({
   initialStep = 'list',
   onRunGenerator
 }) => {
-  if (!isOpen) return null;
-
-  const [step, setStep] = useState(initialStep); // Initialize with prop
+  const [step, setStep] = useState(initialStep);
+  const titleId = useId();
   const totalCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
   const daysOfWeek = ['월', '화', '수', '목', '금'];
 
   // Sync step when isOpen or initialStep changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setStep(initialStep);
     }
   }, [isOpen, initialStep]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
   const handleToggleFreeDay = (day) => {
     if (freeDays.includes(day)) {
@@ -67,10 +79,17 @@ const WishlistModal = ({
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen from bottom / Desktop: Centered card */}
-      <div className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl"
+      >
 
         {/* === Header Shared Area === */}
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
@@ -78,14 +97,17 @@ const WishlistModal = ({
             <div className="flex items-center gap-2 min-w-0">
               {step === 'setup' && (
                 <button
+                  type="button"
                   onClick={() => setStep('list')}
-                  className="mr-1 rounded-full p-1.5 hover:bg-slate-100 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  aria-label="위시리스트 목록으로 돌아가기"
                 >
                   <ChevronLeft size={22} className="text-slate-600" />
+                  <span className="hidden sm:inline">목록으로</span>
                 </button>
               )}
               <div className="min-w-0">
-                <h2 className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">
+                <h2 id={titleId} className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">
                   {step === 'list' ? '위시리스트' : '조합 설정'}
                 </h2>
                 <p className="mt-0.5 text-xs sm:text-sm text-slate-500 truncate">
@@ -97,8 +119,10 @@ const WishlistModal = ({
               </div>
             </div>
             <button
+              type="button"
               onClick={handleClose}
               className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+              aria-label="위시리스트 닫기"
             >
               <X size={22} />
             </button>
@@ -269,6 +293,7 @@ const WishlistModal = ({
           <div className="border-t border-slate-200 bg-white p-3 sm:p-4 pb-[max(env(safe-area-inset-bottom),12px)]">
             {step === 'list' ? (
               <button
+                type="button"
                 onClick={() => setStep('setup')}
                 className="w-full rounded-xl bg-slate-900 px-6 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white shadow-lg transition-transform hover:bg-slate-800 active:scale-[0.99]"
               >
@@ -276,6 +301,7 @@ const WishlistModal = ({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   onRunGenerator();
                   handleClose();

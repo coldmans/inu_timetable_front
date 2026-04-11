@@ -189,7 +189,7 @@ const LoadingOverlay = ({ isGenerating }) => {
 
 // Timetable components moved to components/TimetableGrid.jsx
 
-const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
+const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
   <div className="overflow-hidden rounded-lg md:rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
     <div className="p-2 md:p-5">
       <div className="mb-1.5 md:mb-3 flex items-start justify-between gap-1.5">
@@ -218,14 +218,20 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist }) => (
           <MessageSquare size={11} className="md:w-3 md:h-3" /> <span className="hidden sm:inline">강의평</span>
         </a>
         <button
+          type="button"
           onClick={() => onAddToWishlist(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+          disabled={actionsDisabled}
+          aria-disabled={actionsDisabled}
+          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100"
         >
           <ShoppingCart size={11} className="md:w-3 md:h-3" /> 담기
         </button>
         <button
+          type="button"
           onClick={() => onAddToTimetable(course)}
-          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+          disabled={actionsDisabled}
+          aria-disabled={actionsDisabled}
+          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300"
         >
           <Plus size={11} className="md:w-3 md:h-3" /> 바로 추가
         </button>
@@ -283,6 +289,7 @@ function AppContent() {
 
   // 희망 공강 요일 설정
   const [freeDays, setFreeDays] = useState([]);
+  const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -603,7 +610,7 @@ function AppContent() {
         priority: 3,
         isRequired: isRequired
       });
-      setWishlist([...wishlist, { ...courseToAdd, isRequired }]);
+      setWishlist(prev => [...prev, { ...courseToAdd, isRequired }]);
       showToast(`'${courseToAdd.name}' 과목을 위시리스트에 담았어요!`);
     } catch (error) {
       showToast(error.message, 'warning');
@@ -613,7 +620,7 @@ function AppContent() {
   const handleRemoveFromWishlist = async (courseId) => {
     try {
       await wishlistAPI.remove(user.id, courseId);
-      setWishlist(wishlist.filter(c => c.id !== courseId));
+      setWishlist(prev => prev.filter(course => course.id !== courseId));
       showToast('위시리스트에서 제거했어요!');
     } catch (error) {
       showToast(error.message, 'warning');
@@ -628,14 +635,15 @@ function AppContent() {
         isRequired: !currentIsRequired
       });
 
-      setWishlist(wishlist.map(course =>
+      setWishlist(prev => prev.map(course =>
         course.id === courseId
           ? { ...course, isRequired: !currentIsRequired }
           : course
       ));
 
       const course = wishlist.find(c => c.id === courseId);
-      showToast(`'${course.name}' 과목을 ${!currentIsRequired ? '필수' : '선택'} 과목으로 변경했어요!`);
+      const courseName = course?.name || '선택한 과목';
+      showToast(`'${courseName}' 과목을 ${!currentIsRequired ? '필수' : '선택'} 과목으로 변경했어요!`);
     } catch (error) {
       showToast(error.message, 'warning');
     }
@@ -1252,7 +1260,11 @@ function AppContent() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10">
+      <div
+        aria-hidden={showWishlistModal}
+        inert={showWishlistModal ? '' : undefined}
+        className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10"
+      >
 
         <header className="mb-2 md:mb-10">
           <div className="flex flex-col gap-2 md:gap-6 md:flex-row md:items-center md:justify-between">
@@ -1406,6 +1418,7 @@ function AppContent() {
                   course={course}
                   onAddToTimetable={handleAddToTimetable}
                   onAddToWishlist={handleAddToWishlist}
+                  actionsDisabled={showWishlistModal}
                 />
               ))}
             </div>
@@ -1447,7 +1460,7 @@ function AppContent() {
                     <h3 className="text-lg font-semibold text-slate-900">위시리스트</h3>
                     <div className="flex items-center gap-3">
                       <div className="text-sm text-slate-500">
-                        총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
+                        총 {wishlistCredits}학점
                       </div>
                       <button
                         onClick={() => {
@@ -1537,7 +1550,7 @@ function AppContent() {
                   <div className="border-t border-slate-200 p-5">
                     <div className="space-y-2">
                       <div className="text-center text-xs text-slate-500">
-                        {wishlist.length}개 과목 • 총 {wishlist.reduce((acc, c) => acc + c.credits, 0)}학점
+                        {wishlist.length}개 과목 • 총 {wishlistCredits}학점
                       </div>
                       <button
                         onClick={() => {
@@ -1553,7 +1566,7 @@ function AppContent() {
                             생성 중...
                           </span>
                         ) : (
-                          `${wishlist.reduce((acc, c) => acc + c.credits, 0)}학점 조합 만들기`
+                          `${wishlistCredits}학점 조합 만들기`
                         )}
                       </button>
                     </div>
