@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -8,6 +8,7 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
+import AdminSubjectManager from './components/AdminSubjectManager';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 import html2canvas from 'html2canvas';
@@ -1195,6 +1196,33 @@ function AppContent() {
     setCurrentView('login');
   };
 
+  const isAdminSubjectsPage = window.location.pathname === '/admin/subjects';
+
+  if (isAdminSubjectsPage) {
+    return (
+      <div className="bg-[#f6f7fb] min-h-screen font-sans">
+        <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
+        <div className="max-w-7xl mx-auto px-3 py-4 md:px-8 md:py-10">
+          <header className="mb-4 md:mb-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-xl md:text-4xl font-bold tracking-tight text-slate-900">과목 관리</h1>
+                <p className="mt-1 text-sm md:text-base text-slate-500">관리자 전용 과목 데이터 관리 페이지입니다.</p>
+              </div>
+              <a
+                href="/"
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+              >
+                과목 검색으로 돌아가기
+              </a>
+            </div>
+          </header>
+          <AdminSubjectManager showToast={showToast} />
+        </div>
+      </div>
+    );
+  }
+
   if (currentView === 'login') {
     return <LoginPage onLogin={() => setCurrentView('portal')} />;
   }
@@ -1598,6 +1626,13 @@ function AppContent() {
 
             </div>
             <div className="flex items-center gap-6">
+              <a
+                href="/admin/subjects"
+                className="text-sm hover:text-white transition-colors flex items-center gap-2"
+              >
+                <Settings size={16} />
+                <span>과목 관리</span>
+              </a>
               <a
                 href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
                 target="_blank"

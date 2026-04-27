@@ -4,47 +4,41 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const handleResponse = async (response) => {
   console.log(`API 응답: ${response.status} ${response.statusText} - ${response.url}`);
 
+  const responseText = await response.text();
+  const parseBody = () => {
+    if (!responseText) return null;
+    try {
+      return JSON.parse(responseText);
+    } catch {
+      return responseText;
+    }
+  };
+
   if (!response.ok) {
     let errorMessage = '서버 오류가 발생했습니다.';
-    try {
-      const error = await response.json();
-      errorMessage = error.error || error.message || errorMessage;
-      console.error('API 에러 상세:', error);
-    } catch (e) {
-      console.error('에러 응답 파싱 실패:', e);
-      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    const errorBody = parseBody();
+
+    if (errorBody && typeof errorBody === 'object') {
+      errorMessage = errorBody.error || errorBody.message || errorMessage;
+      console.error('API 에러 상세:', errorBody);
+    } else if (typeof errorBody === 'string' && errorBody.trim()) {
+      errorMessage = errorBody;
+      console.error('API 에러 상세:', errorBody);
     }
-    throw new Error(errorMessage);
+
+    const apiError = new Error(errorMessage);
+    apiError.status = response.status;
+    apiError.payload = errorBody;
+    throw apiError;
   }
-  return response.json();
+
+  return parseBody();
 };
 
-// 인증 API
-export const authAPI = {
-  // 회원가입
-  register: async (userData) => {
-    const response = await fetch(`${BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-    return handleResponse(response);
-  },
-
-  // 로그인
-  login: async (credentials) => {
-    const response = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-    return handleResponse(response);
-  },
-};
+const getAdminHeaders = (adminPassword) => ({
+  'Content-Type': 'application/json',
+  'X-Admin-Password': adminPassword || '',
+});
 
 // 과목 조회 API
 export const subjectAPI = {
@@ -77,9 +71,73 @@ export const subjectAPI = {
     return handleResponse(response);
   },
 
+  // 과목 상세 조회
+  getById: async (subjectId) => {
+    const response = await fetch(`${BASE_URL}/subjects/${subjectId}`);
+    return handleResponse(response);
+  },
+
+  // 관리자 과목 생성
+  create: async (subjectData, adminPassword) => {
+    const response = await fetch(`${BASE_URL}/subjects`, {
+      method: 'POST',
+      headers: getAdminHeaders(adminPassword),
+      body: JSON.stringify(subjectData),
+    });
+    return handleResponse(response);
+  },
+
+  // 관리자 과목 수정
+  update: async (subjectId, subjectData, adminPassword) => {
+    const response = await fetch(`${BASE_URL}/subjects/${subjectId}`, {
+      method: 'PUT',
+      headers: getAdminHeaders(adminPassword),
+      body: JSON.stringify(subjectData),
+    });
+    return handleResponse(response);
+  },
+
+  // 관리자 과목 삭제
+  delete: async (subjectId, adminPassword) => {
+    const response = await fetch(`${BASE_URL}/subjects/${subjectId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-Admin-Password': adminPassword || '',
+      },
+    });
+    return handleResponse(response);
+  },
+
   // 과목 개수 조회
   getCount: async () => {
     const response = await fetch(`${BASE_URL}/subjects/count`);
+    return handleResponse(response);
+  },
+};
+
+// 인증 API
+export const authAPI = {
+  // 회원가입
+  register: async (userData) => {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    return handleResponse(response);
+  },
+
+  // 로그인
+  login: async (credentials) => {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
     return handleResponse(response);
   },
 };
@@ -220,5 +278,3 @@ export const surveyAPI = {
     return handleResponse(response);
   },
 };
-
-
