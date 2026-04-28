@@ -287,7 +287,7 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled
     <div className="flex min-w-0 flex-1 flex-col p-2.5 md:p-4">
       <div className="mb-1.5 flex items-start justify-between gap-1.5 md:mb-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold leading-snug text-slate-900 break-keep md:text-base" title={course.name}>
+          <p className="text-[13px] font-semibold leading-snug text-slate-900 break-words [overflow-wrap:anywhere] md:text-base" title={course.name}>
             {course.name}
           </p>
           <p className="mt-0.5 text-[10px] font-medium text-slate-400 md:text-xs">{course.credits}학점</p>
@@ -315,31 +315,30 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled
           rel="noopener noreferrer"
           aria-label={`${course.name} 강의평 보기`}
           title="강의평"
-          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-green-100 px-1 py-0.5 text-[9px] font-medium text-green-700 transition-colors hover:bg-green-200 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-green-100 px-1 py-0.5 text-[9px] font-medium text-green-700 transition-colors hover:bg-green-200 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <MessageSquare size={10} className="md:w-3 md:h-3" />
-          <span className="hidden sm:inline">강의평</span>
+          <MessageSquare size={10} className="flex-shrink-0 md:h-3 md:w-3" />
+          <span className="hidden whitespace-nowrap sm:inline">강의평</span>
         </a>
         <button
           type="button"
           onClick={() => onAddToWishlist(course)}
           disabled={actionsDisabled}
           aria-disabled={actionsDisabled}
-          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-slate-100 px-1 py-0.5 text-[9px] font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-slate-100 px-1 py-0.5 text-[9px] font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <ShoppingCart size={10} className="md:w-3 md:h-3" />
-          <span className="truncate">담기</span>
+          <ShoppingCart size={10} className="flex-shrink-0 md:h-3 md:w-3" />
+          <span className="whitespace-nowrap">담기</span>
         </button>
         <button
           type="button"
           onClick={() => onAddToTimetable(course)}
           disabled={actionsDisabled}
           aria-disabled={actionsDisabled}
-          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-blue-600 px-1 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-blue-600 px-1 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <Plus size={10} className="md:w-3 md:h-3" />
-          <span className="md:hidden">추가</span>
-          <span className="hidden md:inline">바로 추가</span>
+          <Plus size={10} className="flex-shrink-0 md:h-3 md:w-3" />
+          <span className="whitespace-nowrap">추가</span>
         </button>
       </div>
     </div>
@@ -1555,7 +1554,7 @@ function AppContent() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(155px,1fr))] gap-2 md:gap-3 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3 xl:grid-cols-3">
               {filteredCourses.map(course => (
                 <CourseCard
                   key={course.id}
