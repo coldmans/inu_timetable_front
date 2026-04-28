@@ -101,7 +101,7 @@ const departments = [
   '환경공학전공'
 ];
 
-const AuthModal = ({ isOpen, onClose, showToast }) => {
+const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
@@ -135,6 +135,7 @@ const AuthModal = ({ isOpen, onClose, showToast }) => {
       } else {
         await register(formData);
         showToast('회원가입 및 로그인 완료!');
+        onRegisterSuccess?.();
       }
       onClose();
       setFormData({
