@@ -188,53 +188,155 @@ const LoadingOverlay = ({ isGenerating }) => {
   );
 };
 
+const NewUserTutorialModal = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const steps = [
+    {
+      icon: Search,
+      title: '과목 찾기',
+      description: '과목명, 학과, 이수구분, 요일로 필요한 강의를 빠르게 좁혀보세요.'
+    },
+    {
+      icon: ShoppingCart,
+      title: '위시리스트 담기',
+      description: '관심 과목은 먼저 담아두고 필수 포함 여부를 체크할 수 있어요.'
+    },
+    {
+      icon: Star,
+      title: '조건 맞춰 조합',
+      description: '목표 학점과 공강 요일을 고르면 가능한 시간표 조합을 확인할 수 있어요.'
+    },
+    {
+      icon: CalendarDays,
+      title: '시간표 적용',
+      description: '마음에 드는 조합을 내 시간표에 적용하고 PDF로 저장할 수 있어요.'
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-user-tutorial-title"
+        className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+      >
+        <div className="border-b border-slate-200 px-5 py-4 md:px-6">
+          <p className="text-xs font-semibold text-blue-600">처음 시작 가이드</p>
+          <h2 id="new-user-tutorial-title" className="mt-1 text-xl font-bold text-slate-900">
+            시간표를 만드는 기본 흐름이에요
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            과목을 바로 추가해도 되고, 위시리스트에 모아둔 뒤 조합을 만들 수도 있습니다.
+          </p>
+        </div>
+
+        <div className="grid gap-2 p-4 md:grid-cols-2 md:p-6">
+          {steps.map((step, index) => {
+            const StepIcon = step.icon;
+
+            return (
+              <div key={step.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
+                    <StepIcon size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-400">0{index + 1}</span>
+                      <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-500">{step.description}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-end border-t border-slate-200 bg-white px-5 py-4 md:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+          >
+            과목 검색 시작하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Timetable components moved to components/TimetableGrid.jsx
 
 const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
-  <div className="overflow-hidden rounded-lg md:rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-    <div className="p-2 md:p-5">
-      <div className="mb-1.5 md:mb-3 flex items-start justify-between gap-1.5">
-        <p className="text-sm md:text-lg font-semibold text-slate-900 leading-tight">{course.name} <span className="text-xs md:text-base">({course.credits}학점)</span></p>
-        <div className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] md:text-xs font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
+  <div className="group flex h-full overflow-hidden rounded-lg md:rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+    <div className="flex min-w-0 flex-1 flex-col p-2.5 md:p-4">
+      <div className="mb-1.5 flex items-start justify-between gap-1.5 md:mb-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold leading-snug text-slate-900 break-keep md:text-base" title={course.name}>
+            {course.name}
+          </p>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-400 md:text-xs">{course.credits}학점</p>
+        </div>
+        <div className={`inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-[9px] md:px-2 md:text-[11px] font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
           {course.type}
         </div>
       </div>
-      <div className="space-y-0.5 md:space-y-2 text-[11px] md:text-sm text-slate-600">
-        <div className="flex items-center gap-1">
-          <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+
+      <div className="flex-1 space-y-1 text-[10px] text-slate-600 md:space-y-1.5 md:text-xs">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <MapPin size={11} className="flex-shrink-0 text-slate-400" />
           <span className="truncate">{course.department} | {course.professor}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock size={12} className="text-slate-400 flex-shrink-0" />
-          <span className="text-[11px] md:text-sm">{course.time}</span>
+        <div className="flex min-w-0 items-start gap-1 rounded-md bg-slate-50 px-1.5 py-1 text-slate-600 md:px-2 md:py-1.5">
+          <Clock size={11} className="mt-0.5 flex-shrink-0 text-slate-400" />
+          <span className="leading-snug">{course.time || '시간 미정'}</span>
         </div>
       </div>
-      <div className="mt-2 md:mt-4 flex justify-end gap-1 md:gap-1.5 border-t border-slate-200 pt-2 md:pt-4">
+
+      <div className="mt-2 grid grid-cols-3 gap-1 border-t border-slate-100 pt-2 md:mt-3 md:gap-1.5 md:pt-3">
         <a
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-0.5 rounded-md bg-green-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-green-700 transition-colors hover:bg-green-200"
+          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-green-100 px-1 py-0.5 text-[9px] font-medium text-green-700 transition-colors hover:bg-green-200 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <MessageSquare size={11} className="md:w-3 md:h-3" /> <span className="hidden sm:inline">강의평</span>
+          <MessageSquare size={10} className="md:w-3 md:h-3" />
+          <span className="truncate">강의평</span>
         </a>
         <button
           type="button"
           onClick={() => onAddToWishlist(course)}
           disabled={actionsDisabled}
           aria-disabled={actionsDisabled}
-          className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100"
+          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-slate-100 px-1 py-0.5 text-[9px] font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <ShoppingCart size={11} className="md:w-3 md:h-3" /> 담기
+          <ShoppingCart size={10} className="md:w-3 md:h-3" />
+          <span className="truncate">담기</span>
         </button>
         <button
           type="button"
           onClick={() => onAddToTimetable(course)}
           disabled={actionsDisabled}
           aria-disabled={actionsDisabled}
-          className="inline-flex items-center gap-0.5 rounded-md bg-blue-600 px-1.5 py-1 md:px-2.5 md:py-1.5 text-[10px] md:text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300"
+          className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-blue-600 px-1 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
-          <Plus size={11} className="md:w-3 md:h-3" /> 바로 추가
+          <Plus size={10} className="md:w-3 md:h-3" />
+          <span className="truncate">바로 추가</span>
         </button>
       </div>
     </div>
@@ -280,6 +382,7 @@ function AppContent() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showNewUserTutorial, setShowNewUserTutorial] = useState(false);
 
   // 시간표 조합 결과
   const [combinationResults, setCombinationResults] = useState(null);
@@ -1244,6 +1347,11 @@ function AppContent() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         showToast={showToast}
+        onRegisterSuccess={() => setShowNewUserTutorial(true)}
+      />
+      <NewUserTutorialModal
+        isOpen={showNewUserTutorial}
+        onClose={() => setShowNewUserTutorial(false)}
       />
       <WishlistModal
         isOpen={showWishlistModal}
@@ -1289,27 +1397,29 @@ function AppContent() {
       )}
 
       <div
-        aria-hidden={showWishlistModal}
-        inert={showWishlistModal ? '' : undefined}
-        className="max-w-7xl mx-auto px-3 py-2 md:px-8 md:py-10"
+        aria-hidden={showWishlistModal || showNewUserTutorial}
+        inert={showWishlistModal || showNewUserTutorial ? '' : undefined}
+        className="max-w-7xl mx-auto px-3 py-3 md:px-8 md:py-6"
       >
 
-        <header className="mb-2 md:mb-10">
-          <div className="flex flex-col gap-2 md:gap-6 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-lg md:text-4xl font-bold tracking-tight text-slate-900">과목 검색</h1>
-              <p className="hidden md:block mt-1 text-sm md:text-base text-slate-500">시간표에 바로 담거나 위시리스트로 모아 조합을 만들어 보세요.</p>
+        <header className="mb-3 md:mb-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm sm:flex">
+                <Search size={18} />
+              </div>
+              <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 md:text-2xl">과목 검색</h1>
             </div>
             <div className="flex-shrink-0">
               {isLoggedIn ? (
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-2 md:gap-3">
                   <div className="text-right hidden md:block">
                     <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
                     <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-slate-900 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 md:px-4 md:text-sm"
                   >
                     <LogOut size={14} /> <span className="hidden md:inline">로그아웃</span><span className="md:hidden">로그아웃</span>
                   </button>
@@ -1317,7 +1427,7 @@ function AppContent() {
               ) : (
                 <button
                   onClick={handleLogin}
-                  className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-blue-600 px-3 py-1.5 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 md:px-4 md:text-sm"
                 >
                   <LogIn size={14} /> 로그인
                 </button>
@@ -1327,7 +1437,7 @@ function AppContent() {
         </header>
 
         {/* 검색 바 */}
-        <div className="mb-2 md:mb-8 rounded-lg md:rounded-2xl border border-slate-200 bg-white p-2 md:p-6 shadow-sm space-y-2 md:space-y-3">
+        <div className="mb-3 md:mb-8 rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm space-y-3">
           {/* 검색 입력 */}
           <div className="flex gap-1.5">
             <div className="flex-1 relative">
@@ -1353,7 +1463,7 @@ function AppContent() {
             </button>
           </div>
           {/* 필터 */}
-          <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5 md:gap-2">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 md:gap-2">
             <select
               value={filters.department}
               onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
@@ -1425,28 +1535,32 @@ function AppContent() {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3 lg:gap-10">
+        <div className="grid grid-cols-1 gap-5 md:gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Left: Course List */}
           <main className="lg:col-span-2">
-            <div className="mb-2 md:mb-4 flex items-center justify-between">
-              <h2 className="text-base md:text-xl font-semibold text-slate-900">
-                검색 결과
-                {totalElements > 0 && (
-                  <span className="text-xs md:text-base text-slate-400">
-                    (총 {totalElements.toLocaleString()}개 중 {filteredCourses.length}개 표시)
-                  </span>
-                )}
-                {isLoading && <span className="ml-2 text-xs md:text-sm text-blue-500">로딩 중...</span>}
-              </h2>
+            <div className="mb-2 md:mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-900 md:text-lg">검색 결과</h2>
+                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                  총 {totalElements.toLocaleString()}개
+                </span>
+                <span className="text-xs text-slate-500">현재 {filteredCourses.length}개 표시</span>
+              </div>
+              {isLoading && (
+                <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                  로딩 중...
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 md:gap-4">
+            <div className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-3">
               {filteredCourses.map(course => (
                 <CourseCard
                   key={course.id}
                   course={course}
                   onAddToTimetable={handleAddToTimetable}
                   onAddToWishlist={handleAddToWishlist}
-                  actionsDisabled={showWishlistModal}
+                  actionsDisabled={showWishlistModal || showNewUserTutorial}
                 />
               ))}
             </div>
@@ -1622,7 +1736,7 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-slate-400">
-              <p>© 2025 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
+              <p>© 2026 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
 
             </div>
             <div className="flex items-center gap-6">
