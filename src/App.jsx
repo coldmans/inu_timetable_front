@@ -313,10 +313,12 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={`${course.name} 강의평 보기`}
+          title="강의평"
           className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-green-100 px-1 py-0.5 text-[9px] font-medium text-green-700 transition-colors hover:bg-green-200 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
           <MessageSquare size={10} className="md:w-3 md:h-3" />
-          <span className="truncate">강의평</span>
+          <span className="hidden sm:inline">강의평</span>
         </a>
         <button
           type="button"
@@ -336,7 +338,8 @@ const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled
           className="inline-flex min-h-[27px] items-center justify-center gap-0.5 rounded-md bg-blue-600 px-1 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
         >
           <Plus size={10} className="md:w-3 md:h-3" />
-          <span className="truncate">바로 추가</span>
+          <span className="md:hidden">추가</span>
+          <span className="hidden md:inline">바로 추가</span>
         </button>
       </div>
     </div>
@@ -1544,7 +1547,6 @@ function AppContent() {
                 <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
                   총 {totalElements.toLocaleString()}개
                 </span>
-                <span className="text-xs text-slate-500">현재 {filteredCourses.length}개 표시</span>
               </div>
               {isLoading && (
                 <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
@@ -1553,7 +1555,7 @@ function AppContent() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(155px,1fr))] gap-2 md:gap-3 xl:grid-cols-3">
               {filteredCourses.map(course => (
                 <CourseCard
                   key={course.id}
