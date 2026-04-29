@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -1341,6 +1341,10 @@ function AppContent() {
     );
   }
 
+  const hasResultPagination = totalPages > 1;
+  const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
+  const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
+
   return (
     <div className="bg-[#f6f7fb] min-h-screen font-sans">
       <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
@@ -1547,12 +1551,41 @@ function AppContent() {
                   총 {totalElements.toLocaleString()}개
                 </span>
               </div>
-              {isLoading && (
-                <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
-                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                  로딩 중...
-                </div>
-              )}
+              <div className="flex items-center gap-1.5">
+                {isLoading && (
+                  <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                    로딩 중...
+                  </div>
+                )}
+                {hasResultPagination && (
+                  <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={!canGoToPreviousPage}
+                      aria-label="이전 페이지"
+                      title="이전 페이지"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="hidden min-w-[52px] text-center text-xs font-semibold text-slate-500 sm:inline">
+                      {currentPage + 1} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={!canGoToNextPage}
+                      aria-label="다음 페이지"
+                      title="다음 페이지"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3 xl:grid-cols-3">
               {filteredCourses.map(course => (

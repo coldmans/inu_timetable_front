@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
+  FileSpreadsheet,
   KeyRound,
   Loader2,
   Pencil,
@@ -47,6 +48,12 @@ const createEmptySubjectForm = () => ({
   classMethod: 'OFFLINE',
   isNight: false,
   schedules: []
+});
+
+const createEmptyImportForm = () => ({
+  semester: '',
+  file: null,
+  deactivateMissing: false
 });
 
 const normalizeDayOfWeek = (dayOfWeek) => {
@@ -176,6 +183,38 @@ const getAdminErrorMessage = (error, fallbackMessage) => {
   return error?.message || fallbackMessage;
 };
 
+const getImportErrorMessage = (error, fallbackMessage) => {
+  if (error?.status === 400) {
+    return '입력값 오류입니다. 학기, 파일 형식, 옵션을 확인해주세요.';
+  }
+
+  if (error?.status === 403) {
+    return '관리자 비밀번호가 올바르지 않습니다.';
+  }
+
+  return error?.message || fallbackMessage;
+};
+
+const formatImportPreviewItem = (item) => {
+  if (typeof item === 'string') return item;
+  if (!item || typeof item !== 'object') return '-';
+
+  const title = item.subjectName || item.name || item.title || item.code || item.id || '이름 없는 과목';
+  const meta = [
+    item.department,
+    item.professor,
+    item.semester,
+    item.reason,
+    item.message
+  ].filter(Boolean);
+
+  return meta.length > 0 ? `${title} · ${meta.join(' · ')}` : String(title);
+};
+
+const getPreviewList = (preview, key) => (
+  Array.isArray(preview?.[key]) ? preview[key] : []
+);
+
 const AdminSubjectManager = ({ showToast }) => {
   const [adminPassword, setAdminPassword] = useState(() => {
     try {
@@ -206,13 +245,19 @@ const AdminSubjectManager = ({ showToast }) => {
   const [subjectForm, setSubjectForm] = useState(createEmptySubjectForm);
   const [formError, setFormError] = useState('');
   const [subjectToDelete, setSubjectToDelete] = useState(null);
+  const [importForm, setImportForm] = useState(createEmptyImportForm);
+  const [importError, setImportError] = useState('');
+  const [previewResult, setPreviewResult] = useState(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isApplyingImport, setIsApplyingImport] = useState(false);
+  const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadSubjects(0);
   }, []);
 
   useEffect(() => {
-    if (!isFormOpen && !subjectToDelete) return undefined;
+    if (!isFormOpen && !subjectToDelete && !isImportConfirmOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -220,7 +265,7 @@ const AdminSubjectManager = ({ showToast }) => {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isFormOpen, subjectToDelete]);
+  }, [isFormOpen, subjectToDelete, isImportConfirmOpen]);
 
   const notify = (message, type = 'success') => {
     if (showToast) {
@@ -444,6 +489,102 @@ const AdminSubjectManager = ({ showToast }) => {
     }
   };
 
+  const updateImportField = (field, value) => {
+    setImportForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateImportForm = () => {
+    if (!adminPassword.trim()) {
+      return '관리자 비밀번호를 입력해주세요.';
+    }
+
+    if (!importForm.semester.trim()) {
+      return '학기를 입력해주세요.';
+    }
+
+    if (!importForm.file) {
+      return 'Excel 파일을 선택해주세요.';
+    }
+
+    return '';
+  };
+
+  const handlePreviewImport = async (event) => {
+    event.preventDefault();
+
+    const validationMessage = validateImportForm();
+    if (validationMessage) {
+      setImportError(validationMessage);
+      notify(validationMessage, 'warning');
+      return;
+    }
+
+    try {
+      setIsPreviewLoading(true);
+      setImportError('');
+      setPreviewResult(null);
+      setIsImportConfirmOpen(false);
+
+      const response = await subjectAPI.importPreview({
+        semester: importForm.semester.trim(),
+        file: importForm.file,
+        deactivateMissing: importForm.deactivateMissing
+      }, adminPassword);
+
+      setPreviewResult(response);
+      notify('가져오기 미리보기를 불러왔습니다.');
+    } catch (error) {
+      const message = getImportErrorMessage(error, '가져오기 미리보기를 불러오지 못했습니다.');
+      setImportError(message);
+      notify(message, 'error');
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const openImportConfirmModal = () => {
+    if (!previewResult) return;
+    setIsImportConfirmOpen(true);
+  };
+
+  const closeImportConfirmModal = () => {
+    if (isApplyingImport) return;
+    setIsImportConfirmOpen(false);
+  };
+
+  const handleApplyImport = async () => {
+    const validationMessage = validateImportForm();
+    if (validationMessage) {
+      setImportError(validationMessage);
+      notify(validationMessage, 'warning');
+      return;
+    }
+
+    try {
+      setIsApplyingImport(true);
+      await subjectAPI.importApply({
+        semester: importForm.semester.trim(),
+        file: importForm.file,
+        deactivateMissing: importForm.deactivateMissing
+      }, adminPassword);
+
+      notify('공식 강의시간표 Excel 반영을 완료했습니다.');
+      setIsImportConfirmOpen(false);
+      await loadSubjects(0);
+    } catch (error) {
+      const message = getImportErrorMessage(error, '공식 강의시간표 반영에 실패했습니다.');
+      setImportError(message);
+      notify(message, 'error');
+    } finally {
+      setIsApplyingImport(false);
+    }
+  };
+
+  const addedSubjects = getPreviewList(previewResult, 'addedSubjects');
+  const modifiedSubjects = getPreviewList(previewResult, 'modifiedSubjects');
+  const removedSubjects = getPreviewList(previewResult, 'removedSubjects');
+  const warnings = getPreviewList(previewResult, 'warnings');
+
   return (
     <section className="space-y-4 md:space-y-6">
       <div className="rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm">
@@ -539,6 +680,160 @@ const AdminSubjectManager = ({ showToast }) => {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-base md:text-xl font-semibold text-slate-900">공식 강의시간표 Excel 가져오기</h2>
+            <p className="text-xs md:text-sm text-slate-500">
+              관리자 페이지에서만 공식 강의시간표 Excel 미리보기와 반영을 진행할 수 있습니다.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+            <FileSpreadsheet size={14} />
+            preview 후 apply
+          </div>
+        </div>
+
+        <form onSubmit={handlePreviewImport} className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[180px_minmax(0,1fr)]">
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-slate-500">학기</span>
+              <input
+                type="text"
+                value={importForm.semester}
+                onChange={(event) => updateImportField('semester', event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="2026-1"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-slate-500">xlsx 파일</span>
+              <input
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(event) => {
+                  const nextFile = event.target.files?.[0] || null;
+                  updateImportField('file', nextFile);
+                  setPreviewResult(null);
+                  setImportError('');
+                }}
+                className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+              />
+            </label>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+            <input
+              type="checkbox"
+              checked={importForm.deactivateMissing}
+              onChange={(event) => updateImportField('deactivateMissing', event.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-slate-700">
+              <span className="block font-semibold text-slate-900">Excel에 없는 기존 공식 과목을 비활성화</span>
+              <span className="block text-xs text-slate-500">
+                처음 운영 반영 시에는 레거시 데이터 검토를 위해 기본값 `false`를 유지하는 편이 안전합니다.
+              </span>
+            </span>
+          </label>
+
+          {importError && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+              <span>{importError}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="submit"
+              disabled={isPreviewLoading}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+            >
+              {isPreviewLoading ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+              미리보기 생성
+            </button>
+            {previewResult && (
+              <button
+                type="button"
+                onClick={openImportConfirmModal}
+                disabled={isApplyingImport}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CheckCircle2 size={16} />
+                확인 후 반영
+              </button>
+            )}
+          </div>
+        </form>
+
+        {previewResult && (
+          <div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">미리보기 결과</h3>
+                <p className="text-xs text-slate-500">
+                  학기 {previewResult.semester || importForm.semester} · 총 {previewResult.totalRows ?? 0}행 · 변경 미리보기
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+                <div className="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700">추가 {previewResult.addedCount ?? addedSubjects.length}</div>
+                <div className="rounded-lg bg-amber-50 px-3 py-2 font-semibold text-amber-700">수정 {previewResult.modifiedCount ?? modifiedSubjects.length}</div>
+                <div className="rounded-lg bg-rose-50 px-3 py-2 font-semibold text-rose-700">비활성화 {previewResult.removedCount ?? removedSubjects.length}</div>
+                <div className="rounded-lg bg-slate-200 px-3 py-2 font-semibold text-slate-700">유지 {previewResult.unchangedCount ?? 0}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <div className="rounded-lg border border-emerald-100 bg-white p-3">
+                <h4 className="text-sm font-semibold text-emerald-700">추가 예정 과목</h4>
+                <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  {addedSubjects.length > 0 ? addedSubjects.map((item, index) => (
+                    <li key={`added-${index}`} className="rounded-md bg-emerald-50 px-2 py-1">
+                      {formatImportPreviewItem(item)}
+                    </li>
+                  )) : <li className="text-slate-400">추가 예정 과목이 없습니다.</li>}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-amber-100 bg-white p-3">
+                <h4 className="text-sm font-semibold text-amber-700">수정 예정 과목</h4>
+                <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  {modifiedSubjects.length > 0 ? modifiedSubjects.map((item, index) => (
+                    <li key={`modified-${index}`} className="rounded-md bg-amber-50 px-2 py-1">
+                      {formatImportPreviewItem(item)}
+                    </li>
+                  )) : <li className="text-slate-400">수정 예정 과목이 없습니다.</li>}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-rose-100 bg-white p-3">
+                <h4 className="text-sm font-semibold text-rose-700">비활성화 예정 과목</h4>
+                <p className="mt-1 text-xs text-slate-500">물리 삭제가 아니라 `active=false` 대상입니다.</p>
+                <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  {removedSubjects.length > 0 ? removedSubjects.map((item, index) => (
+                    <li key={`removed-${index}`} className="rounded-md bg-rose-50 px-2 py-1">
+                      {formatImportPreviewItem(item)}
+                    </li>
+                  )) : <li className="text-slate-400">비활성화 예정 과목이 없습니다.</li>}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <h4 className="text-sm font-semibold text-slate-700">경고</h4>
+                <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  {warnings.length > 0 ? warnings.map((item, index) => (
+                    <li key={`warning-${index}`} className="rounded-md bg-slate-100 px-2 py-1">
+                      {formatImportPreviewItem(item)}
+                    </li>
+                  )) : <li className="text-slate-400">경고가 없습니다.</li>}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm">
@@ -900,6 +1195,61 @@ const AdminSubjectManager = ({ showToast }) => {
               >
                 {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                 삭제하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isImportConfirmOpen && previewResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-subject-import-confirm-title"
+            className="w-full max-w-lg rounded-xl bg-white p-5 shadow-2xl"
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-50 p-2 text-blue-600">
+                <FileSpreadsheet size={22} />
+              </div>
+              <div>
+                <h2 id="admin-subject-import-confirm-title" className="text-lg font-semibold text-slate-900">
+                  공식 강의시간표 반영
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  미리보기 결과를 확인했고, 같은 파일과 학기 설정으로 실제 반영을 진행합니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p><span className="font-semibold text-slate-900">학기</span> {previewResult.semester || importForm.semester}</p>
+              <p className="mt-1"><span className="font-semibold text-slate-900">파일</span> {importForm.file?.name || '-'}</p>
+              <p className="mt-1"><span className="font-semibold text-slate-900">비활성화 옵션</span> {importForm.deactivateMissing ? '사용' : '사용 안 함'}</p>
+              <p className="mt-3 text-xs text-slate-500">
+                추가 {previewResult.addedCount ?? addedSubjects.length}건, 수정 {previewResult.modifiedCount ?? modifiedSubjects.length}건,
+                비활성화 {previewResult.removedCount ?? removedSubjects.length}건이 반영됩니다.
+              </p>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeImportConfirmModal}
+                disabled={isApplyingImport}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyImport}
+                disabled={isApplyingImport}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+              >
+                {isApplyingImport ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                반영하기
               </button>
             </div>
           </div>

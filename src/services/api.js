@@ -40,6 +40,14 @@ const getAdminHeaders = (adminPassword) => ({
   'X-Admin-Password': adminPassword || '',
 });
 
+const createSubjectImportFormData = (semester, file, deactivateMissing = false) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('semester', semester);
+  formData.append('deactivateMissing', String(Boolean(deactivateMissing)));
+  return formData;
+};
+
 // 과목 조회 API
 export const subjectAPI = {
   // 전체 과목 조회 (페이징)
@@ -111,6 +119,28 @@ export const subjectAPI = {
   // 과목 개수 조회
   getCount: async () => {
     const response = await fetch(`${BASE_URL}/subjects/count`);
+    return handleResponse(response);
+  },
+
+  importPreview: async ({ semester, file, deactivateMissing }, adminPassword) => {
+    const response = await fetch(`${BASE_URL}/subjects/import/preview`, {
+      method: 'POST',
+      headers: {
+        'X-Admin-Password': adminPassword || '',
+      },
+      body: createSubjectImportFormData(semester, file, deactivateMissing),
+    });
+    return handleResponse(response);
+  },
+
+  importApply: async ({ semester, file, deactivateMissing }, adminPassword) => {
+    const response = await fetch(`${BASE_URL}/subjects/import/apply`, {
+      method: 'POST',
+      headers: {
+        'X-Admin-Password': adminPassword || '',
+      },
+      body: createSubjectImportFormData(semester, file, deactivateMissing),
+    });
     return handleResponse(response);
   },
 };
