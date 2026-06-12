@@ -2,8 +2,9 @@ import React from 'react';
 import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
-const formatTimeDisplay = (schedules) => {
-  if (!schedules || !Array.isArray(schedules)) return '시간 미정';
+const formatTimeDisplay = (course) => {
+  const schedules = course?.schedules;
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
 
   const dayMapping = {
     'MONDAY': '월',
@@ -91,7 +92,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
               <div className="min-w-0">
                 <p className="text-xs font-medium text-blue-600">수업 시간</p>
                 <p className="mt-0.5 text-[15px] font-semibold text-blue-900">
-                  {formatTimeDisplay(course.schedules)}
+                  {formatTimeDisplay(course)}
                 </p>
               </div>
             </div>

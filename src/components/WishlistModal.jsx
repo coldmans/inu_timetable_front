@@ -2,8 +2,9 @@ import React, { useEffect, useId, useState } from 'react';
 import { X, Clock, Star, Trash2, Eye, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수 (기존 유지)
-const formatTimeDisplay = (schedules) => {
-  if (!schedules || !Array.isArray(schedules)) return '시간 미정';
+const formatTimeDisplay = (course) => {
+  const schedules = course?.schedules;
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
 
   const dayMapping = {
     'MONDAY': '월', 'TUESDAY': '화', 'WEDNESDAY': '수', 'THURSDAY': '목', 'FRIDAY': '금',
@@ -171,7 +172,7 @@ const WishlistModal = ({
 
                     <div className="mb-2 sm:mb-3 flex items-start gap-1.5 text-xs sm:text-sm text-blue-600">
                       <Clock size={14} className="mt-0.5 flex-shrink-0" />
-                      <span className="font-medium">{formatTimeDisplay(course.schedules)}</span>
+                      <span className="font-medium">{formatTimeDisplay(course)}</span>
                     </div>
 
                     {/* Required Checkbox */}

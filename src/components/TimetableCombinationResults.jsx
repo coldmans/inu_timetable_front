@@ -159,8 +159,9 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
     }
   };
 
-  const formatTimeDisplay = (schedules) => {
-    if (!schedules || !Array.isArray(schedules)) return '시간 미정';
+  const formatTimeDisplay = (subject) => {
+    const schedules = subject?.schedules;
+    if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
 
     const dayMapping = {
       'MONDAY': '월', 'TUESDAY': '화', 'WEDNESDAY': '수', 'THURSDAY': '목', 'FRIDAY': '금'
@@ -310,7 +311,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                             </div>
                             <div className="space-y-0.5 text-xs text-slate-600">
                               <div className="flex items-center gap-1"><User size={10} className="text-slate-400" />{subject.professor}</div>
-                              <div className="flex items-center gap-1 truncate"><Clock size={10} className="text-slate-400" />{formatTimeDisplay(subject.schedules)}</div>
+                              <div className="flex items-center gap-1 truncate"><Clock size={10} className="text-slate-400" />{formatTimeDisplay(subject)}</div>
                             </div>
                             <div className="mt-1.5">
                               <a

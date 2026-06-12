@@ -25,6 +25,7 @@ import {
   courseTypes,
   grades,
   filterDaysOfWeek,
+  UNASSIGNED_TIME_FILTER,
   timeOptions,
   creditOptions
 } from './utils/timetableUtils';
@@ -153,24 +154,26 @@ const Toast = ({ message, show, type, onDismiss }) => (
 );
 
 const LoadingOverlay = ({ isGenerating }) => {
-  if (!isGenerating) return null;
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (isGenerating) {
-      setProgress(0);
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 1;
-        });
-      }, 30); // 3초 동안 100% 채우기
-      return () => clearInterval(interval);
-    }
+    if (!isGenerating) return undefined;
+
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 1;
+      });
+    }, 30); // 3초 동안 100% 채우기
+
+    return () => clearInterval(interval);
   }, [isGenerating]);
+
+  if (!isGenerating) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -286,7 +289,9 @@ const formatPeriod = (value) => {
 
 const formatScheduleLabel = (course) => {
   const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
-  if (!times || times.length === 0) return course.time ? course.time : '시간 미정';
+  if (!times || times.length === 0) {
+    return course.time ? course.time : '온라인';
+  }
   return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
 };
 
@@ -369,22 +374,95 @@ const EmptyResults = ({ onReset }) => (
   </div>
 );
 
-const FilterSelect = ({ value, onChange, active, label, children }) => (
-  <div className="relative">
-    <select
-      aria-label={label}
-      value={value}
-      onChange={onChange}
-      className={`field appearance-none pr-8 text-[13px] ${active ? 'border-blue-200 bg-blue-50/70 font-medium text-blue-700' : 'text-slate-600'}`}
-    >
-      {children}
-    </select>
-    <ChevronDown
-      size={14}
-      className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${active ? 'text-blue-500' : 'text-slate-400'}`}
-    />
-  </div>
-);
+const FilterSelect = ({ value, onChange, active, label, disabled = false, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+  const options = React.Children.toArray(children)
+    .filter(React.isValidElement)
+    .map(child => ({
+      value: child.props.value,
+      label: child.props.children
+    }));
+  const selectedOption = options.find(option => String(option.value) === String(value)) || options[0];
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!containerRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleSelect = (nextValue) => {
+    if (disabled) return;
+    setIsOpen(false);
+    if (String(nextValue) !== String(value)) {
+      onChange({ target: { value: nextValue } });
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(prev => !prev);
+          }
+        }}
+        className={`field flex items-center justify-between rounded-xl bg-slate-50/70 pr-3 text-left text-[13px] shadow-inner shadow-slate-100/60 hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none ${active && !disabled ? 'border-blue-200 bg-blue-50/80 font-medium text-blue-700 shadow-blue-100/50' : 'text-slate-600'}`}
+      >
+        <span className="truncate">{selectedOption?.label}</span>
+        <ChevronDown
+          size={14}
+          className={`ml-2 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''} ${active && !disabled ? 'text-blue-500' : 'text-slate-400'}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5">
+          <div role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1">
+            {options.map(option => {
+              const isSelected = String(option.value) === String(value);
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelect(option.value)}
+                  className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-[13px] transition-colors ${isSelected ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                >
+                  <span className="truncate">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // 메인 애플리케이션 컴포넌트
 function AppContent() {
@@ -470,6 +548,7 @@ function AppContent() {
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
       const gradeFilter = filters.grade === '전체' ? undefined :
         parseInt(filters.grade.replace('학년', ''));
+      const isUnassignedTimeFilter = filters.dayOfWeek === UNASSIGNED_TIME_FILTER;
 
       const response = await subjectAPI.filter({
         subjectName: searchTerm,
@@ -477,9 +556,10 @@ function AppContent() {
         subjectType: filters.subjectType,
         grade: gradeFilter,
         credits: filters.credits === '전체' ? undefined : parseInt(filters.credits.replace('학점', '')),
-        dayOfWeek: filters.dayOfWeek === '전체' ? undefined : filters.dayOfWeek,
-        startTime: filters.startTime === '전체' ? undefined : filters.startTime,
-        endTime: filters.endTime === '전체' ? undefined : filters.endTime
+        dayOfWeek: filters.dayOfWeek === '전체' || isUnassignedTimeFilter ? undefined : filters.dayOfWeek,
+        startTime: filters.startTime === '전체' || isUnassignedTimeFilter ? undefined : filters.startTime,
+        endTime: filters.endTime === '전체' || isUnassignedTimeFilter ? undefined : filters.endTime,
+        unassignedTime: isUnassignedTimeFilter ? true : undefined
       }, page, pageSize);
 
       // 페이징 응답 처리
@@ -1440,11 +1520,22 @@ function AppContent() {
               <CalendarDays size={17} />
             </span>
             <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">INU 시간표</span>
-            <span className="hidden flex-shrink-0 items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 sm:inline-flex">
-              {CURRENT_SEMESTER.replace('-', '년 ')}학기
-            </span>
           </a>
           <div className="flex flex-shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShowTimetableList}
+              className="icon-btn relative lg:hidden"
+              title="내 시간표 보기"
+              aria-label={`내 시간표 보기${timetable.length > 0 ? `, ${timetable.length}개 과목` : ''}`}
+            >
+              <CalendarDays size={15} />
+              {timetable.length > 0 && (
+                <span className="absolute -right-1 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                  {timetable.length}
+                </span>
+              )}
+            </button>
             {isLoggedIn ? (
               <>
                 <div className="hidden text-right md:block">
@@ -1540,16 +1631,27 @@ function AppContent() {
               label="요일 필터"
               value={filters.dayOfWeek}
               active={filters.dayOfWeek !== '전체'}
-              onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
+              onChange={(e) => {
+                const nextDayOfWeek = e.target.value;
+                setFilters(prev => ({
+                  ...prev,
+                  dayOfWeek: nextDayOfWeek,
+                  startTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
+                  endTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
+                }));
+              }}
             >
               {filterDaysOfWeek.map(day => (
-                <option key={day} value={day}>{day === '전체' ? '요일' : day}</option>
+                <option key={day} value={day}>
+                  {day === '전체' ? '요일' : day}
+                </option>
               ))}
             </FilterSelect>
             <FilterSelect
               label="시작 교시 필터"
               value={filters.startTime}
               active={filters.startTime !== '전체'}
+              disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
               onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
             >
               {timeOptions.map(time => (
@@ -1560,6 +1662,7 @@ function AppContent() {
               label="종료 교시 필터"
               value={filters.endTime}
               active={filters.endTime !== '전체'}
+              disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
               onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
             >
               {timeOptions.map(time => (
@@ -1709,20 +1812,19 @@ function AppContent() {
                   {/* 목표 학점 선택 */}
                   <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
                     <span className="text-[13px] font-medium text-slate-600">목표 학점</span>
-                    <div className="relative">
-                      <select
+                    <div className="w-[120px]">
+                      <FilterSelect
                         value={targetCredits}
                         onChange={(e) => setTargetCredits(parseInt(e.target.value))}
-                        aria-label="목표 학점 선택"
-                        className="field h-8 w-[120px] appearance-none pr-7 text-[13px]"
+                        active={targetCredits !== 18}
+                        label="목표 학점 선택"
                       >
                         {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map(credit => (
                           <option key={credit} value={credit}>
                             {credit}학점{credit === 18 ? ' (권장)' : ''}
                           </option>
                         ))}
-                      </select>
-                      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                      </FilterSelect>
                     </div>
                   </div>
                 </div>
@@ -1800,23 +1902,6 @@ function AppContent() {
           </aside>
         </div>
       </div>
-
-      {/* Mobile: Floating Button to View Timetable */}
-      <div className="fixed bottom-5 right-4 z-40 lg:hidden">
-        <button
-          onClick={handleShowTimetableList}
-          className="flex h-12 items-center gap-2 rounded-full bg-blue-600 pl-4 pr-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-transform active:scale-95"
-        >
-          <CalendarDays size={18} />
-          내 시간표
-          {timetable.length > 0 && (
-            <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-white/25 px-1 text-xs font-bold tabular-nums">
-              {timetable.length}
-            </span>
-          )}
-        </button>
-      </div>
-
       {/* Footer */}
       <footer className="mt-12 border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 sm:flex-row sm:items-center sm:justify-between md:px-8">

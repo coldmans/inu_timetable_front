@@ -173,6 +173,7 @@ export const formatCourse = (subject) => {
         type,
         time: timeString,
         schedules: subject.schedules,
+        classMethod: subject.classMethod,
         rating: subject.rating || 4.0,
         reviews: subject.reviews || 0,
         ...colorScheme
@@ -281,7 +282,9 @@ export const courseTypes = ['전체', '전핵', '전심', '전기', '심교', '�
 
 export const grades = ['전체', '1학년', '2학년', '3학년', '4학년'];
 
-export const filterDaysOfWeek = ['전체', '월', '화', '수', '목', '금', '토'];
+export const UNASSIGNED_TIME_FILTER = '온라인';
+
+export const filterDaysOfWeek = ['전체', '월', '화', '수', '목', '금', '토', UNASSIGNED_TIME_FILTER];
 
 export const timeOptions = ['전체', 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
 

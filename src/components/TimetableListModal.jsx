@@ -3,8 +3,9 @@ import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutLis
 import TimetableGrid from './TimetableGrid';
 
 // 시간 표시를 위한 헬퍼 함수
-const formatTimeDisplay = (schedules) => {
-  if (!schedules || !Array.isArray(schedules)) return '시간 미정';
+const formatTimeDisplay = (course) => {
+  const schedules = course?.schedules;
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
 
   const dayMapping = {
     'MONDAY': '월',
@@ -133,7 +134,7 @@ const TimetableListModal = ({
 
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-blue-600">
                         <Clock size={14} className="flex-shrink-0" />
-                        <span className="font-medium">{formatTimeDisplay(course.schedules)}</span>
+                        <span className="font-medium">{formatTimeDisplay(course)}</span>
                       </div>
                     </div>
 

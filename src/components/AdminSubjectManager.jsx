@@ -46,7 +46,7 @@ const createEmptySubjectForm = () => ({
   professor: '',
   department: '',
   grade: '1',
-  subjectType: '전심',
+  subjectType: '',
   classMethod: 'OFFLINE',
   isNight: false,
   schedules: []
@@ -70,7 +70,7 @@ const toSubjectForm = (subject) => ({
   professor: subject?.professor || '',
   department: subject?.department || '',
   grade: String(subject?.grade ?? 1),
-  subjectType: ADMIN_SUBJECT_TYPES.includes(subject?.subjectType) ? subject.subjectType : '전심',
+  subjectType: ADMIN_SUBJECT_TYPES.includes(subject?.subjectType) ? subject.subjectType : '',
   classMethod: CLASS_METHOD_VALUES.includes(subject?.classMethod) ? subject.classMethod : 'OFFLINE',
   isNight: Boolean(subject?.isNight),
   schedules: Array.isArray(subject?.schedules)
@@ -1263,6 +1263,7 @@ const AdminSubjectManager = ({ showToast }) => {
                       onChange={(event) => updateFormField('subjectType', event.target.value)}
                       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">선택</option>
                       {ADMIN_SUBJECT_TYPES.map(subjectType => (
                         <option key={subjectType} value={subjectType}>{subjectType}</option>
                       ))}
