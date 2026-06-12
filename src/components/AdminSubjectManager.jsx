@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   KeyRound,
+  LogOut,
   Loader2,
   Pencil,
   Plus,
@@ -13,10 +14,11 @@ import {
   X
 } from 'lucide-react';
 import Pagination from './Pagination';
-import { subjectAPI } from '../services/api';
+import { adminAuthAPI, subjectAPI } from '../services/api';
 import { departments, grades } from '../utils/timetableUtils';
 
-const ADMIN_PASSWORD_STORAGE_KEY = 'inu_admin_password';
+const ADMIN_USERNAME_STORAGE_KEY = 'inu_admin_username';
+const ADMIN_CSRF_STORAGE_KEY = 'inu_admin_csrf';
 
 const ADMIN_SUBJECT_TYPES = ['전심', '전핵', '심교', '핵교', '일선', '전기', '기교', '군사학', '교직'];
 const ADMIN_SUBJECT_TYPE_FILTERS = ['전체', ...ADMIN_SUBJECT_TYPES];
@@ -172,8 +174,8 @@ const getAdminErrorMessage = (error, fallbackMessage) => {
     return '입력값 오류입니다. 필수값과 시간표 교시를 확인해주세요.';
   }
 
-  if (error?.status === 403) {
-    return '관리자 비밀번호가 올바르지 않습니다.';
+  if (error?.status === 401 || error?.status === 403) {
+    return '관리자 로그인이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.';
   }
 
   if (error?.status === 409) {
@@ -188,11 +190,23 @@ const getImportErrorMessage = (error, fallbackMessage) => {
     return '입력값 오류입니다. 학기, 파일 형식, 옵션을 확인해주세요.';
   }
 
-  if (error?.status === 403) {
-    return '관리자 비밀번호가 올바르지 않습니다.';
+  if (error?.status === 401 || error?.status === 403) {
+    return '관리자 로그인이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.';
   }
 
   return error?.message || fallbackMessage;
+};
+
+const getAdminAuthErrorMessage = (error) => {
+  if (error?.status === 403) {
+    return '관리자 아이디 또는 비밀번호가 올바르지 않습니다.';
+  }
+
+  if (error?.status === 429) {
+    return '로그인 실패가 많아 잠시 잠겼습니다. 잠시 후 다시 시도해주세요.';
+  }
+
+  return error?.message || '관리자 로그인에 실패했습니다.';
 };
 
 const formatImportPreviewItem = (item) => {
@@ -216,13 +230,33 @@ const getPreviewList = (preview, key) => (
 );
 
 const AdminSubjectManager = ({ showToast }) => {
-  const [adminPassword, setAdminPassword] = useState(() => {
+  const [adminUsername, setAdminUsername] = useState(() => {
     try {
-      return sessionStorage.getItem(ADMIN_PASSWORD_STORAGE_KEY) || '';
+      return sessionStorage.getItem(ADMIN_USERNAME_STORAGE_KEY) || '';
     } catch {
       return '';
     }
   });
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminSession, setAdminSession] = useState(() => {
+    try {
+      const csrfToken = sessionStorage.getItem(ADMIN_CSRF_STORAGE_KEY) || '';
+      const username = sessionStorage.getItem(ADMIN_USERNAME_STORAGE_KEY) || '';
+      return {
+        authenticated: Boolean(csrfToken),
+        username,
+        csrfToken
+      };
+    } catch {
+      return {
+        authenticated: false,
+        username: '',
+        csrfToken: ''
+      };
+    }
+  });
+  const [isAdminAuthLoading, setIsAdminAuthLoading] = useState(false);
+  const [adminAuthError, setAdminAuthError] = useState('');
   const [filters, setFilters] = useState({
     subjectName: '',
     professor: '',
@@ -257,6 +291,52 @@ const AdminSubjectManager = ({ showToast }) => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const restoreAdminSession = async () => {
+      try {
+        const response = await adminAuthAPI.me();
+        if (!isMounted) return;
+
+        const csrfToken = response?.csrfToken || '';
+        const username = response?.username || '';
+        if (!response?.authenticated || !csrfToken) {
+          setAdminSession({ authenticated: false, username: '', csrfToken: '' });
+          return;
+        }
+
+        setAdminSession({ authenticated: true, username, csrfToken });
+        if (username) {
+          setAdminUsername(username);
+        }
+
+        try {
+          if (username) {
+            sessionStorage.setItem(ADMIN_USERNAME_STORAGE_KEY, username);
+          }
+          sessionStorage.setItem(ADMIN_CSRF_STORAGE_KEY, csrfToken);
+        } catch {
+          // 세션 저장이 막혀도 현재 탭의 로그인 상태는 유지한다.
+        }
+      } catch {
+        if (!isMounted) return;
+        setAdminSession({ authenticated: false, username: '', csrfToken: '' });
+        try {
+          sessionStorage.removeItem(ADMIN_CSRF_STORAGE_KEY);
+        } catch {
+          // sessionStorage 접근이 막힌 환경에서는 메모리 상태만 초기화한다.
+        }
+      }
+    };
+
+    restoreAdminSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isFormOpen && !subjectToDelete && !isImportConfirmOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
@@ -270,6 +350,50 @@ const AdminSubjectManager = ({ showToast }) => {
   const notify = (message, type = 'success') => {
     if (showToast) {
       showToast(message, type);
+    }
+  };
+
+  const isAdminAuthenticated = Boolean(adminSession.csrfToken);
+  const adminCsrfToken = adminSession.csrfToken;
+
+  const requireAdminAuth = () => (
+    isAdminAuthenticated ? '' : '관리자 로그인이 필요합니다.'
+  );
+
+  const persistAdminSession = (response) => {
+    const csrfToken = response?.csrfToken || '';
+    const username = response?.username || adminUsername.trim();
+
+    if (!response?.authenticated || !csrfToken) {
+      return false;
+    }
+
+    setAdminSession({ authenticated: true, username, csrfToken });
+    setAdminUsername(username);
+    setAdminPassword('');
+    setAdminAuthError('');
+
+    try {
+      if (username) {
+        sessionStorage.setItem(ADMIN_USERNAME_STORAGE_KEY, username);
+      }
+      sessionStorage.setItem(ADMIN_CSRF_STORAGE_KEY, csrfToken);
+    } catch {
+      notify('관리자 세션 저장에 실패했습니다. 현재 탭에서는 계속 사용할 수 있습니다.', 'warning');
+    }
+
+    return true;
+  };
+
+  const clearAdminSession = () => {
+    setAdminSession({ authenticated: false, username: '', csrfToken: '' });
+    setAdminPassword('');
+    setAdminAuthError('');
+
+    try {
+      sessionStorage.removeItem(ADMIN_CSRF_STORAGE_KEY);
+    } catch {
+      // sessionStorage가 막힌 환경에서는 입력 상태만 초기화한다.
     }
   };
 
@@ -304,27 +428,61 @@ const AdminSubjectManager = ({ showToast }) => {
     }
   };
 
-  const handlePasswordChange = (event) => {
+  const handleAdminUsernameChange = (event) => {
     const nextValue = event.target.value;
-    setAdminPassword(nextValue);
+    setAdminUsername(nextValue);
 
     try {
       if (nextValue) {
-        sessionStorage.setItem(ADMIN_PASSWORD_STORAGE_KEY, nextValue);
+        sessionStorage.setItem(ADMIN_USERNAME_STORAGE_KEY, nextValue);
       } else {
-        sessionStorage.removeItem(ADMIN_PASSWORD_STORAGE_KEY);
+        sessionStorage.removeItem(ADMIN_USERNAME_STORAGE_KEY);
       }
     } catch {
-      notify('관리자 비밀번호 저장에 실패했습니다.', 'warning');
+      notify('관리자 아이디 저장에 실패했습니다.', 'warning');
     }
   };
 
-  const clearAdminPassword = () => {
-    setAdminPassword('');
+  const handleAdminLogin = async (event) => {
+    event.preventDefault();
+
+    const username = adminUsername.trim();
+    const password = adminPassword.trim();
+
+    if (!username || !password) {
+      const message = '관리자 아이디와 비밀번호를 입력해주세요.';
+      setAdminAuthError(message);
+      notify(message, 'warning');
+      return;
+    }
+
     try {
-      sessionStorage.removeItem(ADMIN_PASSWORD_STORAGE_KEY);
-    } catch {
-      // sessionStorage가 막힌 환경에서는 입력 상태만 초기화한다.
+      setIsAdminAuthLoading(true);
+      setAdminAuthError('');
+      const response = await adminAuthAPI.login({ username, password });
+      if (!persistAdminSession(response)) {
+        throw new Error('관리자 로그인 응답이 올바르지 않습니다.');
+      }
+      notify('관리자 로그인했습니다.');
+    } catch (error) {
+      const message = getAdminAuthErrorMessage(error);
+      setAdminAuthError(message);
+      notify(message, 'error');
+    } finally {
+      setIsAdminAuthLoading(false);
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    try {
+      setIsAdminAuthLoading(true);
+      await adminAuthAPI.logout();
+      notify('관리자 로그아웃했습니다.');
+    } catch (error) {
+      notify(error?.message || '관리자 로그아웃 요청에 실패했습니다.', 'warning');
+    } finally {
+      clearAdminSession();
+      setIsAdminAuthLoading(false);
     }
   };
 
@@ -357,6 +515,12 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const openCreateModal = () => {
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      notify(authMessage, 'warning');
+      return;
+    }
+
     setFormMode('create');
     setEditingSubject(null);
     setSubjectForm(createEmptySubjectForm());
@@ -365,6 +529,12 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const openEditModal = async (subject) => {
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      notify(authMessage, 'warning');
+      return;
+    }
+
     try {
       setDetailLoadingId(subject.id);
       const detail = await subjectAPI.getById(subject.id);
@@ -424,10 +594,10 @@ const AdminSubjectManager = ({ showToast }) => {
       return;
     }
 
-    if (!adminPassword.trim()) {
-      const passwordMessage = '관리자 비밀번호를 입력해주세요.';
-      setFormError(passwordMessage);
-      notify(passwordMessage, 'warning');
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      setFormError(authMessage);
+      notify(authMessage, 'warning');
       return;
     }
 
@@ -437,9 +607,9 @@ const AdminSubjectManager = ({ showToast }) => {
     try {
       setIsSaving(true);
       if (mode === 'create') {
-        await subjectAPI.create(payload, adminPassword);
+        await subjectAPI.create(payload, adminCsrfToken);
       } else {
-        await subjectAPI.update(editingSubject.id, payload, adminPassword);
+        await subjectAPI.update(editingSubject.id, payload, adminCsrfToken);
       }
 
       notify(mode === 'create' ? '과목을 생성했습니다.' : '과목을 수정했습니다.');
@@ -460,6 +630,12 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const openDeleteModal = (subject) => {
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      notify(authMessage, 'warning');
+      return;
+    }
+
     setSubjectToDelete(subject);
   };
 
@@ -471,14 +647,15 @@ const AdminSubjectManager = ({ showToast }) => {
   const handleDeleteSubject = async () => {
     if (!subjectToDelete) return;
 
-    if (!adminPassword.trim()) {
-      notify('관리자 비밀번호를 입력해주세요.', 'warning');
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      notify(authMessage, 'warning');
       return;
     }
 
     try {
       setIsDeleting(true);
-      await subjectAPI.delete(subjectToDelete.id, adminPassword);
+      await subjectAPI.delete(subjectToDelete.id, adminCsrfToken);
       notify('과목을 삭제했습니다.');
       setSubjectToDelete(null);
       await loadSubjects(currentPage);
@@ -494,8 +671,9 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const validateImportForm = () => {
-    if (!adminPassword.trim()) {
-      return '관리자 비밀번호를 입력해주세요.';
+    const authMessage = requireAdminAuth();
+    if (authMessage) {
+      return authMessage;
     }
 
     if (!importForm.semester.trim()) {
@@ -529,7 +707,7 @@ const AdminSubjectManager = ({ showToast }) => {
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
-      }, adminPassword);
+      }, adminCsrfToken);
 
       setPreviewResult(response);
       notify('가져오기 미리보기를 불러왔습니다.');
@@ -566,7 +744,7 @@ const AdminSubjectManager = ({ showToast }) => {
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
-      }, adminPassword);
+      }, adminCsrfToken);
 
       notify('공식 강의시간표 Excel 반영을 완료했습니다.');
       setIsImportConfirmOpen(false);
@@ -845,28 +1023,65 @@ const AdminSubjectManager = ({ showToast }) => {
               {isLoading && <span className="ml-2 text-blue-500">불러오는 중...</span>}
             </p>
           </div>
-          <label className="flex w-full flex-col gap-1 md:w-80">
-            <span className="text-xs font-semibold text-slate-500">관리자 비밀번호</span>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <KeyRound className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-9 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="비밀번호"
-                />
+          <div className="w-full md:w-[360px]">
+            {isAdminAuthenticated ? (
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-emerald-700">관리자 로그인됨</span>
+                    <p className="truncate text-sm font-semibold text-emerald-950">
+                      {adminSession.username || adminUsername || 'admin'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAdminLogout}
+                    disabled={isAdminAuthLoading}
+                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isAdminAuthLoading ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+                    로그아웃
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={clearAdminPassword}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-              >
-                지우기
-              </button>
-            </div>
-          </label>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="text-xs font-semibold text-slate-500">관리자 로그인</span>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                    <input
+                      type="text"
+                      value={adminUsername}
+                      onChange={handleAdminUsernameChange}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-9 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="아이디"
+                      autoComplete="username"
+                    />
+                  </div>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(event) => setAdminPassword(event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="비밀번호"
+                    autoComplete="current-password"
+                  />
+                </div>
+                {adminAuthError && (
+                  <p className="mt-2 text-xs font-medium text-rose-600">{adminAuthError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={isAdminAuthLoading}
+                  className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  {isAdminAuthLoading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
+                  로그인
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 overflow-x-auto">

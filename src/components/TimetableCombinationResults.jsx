@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, C
 
 import {
   parseTime,
+  getCourseTypeBadgeClass,
+  getCourseTypeColorScheme,
   daysOfWeek as utilDaysOfWeek,
   timeSlots,
   displayTimeSlots
@@ -101,21 +103,8 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
 
     const unscheduled = [];
 
-    combination.forEach((subject, index) => {
-      const colors = [
-        { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-800' },
-        { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-800' },
-        { bg: 'bg-indigo-100', border: 'border-indigo-400', text: 'text-indigo-800' },
-        { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-800' },
-        { bg: 'bg-purple-100', border: 'border-purple-400', text: 'text-purple-800' },
-        { bg: 'bg-pink-100', border: 'border-pink-400', text: 'text-pink-800' },
-        { bg: 'bg-teal-100', border: 'border-teal-400', text: 'text-teal-800' },
-        { bg: 'bg-sky-100', border: 'border-sky-400', text: 'text-sky-800' },
-        { bg: 'bg-red-100', border: 'border-red-400', text: 'text-red-800' },
-        { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-800' },
-      ];
-
-      const colorScheme = colors[index % colors.length];
+    combination.forEach((subject) => {
+      const colorScheme = getCourseTypeColorScheme(subject.subjectType);
       const times = parseTime(subject.schedules);
 
       if (times.length === 0) {
@@ -309,14 +298,8 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                   <span className="text-sm sm:text-base font-semibold text-slate-900">과목 목록</span>
                 </div>
                 <div className="max-h-48 sm:max-h-60 space-y-2 sm:space-y-3 overflow-y-auto">
-                  {combination.map((subject, index) => {
-                    const colors = [
-                      'bg-blue-100 text-blue-800', 'bg-green-100 text-green-800', 'bg-indigo-100 text-indigo-800',
-                      'bg-yellow-100 text-yellow-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800',
-                      'bg-teal-100 text-teal-800', 'bg-sky-100 text-sky-800', 'bg-red-100 text-red-800',
-                      'bg-orange-100 text-orange-800',
-                    ];
-                    const colorClass = colors[index % colors.length];
+                  {combination.map((subject) => {
+                    const colorClass = getCourseTypeBadgeClass(subject.subjectType);
 
                     return (
                       <div key={subject.id} className="rounded-lg sm:rounded-xl border border-slate-200 p-2 sm:p-3">

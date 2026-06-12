@@ -113,21 +113,53 @@ export const parseTimeString = (timeString) => {
     return results;
 };
 
-export const formatCourse = (subject, index = 0) => {
-    const colors = [
-        { color: 'bg-blue-200', textColor: 'text-blue-800', borderColor: 'border-blue-400' },
-        { color: 'bg-green-200', textColor: 'text-green-800', borderColor: 'border-green-400' },
-        { color: 'bg-indigo-200', textColor: 'text-indigo-800', borderColor: 'border-indigo-400' },
-        { color: 'bg-yellow-200', textColor: 'text-yellow-800', borderColor: 'border-yellow-400' },
-        { color: 'bg-purple-200', textColor: 'text-purple-800', borderColor: 'border-purple-400' },
-        { color: 'bg-pink-200', textColor: 'text-pink-800', borderColor: 'border-pink-400' },
-        { color: 'bg-teal-200', textColor: 'text-teal-800', borderColor: 'border-teal-400' },
-        { color: 'bg-sky-200', textColor: 'text-sky-800', borderColor: 'border-sky-400' },
-        { color: 'bg-red-200', textColor: 'text-red-800', borderColor: 'border-red-400' },
-        { color: 'bg-orange-200', textColor: 'text-orange-800', borderColor: 'border-orange-400' },
-    ];
+const subjectTypeAliases = {
+    '전공핵심': '전핵',
+    '전공심화': '전심',
+    '전공기초': '전기',
+    '핵심교양': '핵교',
+    '심화교양': '심교',
+    '기초교양': '기교',
+    '일반선택': '일선',
+};
 
-    const colorScheme = colors[index % colors.length];
+const subjectTypeColors = {
+    '전핵': { color: 'bg-blue-200', bg: 'bg-blue-100', textColor: 'text-blue-800', text: 'text-blue-800', borderColor: 'border-blue-400', border: 'border-blue-400' },
+    '전심': { color: 'bg-purple-200', bg: 'bg-purple-100', textColor: 'text-purple-800', text: 'text-purple-800', borderColor: 'border-purple-400', border: 'border-purple-400' },
+    '전기': { color: 'bg-indigo-200', bg: 'bg-indigo-100', textColor: 'text-indigo-800', text: 'text-indigo-800', borderColor: 'border-indigo-400', border: 'border-indigo-400' },
+    '핵교': { color: 'bg-sky-200', bg: 'bg-sky-100', textColor: 'text-sky-800', text: 'text-sky-800', borderColor: 'border-sky-400', border: 'border-sky-400' },
+    '심교': { color: 'bg-cyan-200', bg: 'bg-cyan-100', textColor: 'text-cyan-800', text: 'text-cyan-800', borderColor: 'border-cyan-400', border: 'border-cyan-400' },
+    '기교': { color: 'bg-emerald-200', bg: 'bg-emerald-100', textColor: 'text-emerald-800', text: 'text-emerald-800', borderColor: 'border-emerald-400', border: 'border-emerald-400' },
+    '일선': { color: 'bg-amber-200', bg: 'bg-amber-100', textColor: 'text-amber-800', text: 'text-amber-800', borderColor: 'border-amber-400', border: 'border-amber-400' },
+    '교직': { color: 'bg-rose-200', bg: 'bg-rose-100', textColor: 'text-rose-800', text: 'text-rose-800', borderColor: 'border-rose-400', border: 'border-rose-400' },
+    '군사학': { color: 'bg-slate-200', bg: 'bg-slate-100', textColor: 'text-slate-800', text: 'text-slate-800', borderColor: 'border-slate-400', border: 'border-slate-400' },
+};
+
+export const normalizeSubjectType = (subjectType) => {
+    const type = typeof subjectType === 'string' ? subjectType.trim() : '';
+    return subjectTypeAliases[type] || type;
+};
+
+export const getCourseTypeColorScheme = (subjectType) => {
+    const normalizedType = normalizeSubjectType(subjectType);
+    return subjectTypeColors[normalizedType] || {
+        color: 'bg-slate-200',
+        bg: 'bg-slate-100',
+        textColor: 'text-slate-800',
+        text: 'text-slate-800',
+        borderColor: 'border-slate-400',
+        border: 'border-slate-400',
+    };
+};
+
+export const getCourseTypeBadgeClass = (subjectType) => {
+    const { color, textColor } = getCourseTypeColorScheme(subjectType);
+    return `${color} ${textColor}`;
+};
+
+export const formatCourse = (subject) => {
+    const type = subject.subjectType || subject.type;
+    const colorScheme = getCourseTypeColorScheme(type);
     const timeString = subject.schedules && Array.isArray(subject.schedules) ?
         subject.schedules.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`).join(', ') :
         subject.time || '';
@@ -138,7 +170,7 @@ export const formatCourse = (subject, index = 0) => {
         credits: subject.credits,
         professor: subject.professor,
         department: subject.department,
-        type: subject.subjectType || subject.type,
+        type,
         time: timeString,
         schedules: subject.schedules,
         rating: subject.rating || 4.0,

@@ -17,6 +17,7 @@ import TimetableGrid from './components/TimetableGrid';
 import {
   CURRENT_SEMESTER,
   formatCourse,
+  getCourseTypeColorScheme,
   parseTime,
   parseTimeString,
   checkConflict,
@@ -514,22 +515,8 @@ function AppContent() {
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
       console.log('✅ 위시리스트 데이터 받음:', wishlistData);
 
-      const formattedWishlist = wishlistData.map((item, index) => {
+      const formattedWishlist = wishlistData.map((item) => {
         console.log('위시리스트 아이템:', item);
-
-        // 색상 배열 (formatCourse에서 가져옴)
-        const colors = [
-          { color: 'bg-blue-200', textColor: 'text-blue-800', borderColor: 'border-blue-400' },
-          { color: 'bg-green-200', textColor: 'text-green-800', borderColor: 'border-green-400' },
-          { color: 'bg-indigo-200', textColor: 'text-indigo-800', borderColor: 'border-indigo-400' },
-          { color: 'bg-yellow-200', textColor: 'text-yellow-800', borderColor: 'border-yellow-400' },
-          { color: 'bg-purple-200', textColor: 'text-purple-800', borderColor: 'border-purple-400' },
-          { color: 'bg-pink-200', textColor: 'text-pink-800', borderColor: 'border-pink-400' },
-          { color: 'bg-teal-200', textColor: 'text-teal-800', borderColor: 'border-teal-400' },
-          { color: 'bg-sky-200', textColor: 'text-sky-800', borderColor: 'border-sky-400' },
-          { color: 'bg-red-200', textColor: 'text-red-800', borderColor: 'border-red-400' },
-          { color: 'bg-orange-200', textColor: 'text-orange-800', borderColor: 'border-orange-400' },
-        ];
 
         // 새로운 API 응답: 아이템 자체가 모든 과목 정보를 포함
         return {
@@ -550,7 +537,7 @@ function AppContent() {
           rating: 4.0, // 기본값
           reviews: 0, // 기본값
           isRequired: item.isRequired || false,
-          ...colors[index % colors.length]
+          ...getCourseTypeColorScheme(item.subjectType)
         };
       });
       console.log('📋 포맷된 위시리스트:', formattedWishlist);
@@ -1020,17 +1007,7 @@ function AppContent() {
         isRequired: false
       });
 
-      // 위시리스트에 추가
-      const colors = [
-        { color: 'bg-blue-200', textColor: 'text-blue-800', borderColor: 'border-blue-400' },
-        { color: 'bg-green-200', textColor: 'text-green-800', borderColor: 'border-green-400' },
-        { color: 'bg-indigo-200', textColor: 'text-indigo-800', borderColor: 'border-indigo-400' },
-        { color: 'bg-yellow-200', textColor: 'text-yellow-800', borderColor: 'border-yellow-400' },
-        { color: 'bg-purple-200', textColor: 'text-purple-800', borderColor: 'border-purple-400' },
-      ];
-      const colorScheme = colors[wishlist.length % colors.length];
-
-      setWishlist([...wishlist, { ...course, ...colorScheme, isRequired: false }]);
+      setWishlist([...wishlist, { ...course, ...getCourseTypeColorScheme(course.type), isRequired: false }]);
       showToast(`'${course.name}' 과목을 위시리스트에 담았어요!`);
     } catch (error) {
       showToast(`위시리스트 추가 실패: ${error.message}`, 'error');

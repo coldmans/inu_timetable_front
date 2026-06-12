@@ -13,6 +13,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/admin/api': {
+        target: 'http://34.50.38.200:8080/admin/api',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/admin\/api/, ''),
+      },
     },
   },
 });

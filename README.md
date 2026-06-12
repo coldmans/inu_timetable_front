@@ -2,6 +2,8 @@
 
 인천대학교 시간표 마법사의 React/Vite 프론트엔드입니다. Spring Boot 백엔드와 연동해 과목 검색, 위시리스트, 자동 시간표 조합, 시간표 시각화, PDF 내보내기 흐름을 제공합니다.
 
+Live site: https://inuu-timetable.vercel.app
+
 ## Portfolio Highlights
 
 - 실제 학생용 시간표 서비스의 사용자 화면을 React, Vite, Tailwind CSS로 구현했습니다.
@@ -64,11 +66,13 @@ The app calls the backend through `src/services/api.js`.
 
 ```text
 VITE_API_BASE_URL=/api
+VITE_ADMIN_API_BASE_URL=/admin/api
 ```
 
 Main API groups:
 
-- `subjectAPI`: subject list, detail, search, filter, import preview/apply
+- `subjectAPI`: subject list, search, filter, and admin-only detail/import mutations
+- `adminAuthAPI`: admin login, session restore, logout
 - `authAPI`: register, login
 - `wishlistAPI`: add, remove, priority, required subjects
 - `timetableAPI`: add, remove, memo, clear, get by user
