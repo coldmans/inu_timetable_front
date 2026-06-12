@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Trash2, Info, Heart, X, MessageSquare } from 'lucide-react';
+import { Trash2, Info, Heart, MessageSquare } from 'lucide-react';
 
 const TimetableCourseMenu = ({
   isOpen,
@@ -37,65 +37,58 @@ const TimetableCourseMenu = ({
   return (
     <div
       ref={menuRef}
-      className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[180px]"
+      role="menu"
+      className="modal-panel fixed z-50 min-w-[200px] rounded-xl bg-white py-1.5 shadow-lg ring-1 ring-slate-200"
       style={{
-        left: Math.min(position.x, window.innerWidth - 200),
-        top: Math.min(position.y, window.innerHeight - 200),
+        left: Math.min(position.x, window.innerWidth - 216),
+        top: Math.min(position.y, window.innerHeight - 220),
       }}
     >
-      {/* 헤더 */}
-      <div className="px-4 py-2 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-800 text-sm truncate flex-1">
-            {course.name}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <X size={14} className="text-gray-500" />
-          </button>
-        </div>
-        <p className="text-xs text-gray-500">{course.professor}</p>
+      <div className="border-b border-slate-100 px-3.5 pb-2 pt-1">
+        <p className="truncate text-sm font-semibold text-slate-900">{course.name}</p>
+        <p className="truncate text-xs text-slate-500">{course.professor}</p>
       </div>
 
-      {/* 메뉴 옵션 */}
       <div className="py-1">
         <button
+          role="menuitem"
           onClick={() => handleMenuClick(onViewDetails)}
-          className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-slate-50"
         >
-          <Info size={16} className="text-blue-500" />
-          <span className="text-sm text-gray-700">상세 정보 보기</span>
+          <Info size={15} className="text-slate-400" />
+          상세 정보 보기
         </button>
 
         <a
+          role="menuitem"
           href={everytimeUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={onClose}
-          className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-green-50 transition-colors"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-slate-50"
         >
-          <MessageSquare size={16} className="text-green-500" />
-          <span className="text-sm text-gray-700">강의평 보기</span>
+          <MessageSquare size={15} className="text-emerald-500" />
+          강의평 보기
         </a>
 
         <button
+          role="menuitem"
           onClick={() => handleMenuClick(() => onAddToWishlist(course))}
-          className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-slate-700 transition-colors hover:bg-slate-50"
         >
-          <Heart size={16} className="text-pink-500" />
-          <span className="text-sm text-gray-700">위시리스트에 담기</span>
+          <Heart size={15} className="text-rose-400" />
+          위시리스트에 담기
         </button>
 
-        <div className="border-t border-gray-100 my-1"></div>
+        <div className="my-1 border-t border-slate-100"></div>
 
         <button
+          role="menuitem"
           onClick={() => handleMenuClick(() => onRemove(course))}
-          className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-red-50 transition-colors text-red-600"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] font-medium text-rose-600 transition-colors hover:bg-rose-50"
         >
-          <Trash2 size={16} className="text-red-500" />
-          <span className="text-sm">시간표에서 제거</span>
+          <Trash2 size={15} />
+          시간표에서 제거
         </button>
       </div>
     </div>

@@ -1,105 +1,7 @@
 import React, { useState } from 'react';
-import { X, LogIn, UserPlus } from 'lucide-react';
+import { X, LogIn, UserPlus, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-// 학과 목록 (App.jsx와 동일)
-const departments = [
-  '전체',
-  '&Service',
-  'Global',
-  'HUSS(타대학)',
-  'HUSS포용사회이니셔티브학부',
-  'IBE전공',
-  'Trade',
-  '건설환경공학전공',
-  '건축공학전공',
-  '경영학부',
-  '경제학과',
-  '공연예술학과',
-  '광전자공학전공(연계)',
-  '교양',
-  '교직',
-  '국어교육과',
-  '국어국문학과',
-  '국제개발협력연계전공',
-  '군사학',
-  '기계공학과',
-  '나노바이오공학전공',
-  '데이터과학과',
-  '도시건축학부',
-  '도시건축학전공',
-  '도시공학과',
-  '도시행정학과',
-  '도시환경공학부',
-  '독어독문학과',
-  '동북아국제통상전공',
-  '디자인학부',
-  '무역학부',
-  '무역학부(야)',
-  '문헌정보학과',
-  '물류학전공(연계)',
-  '물리학과',
-  '미디어커뮤니케이션학과',
-  '미래교육디자인연계전공',
-  '미래자동차연계전공',
-  '바이오-로봇시스템공학과',
-  '반도체융합전공',
-  '법학부',
-  '분자의생명전공',
-  '불어불문학과',
-  '사회복지학과',
-  '산경(야)',
-  '산업경영공학과',
-  '생명공학부',
-  '생명공학전공',
-  '생명과학부',
-  '생명과학전공',
-  '서양화전공',
-  '세무회계학과',
-  '소비자학과',
-  '소셜데이터사이언스연계전공',
-  '수학과',
-  '수학교육과',
-  '스마트물류공학전공',
-  '스포츠과학부',
-  '신소재공학과',
-  '심화교양',
-  '안전공학과',
-  '에너지화학공학과',
-  '역사교육과',
-  '영어교육과',
-  '영어영문학과',
-  '운동건강학부',
-  '유아교육과',
-  '윤리교육과',
-  '인문문화예술기획연계전공',
-  '일본지역문화학과',
-  '일선',
-  '일어교육과',
-  '임베디드시스템공학과',
-  '자유전공학부',
-  '전기공학과',
-  '전자(야)',
-  '전자공학과',
-  '전자공학부',
-  '전자공학전공',
-  '정보통신공학과',
-  '정치외교학과',
-  '조형예술학부',
-  '중국학과',
-  '중어중국학과',
-  '창의인재개발학과',
-  '창의적디자인연계전공',
-  '체육교육과',
-  '컴퓨터공학부',
-  '패션산업학과',
-  '한국화전공',
-  '해양학과',
-  '행정학과',
-  '화학과',
-  '환경',
-  '환경공학전공'
-];
+import { departments } from '../utils/timetableUtils';
 
 const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -154,116 +56,140 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {isLogin ? '로그인' : '회원가입'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        className="modal-panel w-full max-w-[400px] rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
+      >
+        <div className="flex items-start justify-between px-6 pt-6">
+          <div>
+            <h2 id="auth-modal-title" className="text-lg font-bold tracking-tight text-slate-900">
+              {isLogin ? '로그인' : '회원가입'}
+            </h2>
+            <p className="mt-1 text-[13px] text-slate-500">
+              {isLogin ? 'INU 시간표 계정으로 계속하세요.' : '몇 초면 끝나요. 위시리스트와 시간표가 저장됩니다.'}
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="닫기" className="icon-btn -mr-1 -mt-1">
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5">
+          <div className="space-y-3.5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="auth-username" className="mb-1.5 block text-[13px] font-medium text-slate-700">
                 아이디
               </label>
               <input
+                id="auth-username"
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoComplete="username"
+                className="field h-11"
                 placeholder="아이디를 입력하세요"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="auth-password" className="mb-1.5 block text-[13px] font-medium text-slate-700">
                 비밀번호
               </label>
               <input
+                id="auth-password"
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                className="field h-11"
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
 
             {!isLogin && (
-              <>
+              <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="auth-grade" className="mb-1.5 block text-[13px] font-medium text-slate-700">
                     학년
                   </label>
-                  <select
-                    name="grade"
-                    value={formData.grade}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value={1}>1학년</option>
-                    <option value={2}>2학년</option>
-                    <option value={3}>3학년</option>
-                    <option value={4}>4학년</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="auth-grade"
+                      name="grade"
+                      value={formData.grade}
+                      onChange={handleInputChange}
+                      required
+                      className="field h-11 appearance-none pr-7"
+                    >
+                      <option value={1}>1학년</option>
+                      <option value={2}>2학년</option>
+                      <option value={3}>3학년</option>
+                      <option value={4}>4학년</option>
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="col-span-2">
+                  <label htmlFor="auth-major" className="mb-1.5 block text-[13px] font-medium text-slate-700">
                     전공
                   </label>
-                  <select
-                    name="major"
-                    value={formData.major}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {departments.slice(1).map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="auth-major"
+                      name="major"
+                      value={formData.major}
+                      onChange={handleInputChange}
+                      required
+                      className="field h-11 appearance-none pr-7"
+                    >
+                      {departments.slice(1).map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-primary mt-5 h-11 w-full text-[15px]"
           >
             {isLoading ? (
-              '처리 중...'
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                처리 중...
+              </span>
             ) : (
               <>
-                {isLogin ? <LogIn size={20} /> : <UserPlus size={20} />}
-                {isLogin ? '로그인' : '회원가입'}
+                {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
+                {isLogin ? '로그인' : '가입하고 시작하기'}
               </>
             )}
           </button>
-        </form>
 
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            {isLogin ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
-          </button>
-        </div>
+          <p className="mt-4 text-center text-[13px] text-slate-500">
+            {isLogin ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
+            >
+              {isLogin ? '회원가입' : '로그인'}
+            </button>
+          </p>
+        </form>
       </div>
     </div>
   );

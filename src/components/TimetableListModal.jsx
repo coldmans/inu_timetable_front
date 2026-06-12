@@ -59,7 +59,7 @@ const TimetableListModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen / Desktop: Centered card */}
-      <div className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl">
+      <div className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl">
         <div className="sticky top-0 z-10 flex flex-col border-b border-slate-200 bg-white">
           <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
             <div className="min-w-0">
@@ -106,7 +106,7 @@ const TimetableListModal = ({
               {courses.map((course, index) => (
                 <div
                   key={course.id || index}
-                  className="rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4 shadow-sm transition-colors hover:border-slate-300"
+                  className="rounded-xl p-3 ring-1 ring-slate-200 bg-white transition-colors hover:ring-slate-300 sm:p-4"
                 >
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex-1 min-w-0">

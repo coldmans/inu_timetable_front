@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings, CheckCircle2, XCircle, RotateCcw, SearchX } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -131,26 +131,26 @@ const portalRegisteredCourses = [
 
 // --- UI Components ---
 
-const Toast = ({ message, show, type, onDismiss }) => {
-  const getToastStyles = () => {
-    switch (type) {
-      case 'success': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-blue-500';
-    }
-  };
-
-  return (
-    <div
-      className={`fixed top-5 right-5 flex items-center text-white px-6 py-3 rounded-lg shadow-lg transition-transform duration-300 z-50 ${show ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'} ${getToastStyles()}`}
-    >
-      {(type === 'warning' || type === 'error') && <AlertTriangle className="mr-2" />}
-      {message}
-      <button onClick={onDismiss} className="ml-4 font-bold">X</button>
-    </div>
-  );
+const toastIcons = {
+  success: <CheckCircle2 size={17} className="flex-shrink-0 text-emerald-500" />,
+  warning: <AlertTriangle size={17} className="flex-shrink-0 text-amber-500" />,
+  error: <XCircle size={17} className="flex-shrink-0 text-rose-500" />,
+  info: <Info size={17} className="flex-shrink-0 text-blue-500" />,
 };
+
+const Toast = ({ message, show, type, onDismiss }) => (
+  <div
+    role="status"
+    aria-live="polite"
+    className={`fixed left-1/2 top-4 z-[60] flex w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2.5 rounded-xl bg-white py-2.5 pl-3.5 pr-2 shadow-lg ring-1 ring-slate-900/10 transition-all duration-200 ease-out ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'}`}
+  >
+    {toastIcons[type] || toastIcons.info}
+    <span className="text-sm font-medium text-slate-800">{message}</span>
+    <button onClick={onDismiss} aria-label="알림 닫기" className="icon-btn h-7 w-7">
+      <X size={14} />
+    </button>
+  </div>
+);
 
 const LoadingOverlay = ({ isGenerating }) => {
   if (!isGenerating) return null;
@@ -173,8 +173,8 @@ const LoadingOverlay = ({ isGenerating }) => {
   }, [isGenerating]);
 
   return (
-    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/60 px-8 py-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+      <div className="modal-panel flex flex-col items-center gap-4 rounded-2xl bg-white px-8 py-7 shadow-xl ring-1 ring-slate-200">
         <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" aria-hidden="true"></div>
         <div className="text-center">
           <p className="text-gray-900 text-lg font-semibold">시간표 조합을 준비하고 있어요</p>
@@ -227,17 +227,16 @@ const NewUserTutorialModal = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-user-tutorial-title"
-        className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+        className="modal-panel w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
       >
-        <div className="border-b border-slate-200 px-5 py-4 md:px-6">
-          <p className="text-xs font-semibold text-blue-600">처음 시작 가이드</p>
-          <h2 id="new-user-tutorial-title" className="mt-1 text-xl font-bold text-slate-900">
-            시간표를 만드는 기본 흐름이에요
+        <div className="border-b border-slate-100 px-5 py-4 md:px-6">
+          <h2 id="new-user-tutorial-title" className="text-lg font-bold tracking-tight text-slate-900">
+            시간표, 이렇게 만들어요
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             과목을 바로 추가해도 되고, 위시리스트에 모아둔 뒤 조합을 만들 수도 있습니다.
@@ -249,17 +248,17 @@ const NewUserTutorialModal = ({ isOpen, onClose }) => {
             const StepIcon = step.icon;
 
             return (
-              <div key={step.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div key={step.title} className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
-                    <StepIcon size={18} />
+                  <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/60">
+                    <StepIcon size={17} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-400">0{index + 1}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold tabular-nums text-blue-600">{index + 1}</span>
                       <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
                     </div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-500">{step.description}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{step.description}</p>
                   </div>
                 </div>
               </div>
@@ -267,12 +266,8 @@ const NewUserTutorialModal = ({ isOpen, onClose }) => {
           })}
         </div>
 
-        <div className="flex justify-end border-t border-slate-200 bg-white px-5 py-4 md:px-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
-          >
+        <div className="flex justify-end border-t border-slate-100 px-5 py-4 md:px-6">
+          <button type="button" onClick={onClose} className="btn-primary h-10 px-5">
             과목 검색 시작하기
           </button>
         </div>
@@ -283,66 +278,111 @@ const NewUserTutorialModal = ({ isOpen, onClose }) => {
 
 // Timetable components moved to components/TimetableGrid.jsx
 
-const CourseCard = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
-  <div className="group flex h-full overflow-hidden rounded-lg md:rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
-    <div className="flex min-w-0 flex-1 flex-col p-2.5 md:p-4">
-      <div className="mb-1.5 flex items-start justify-between gap-1.5 md:mb-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold leading-snug text-slate-900 break-words [overflow-wrap:anywhere] md:text-base" title={course.name}>
+const formatPeriod = (value) => {
+  const rounded = Math.round(value * 2) / 2;
+  if (rounded >= 10) return `야${rounded - 9}`;
+  return `${rounded}`;
+};
+
+const formatScheduleLabel = (course) => {
+  const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
+  if (!times || times.length === 0) return course.time ? course.time : '시간 미정';
+  return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
+};
+
+const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
+  <li className="px-4 py-3.5 transition-colors hover:bg-slate-50/80 sm:px-5">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className={`inline-flex flex-shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${course.color} ${course.textColor}`}>
+            {course.type}
+          </span>
+          <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
             {course.name}
-          </p>
-          <p className="mt-0.5 text-[10px] font-medium text-slate-400 md:text-xs">{course.credits}학점</p>
+          </h3>
+          <span className="flex-shrink-0 text-xs font-medium text-slate-400">{course.credits}학점</span>
         </div>
-        <div className={`inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-[9px] md:px-2 md:text-[11px] font-medium whitespace-nowrap ${course.color} ${course.textColor}`}>
-          {course.type}
-        </div>
-      </div>
-
-      <div className="flex-1 space-y-1 text-[10px] text-slate-600 md:space-y-1.5 md:text-xs">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <MapPin size={11} className="flex-shrink-0 text-slate-400" />
-          <span className="truncate">{course.department} | {course.professor}</span>
-        </div>
-        <div className="flex min-w-0 items-start gap-1 rounded-md bg-slate-50 px-1.5 py-1 text-slate-600 md:px-2 md:py-1.5">
-          <Clock size={11} className="mt-0.5 flex-shrink-0 text-slate-400" />
-          <span className="leading-snug">{course.time || '시간 미정'}</span>
+        <p className="mt-1 truncate text-[13px] text-slate-500">
+          {course.professor} · {course.department}
+        </p>
+        <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+          <Clock size={12} className="flex-shrink-0 text-slate-400" />
+          <span className="truncate font-medium">{formatScheduleLabel(course)}</span>
         </div>
       </div>
 
-      <div className="mt-2 grid grid-cols-3 gap-1 border-t border-slate-100 pt-2 md:mt-3 md:gap-1.5 md:pt-3">
+      <div className="flex flex-shrink-0 items-center gap-1.5 sm:ml-3">
         <a
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${course.name} 강의평 보기`}
-          title="강의평"
-          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-green-100 px-1 py-0.5 text-[9px] font-medium text-green-700 transition-colors hover:bg-green-200 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          title="에브리타임 강의평"
+          className="icon-btn"
         >
-          <MessageSquare size={10} className="flex-shrink-0 md:h-3 md:w-3" />
-          <span className="hidden whitespace-nowrap sm:inline">강의평</span>
+          <MessageSquare size={15} />
         </a>
         <button
           type="button"
           onClick={() => onAddToWishlist(course)}
           disabled={actionsDisabled}
-          aria-disabled={actionsDisabled}
-          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-slate-100 px-1 py-0.5 text-[9px] font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-100 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          className="btn-secondary h-8 flex-1 px-3 text-[13px] sm:flex-none"
         >
-          <ShoppingCart size={10} className="flex-shrink-0 md:h-3 md:w-3" />
-          <span className="whitespace-nowrap">담기</span>
+          <ShoppingCart size={13} /> 담기
         </button>
         <button
           type="button"
           onClick={() => onAddToTimetable(course)}
           disabled={actionsDisabled}
-          aria-disabled={actionsDisabled}
-          className="inline-flex min-h-[27px] min-w-0 items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-md bg-blue-600 px-1 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:hover:bg-blue-300 md:min-h-[31px] md:gap-1 md:px-2 md:text-[11px]"
+          className="btn-primary h-8 flex-1 px-3 text-[13px] sm:flex-none"
         >
-          <Plus size={10} className="flex-shrink-0 md:h-3 md:w-3" />
-          <span className="whitespace-nowrap">추가</span>
+          <Plus size={13} /> 추가
         </button>
       </div>
     </div>
+  </li>
+);
+
+const CourseRowSkeleton = () => (
+  <li className="animate-pulse px-4 py-3.5 sm:px-5">
+    <div className="flex items-center gap-2">
+      <div className="h-4 w-9 rounded-md bg-slate-100" />
+      <div className="h-4 w-44 rounded-md bg-slate-200" />
+      <div className="h-3 w-10 rounded-md bg-slate-100" />
+    </div>
+    <div className="mt-2 h-3 w-36 rounded-md bg-slate-100" />
+    <div className="mt-2 h-3 w-28 rounded-md bg-slate-100" />
+  </li>
+);
+
+const EmptyResults = ({ onReset }) => (
+  <div className="flex flex-col items-center px-6 py-16 text-center">
+    <div className="grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">
+      <SearchX size={22} />
+    </div>
+    <p className="mt-4 text-[15px] font-semibold text-slate-900">조건에 맞는 과목이 없어요</p>
+    <p className="mt-1 text-sm text-slate-500">검색어를 바꾸거나 필터를 초기화해 보세요.</p>
+    <button type="button" onClick={onReset} className="btn-secondary mt-5">
+      <RotateCcw size={14} /> 필터 초기화
+    </button>
+  </div>
+);
+
+const FilterSelect = ({ value, onChange, active, label, children }) => (
+  <div className="relative">
+    <select
+      aria-label={label}
+      value={value}
+      onChange={onChange}
+      className={`field appearance-none pr-8 text-[13px] ${active ? 'border-blue-200 bg-blue-50/70 font-medium text-blue-700' : 'text-slate-600'}`}
+    >
+      {children}
+    </select>
+    <ChevronDown
+      size={14}
+      className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${active ? 'text-blue-500' : 'text-slate-400'}`}
+    />
   </div>
 );
 
@@ -558,6 +598,14 @@ function AppContent() {
   const executeSearch = () => {
     setCurrentPage(0); // 검색 시 첫 페이지로 리셋
     loadCourses(0);
+  };
+
+  const defaultFilters = { department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' };
+  const activeFilterCount = Object.values(filters).filter(value => value !== '전체').length;
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setFilters({ ...defaultFilters });
   };
 
   // 엔터키 검색
@@ -1282,7 +1330,7 @@ function AppContent() {
 
   if (isAdminSubjectsPage) {
     return (
-      <div className="bg-[#f6f7fb] min-h-screen font-sans">
+      <div className="min-h-screen bg-slate-50">
         <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
         <div className="max-w-7xl mx-auto px-3 py-4 md:px-8 md:py-10">
           <header className="mb-4 md:mb-8">
@@ -1323,7 +1371,7 @@ function AppContent() {
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
 
   return (
-    <div className="bg-[#f6f7fb] min-h-screen font-sans">
+    <div className="min-h-screen bg-slate-50">
       <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
       <LoadingOverlay isGenerating={isGenerating} />
       <AuthModal
@@ -1379,220 +1427,239 @@ function AppContent() {
         />
       )}
 
+      <header
+        aria-hidden={showWishlistModal || showNewUserTutorial}
+        inert={showWishlistModal || showNewUserTutorial ? '' : undefined}
+        className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur"
+      >
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
+          <a href="/" className="flex min-w-0 items-center gap-2">
+            <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-blue-600 text-white shadow-sm">
+              <CalendarDays size={17} />
+            </span>
+            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">INU 시간표</span>
+            <span className="hidden flex-shrink-0 items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 sm:inline-flex">
+              {CURRENT_SEMESTER.replace('-', '년 ')}학기
+            </span>
+          </a>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {isLoggedIn ? (
+              <>
+                <div className="hidden text-right md:block">
+                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{user.nickname}님</p>
+                  <p className="text-[11px] leading-tight text-slate-500">{user.major} {user.grade}학년</p>
+                </div>
+                <button onClick={handleLogout} className="btn-ghost h-8 px-2.5 text-[13px]">
+                  <LogOut size={14} /> 로그아웃
+                </button>
+              </>
+            ) : (
+              <button onClick={handleLogin} className="btn-primary h-8 px-3 text-[13px]">
+                <LogIn size={14} /> 로그인
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
       <div
         aria-hidden={showWishlistModal || showNewUserTutorial}
         inert={showWishlistModal || showNewUserTutorial ? '' : undefined}
-        className="max-w-7xl mx-auto px-3 py-3 md:px-8 md:py-6"
+        className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
 
-        <header className="mb-3 md:mb-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm sm:flex">
-                <Search size={18} />
-              </div>
-              <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 md:text-2xl">과목 검색</h1>
-            </div>
-            <div className="flex-shrink-0">
-              {isLoggedIn ? (
-                <div className="flex items-center gap-2 md:gap-3">
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-semibold text-slate-900">{user.nickname}님</p>
-                    <p className="text-xs text-slate-500">{user.major} {user.grade}학년</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 md:px-4 md:text-sm"
-                  >
-                    <LogOut size={14} /> <span className="hidden md:inline">로그아웃</span><span className="md:hidden">로그아웃</span>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleLogin}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 md:px-4 md:text-sm"
-                >
-                  <LogIn size={14} /> 로그인
-                </button>
-              )}
-            </div>
-          </div>
-        </header>
-
         {/* 검색 바 */}
-        <div className="mb-3 md:mb-8 rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm space-y-3">
-          {/* 검색 입력 */}
-          <div className="flex gap-1.5">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-2.5 md:left-4 md:top-3.5 text-slate-400" size={16} />
+        <section aria-label="과목 검색" className="card p-3 md:p-4">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 aria-label="과목명 검색"
-                placeholder="과목명으로 검색..."
+                placeholder="과목명을 검색해 보세요"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
-                className="w-full rounded-lg md:rounded-xl border border-slate-200 bg-white px-9 py-2 md:px-12 md:py-3 text-sm text-slate-900 shadow-inner shadow-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
+                onKeyDown={handleSearchKeyPress}
+                className="field h-10 pl-9 md:h-11"
               />
             </div>
             <button
               onClick={executeSearch}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 rounded-lg md:rounded-xl bg-blue-600 px-3 py-2 md:px-5 md:py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="btn-primary h-10 px-4 md:h-11 md:px-5"
             >
-              <Search size={16} className="md:hidden" />
-              <span className="hidden md:inline">검색</span>
-              <span className="md:hidden">검색</span>
+              <Search size={15} className="sm:hidden" />
+              <span className="hidden sm:inline">검색</span>
             </button>
           </div>
-          {/* 필터 */}
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 md:gap-2">
-            <select
+
+          <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
+            <FilterSelect
+              label="학과 필터"
               value={filters.department}
+              active={filters.department !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.department === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {departments.map(dept => (
-                <option key={dept} value={dept} className="text-slate-700">{dept === '전체' ? '학과' : dept}</option>
+                <option key={dept} value={dept}>{dept === '전체' ? '학과' : dept}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="이수구분 필터"
               value={filters.subjectType}
+              active={filters.subjectType !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.subjectType === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {courseTypes.map(type => (
-                <option key={type} value={type} className="text-slate-700">{type === '전체' ? '구분' : type}</option>
+                <option key={type} value={type}>{type === '전체' ? '구분' : type}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="학년 필터"
               value={filters.grade}
+              active={filters.grade !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, grade: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.grade === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {grades.map(grade => (
-                <option key={grade} value={grade} className="text-slate-700">{grade === '전체' ? '학년' : grade}</option>
+                <option key={grade} value={grade}>{grade === '전체' ? '학년' : grade}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="학점 필터"
               value={filters.credits}
+              active={filters.credits !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, credits: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.credits === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {creditOptions.map(credit => (
-                <option key={credit} value={credit} className="text-slate-700">{credit === '전체' ? '학점' : credit}</option>
+                <option key={credit} value={credit}>{credit === '전체' ? '학점' : credit}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="요일 필터"
               value={filters.dayOfWeek}
+              active={filters.dayOfWeek !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.dayOfWeek === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {filterDaysOfWeek.map(day => (
-                <option key={day} value={day} className="text-slate-700">{day === '전체' ? '요일' : day}</option>
+                <option key={day} value={day}>{day === '전체' ? '요일' : day}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="시작 교시 필터"
               value={filters.startTime}
+              active={filters.startTime !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, startTime: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.startTime === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {timeOptions.map(time => (
-                <option key={time} value={time} className="text-slate-700">
-                  {time === '전체' ? '시작' : `${time}교시`}
-                </option>
+                <option key={time} value={time}>{time === '전체' ? '시작' : `${time}교시`}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
+              label="종료 교시 필터"
               value={filters.endTime}
+              active={filters.endTime !== '전체'}
               onChange={(e) => setFilters(prev => ({ ...prev, endTime: e.target.value }))}
-              className={`w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.endTime === '전체' ? 'text-slate-400' : 'text-slate-700'}`}
             >
               {timeOptions.map(time => (
-                <option key={time} value={time} className="text-slate-700">
-                  {time === '전체' ? '종료' : `${time}교시`}
-                </option>
+                <option key={time} value={time}>{time === '전체' ? '종료' : `${time}교시`}</option>
               ))}
-            </select>
+            </FilterSelect>
           </div>
-        </div>
+
+          {(activeFilterCount > 0 || searchTerm) && (
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn-ghost h-7 gap-1 px-2 text-xs text-slate-500"
+              >
+                <RotateCcw size={12} /> 필터 초기화{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              </button>
+            </div>
+          )}
+        </section>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 gap-5 md:gap-8 lg:grid-cols-3 lg:gap-10">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-3 lg:gap-6">
           {/* Left: Course List */}
           <main className="lg:col-span-2">
-            <div className="mb-2 md:mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-900 md:text-lg">검색 결과</h2>
-                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                  총 {totalElements.toLocaleString()}개
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {isLoading && (
-                  <div className="inline-flex w-fit items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
-                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                    로딩 중...
-                  </div>
-                )}
+            <div className="card overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h2 className="text-[15px] font-semibold text-slate-900">검색 결과</h2>
+                  <span className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-blue-700">
+                    {totalElements.toLocaleString()}
+                  </span>
+                </div>
                 {hasResultPagination && (
-                  <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                  <div className="flex flex-shrink-0 items-center gap-0.5">
                     <button
                       type="button"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={!canGoToPreviousPage}
                       aria-label="이전 페이지"
-                      title="이전 페이지"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                      className="icon-btn h-7 w-7 disabled:opacity-40"
                     >
-                      <ChevronLeft size={16} />
+                      <ChevronLeft size={15} />
                     </button>
-                    <span className="hidden min-w-[52px] text-center text-xs font-semibold text-slate-500 sm:inline">
-                      {currentPage + 1} / {totalPages}
+                    <span className="min-w-[44px] text-center text-xs font-medium tabular-nums text-slate-500">
+                      {currentPage + 1}/{totalPages}
                     </span>
                     <button
                       type="button"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={!canGoToNextPage}
                       aria-label="다음 페이지"
-                      title="다음 페이지"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                      className="icon-btn h-7 w-7 disabled:opacity-40"
                     >
-                      <ChevronRight size={16} />
+                      <ChevronRight size={15} />
                     </button>
                   </div>
                 )}
               </div>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3 xl:grid-cols-3">
-              {filteredCourses.map(course => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  onAddToTimetable={handleAddToTimetable}
-                  onAddToWishlist={handleAddToWishlist}
-                  actionsDisabled={showWishlistModal || showNewUserTutorial}
-                />
-              ))}
-            </div>
 
-            {/* 페이징 컴포넌트 */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalElements={totalElements}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              isLoading={isLoading}
-            />
+              {isLoading ? (
+                <ul aria-label="검색 결과 불러오는 중" className="divide-y divide-slate-100">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <CourseRowSkeleton key={index} />
+                  ))}
+                </ul>
+              ) : filteredCourses.length === 0 ? (
+                <EmptyResults onReset={handleResetFilters} />
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {filteredCourses.map(course => (
+                    <CourseRow
+                      key={course.id}
+                      course={course}
+                      onAddToTimetable={handleAddToTimetable}
+                      onAddToWishlist={handleAddToWishlist}
+                      actionsDisabled={showWishlistModal || showNewUserTutorial}
+                    />
+                  ))}
+                </ul>
+              )}
+
+              {!isLoading && filteredCourses.length > 0 && (
+                <div className="border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalElements={totalElements}
+                    pageSize={pageSize}
+                    onPageChange={handlePageChange}
+                    isLoading={isLoading}
+                  />
+                </div>
+              )}
+            </div>
           </main>
 
           {/* Right: Timetable & Wishlist */}
-          <aside className="space-y-8">
-            <div className="sticky top-28">
+          <aside>
+            <div className="space-y-4 lg:sticky lg:top-[4.5rem]">
               {/* Desktop: Mini Timetable */}
               <div className="hidden lg:block">
-                {/* Timetable Grid */}
                 <TimetableGrid
                   courses={timetable}
                   onExportPDF={handleExportTimetablePDF}
@@ -1607,122 +1674,120 @@ function AppContent() {
               </div>
 
               {/* Wishlist */}
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-200 p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-slate-900">위시리스트</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm text-slate-500">
-                        총 {wishlistCredits}학점
-                      </div>
+              <div className="card">
+                <div className="border-b border-slate-100 px-4 py-3.5 sm:px-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[15px] font-semibold text-slate-900">위시리스트</h3>
+                      {wishlist.length > 0 && (
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
+                          {wishlist.length}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium tabular-nums text-slate-400">{wishlistCredits}학점</span>
                       <button
                         onClick={() => {
                           setWishlistModalMode('list');
                           setShowWishlistModal(true);
                         }}
-                        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+                        className="icon-btn"
                         title="위시리스트 확장 보기"
+                        aria-label="위시리스트 확장 보기"
                       >
-                        <Maximize size={18} className="text-slate-500" />
+                        <Maximize size={15} />
                       </button>
                     </div>
                   </div>
 
                   {/* 목표 학점 선택 */}
-                  <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
-                    <span className="text-sm font-medium text-slate-700">목표 학점</span>
-                    <select
-                      value={targetCredits}
-                      onChange={(e) => setTargetCredits(parseInt(e.target.value))}
-                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={12}>12학점</option>
-                      <option value={13}>13학점</option>
-                      <option value={14}>14학점</option>
-                      <option value={15}>15학점</option>
-                      <option value={16}>16학점</option>
-                      <option value={17}>17학점</option>
-                      <option value={18}>18학점 (권장)</option>
-                      <option value={19}>19학점</option>
-                      <option value={20}>20학점</option>
-                      <option value={21}>21학점</option>
-                      <option value={22}>22학점</option>
-                      <option value={23}>23학점</option>
-                      <option value={24}>24학점</option>
-                    </select>
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                    <span className="text-[13px] font-medium text-slate-600">목표 학점</span>
+                    <div className="relative">
+                      <select
+                        value={targetCredits}
+                        onChange={(e) => setTargetCredits(parseInt(e.target.value))}
+                        aria-label="목표 학점 선택"
+                        className="field h-8 w-[120px] appearance-none pr-7 text-[13px]"
+                      >
+                        {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map(credit => (
+                          <option key={credit} value={credit}>
+                            {credit}학점{credit === 18 ? ' (권장)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                    </div>
                   </div>
                 </div>
-                <div className="max-h-60 overflow-y-auto p-3">
+                <div className="max-h-64 overflow-y-auto p-3">
                   {wishlist.length > 0 ? (
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                       {wishlist.map(course => (
-                        <li key={course.id} className={`rounded-xl border p-3 ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold text-slate-900">{course.name}</p>
+                        <li key={course.id} className={`rounded-xl p-3 ring-1 ${course.isRequired ? 'bg-rose-50/70 ring-rose-200' : 'bg-white ring-slate-200'}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <p className="truncate text-sm font-semibold text-slate-900">{course.name}</p>
                                 {course.isRequired && (
-                                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                                  <span className="flex-shrink-0 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                                     필수
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-slate-500">{course.credits}학점 | {course.professor}</p>
-
-
-                              {/* 필수 과목 체크박스 */}
-                              <div className="mt-2 flex items-center gap-2">
+                              <p className="mt-0.5 text-xs text-slate-500">{course.credits}학점 · {course.professor}</p>
+                              <label
+                                htmlFor={`required-${course.id}`}
+                                className="mt-2 flex w-fit cursor-pointer items-center gap-1.5 text-xs text-slate-600"
+                              >
                                 <input
                                   type="checkbox"
                                   id={`required-${course.id}`}
                                   checked={course.isRequired || false}
                                   onChange={() => handleToggleRequired(course.id, course.isRequired)}
-                                  className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                                  className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                                 />
-                                <label
-                                  htmlFor={`required-${course.id}`}
-                                  className="cursor-pointer text-sm text-slate-600"
-                                >
-                                  필수 포함 과목
-                                </label>
-                              </div>
+                                필수 포함
+                              </label>
                             </div>
                             <button
                               onClick={() => handleRemoveFromWishlist(course.id)}
-                              className="ml-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500"
+                              aria-label={`${course.name} 위시리스트에서 제거`}
+                              className="icon-btn h-7 w-7 hover:text-rose-500"
                             >
-                              <X size={18} />
+                              <X size={15} />
                             </button>
                           </div>
                         </li>
                       ))}
                     </ul>
-                  ) : <div className="py-8 text-center text-sm text-slate-400">담은 과목이 없어요.</div>}
+                  ) : (
+                    <div className="px-4 py-10 text-center">
+                      <p className="text-sm font-medium text-slate-600">아직 담은 과목이 없어요</p>
+                      <p className="mt-1 text-xs text-slate-400">검색 결과에서 '담기'를 누르면 여기에 모여요.</p>
+                    </div>
+                  )}
                 </div>
                 {wishlist.length > 0 && (
-                  <div className="border-t border-slate-200 p-5">
-                    <div className="space-y-2">
-                      <div className="text-center text-xs text-slate-500">
-                        {wishlist.length}개 과목 • 총 {wishlistCredits}학점
-                      </div>
-                      <button
-                        onClick={() => {
-                          setWishlistModalMode('setup');
-                          setShowWishlistModal(true);
-                        }}
-                        disabled={isGenerating}
-                        className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                      >
-                        {isGenerating ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            생성 중...
-                          </span>
-                        ) : (
-                          `${wishlistCredits}학점 조합 만들기`
-                        )}
-                      </button>
-                    </div>
+                  <div className="border-t border-slate-100 p-3 sm:p-4">
+                    <button
+                      onClick={() => {
+                        setWishlistModalMode('setup');
+                        setShowWishlistModal(true);
+                      }}
+                      disabled={isGenerating}
+                      className="btn-primary h-11 w-full rounded-xl text-[15px]"
+                    >
+                      {isGenerating ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                          생성 중...
+                        </span>
+                      ) : (
+                        `시간표 조합 만들기 · ${wishlistCredits}학점`
+                      )}
+                    </button>
                   </div>
                 )}
               </div>
@@ -1732,42 +1797,43 @@ function AppContent() {
       </div>
 
       {/* Mobile: Floating Button to View Timetable */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-5 right-4 z-40 lg:hidden">
         <button
           onClick={handleShowTimetableList}
-          className="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
+          className="flex h-12 items-center gap-2 rounded-full bg-blue-600 pl-4 pr-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-transform active:scale-95"
         >
-          <CalendarDays size={20} />
-          <span>내 시간표 보기 ({timetable.length})</span>
+          <CalendarDays size={18} />
+          내 시간표
+          {timetable.length > 0 && (
+            <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-white/25 px-1 text-xs font-bold tabular-nums">
+              {timetable.length}
+            </span>
+          )}
         </button>
       </div>
 
       {/* Footer */}
-      <footer className="bg-slate-800 text-slate-300 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-slate-400">
-              <p>© 2026 INU 시간표. 인천대학교 비공식 서비스입니다.</p>
-
-            </div>
-            <div className="flex items-center gap-6">
-              <a
-                href="/admin/subjects"
-                className="text-sm hover:text-white transition-colors flex items-center gap-2"
-              >
-                <Settings size={16} />
-                <span>과목 관리</span>
-              </a>
-              <a
-                href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm hover:text-white transition-colors flex items-center gap-2"
-              >
-                <span>📷</span>
-                <span>Instagram DM 문의</span>
-              </a>
-            </div>
+      <footer className="mt-12 border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 sm:flex-row sm:items-center sm:justify-between md:px-8">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-blue-600 text-white">
+              <CalendarDays size={13} />
+            </span>
+            <span className="font-semibold text-slate-700">INU 시간표</span>
+            <span className="text-xs text-slate-400">인천대학교 비공식 서비스 · © 2026</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <a href="/admin/subjects" className="btn-ghost h-8 px-2.5 text-xs text-slate-500">
+              <Settings size={13} /> 과목 관리
+            </a>
+            <a
+              href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+            >
+              <MessageSquare size={13} /> 문의하기
+            </a>
           </div>
         </div>
       </footer>

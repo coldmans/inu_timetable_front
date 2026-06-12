@@ -1,29 +1,28 @@
 import React, { useState, useMemo } from 'react';
-import { Download, CalendarDays, X } from 'lucide-react';
+import { Download, CalendarDays, Trash2 } from 'lucide-react';
 import TimetableCourseMenu from './TimetableCourseMenu';
 import { parseTime, parseTimeString, daysOfWeek, timeSlots, displayTimeSlots } from '../utils/timetableUtils';
 
 const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
     const course = grid[day]?.[slot];
     const isFirstHalf = slot.endsWith('-1');
-    const emptyClass = `border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`;
+    const emptyClass = `border border-slate-100 ${slot.startsWith('야') ? 'bg-slate-50' : 'bg-white'}`;
 
     // Case 1: Course exists
     if (course) {
         if (course.isStart) {
             const backgroundColor = course.color || 'bg-blue-100';
-            const borderColor = course.borderColor || 'border-blue-400'; // App.jsx has border-blue-400 in formatCourse
             const textColor = course.textColor || 'text-slate-900';
             return (
                 <td
                     rowSpan={course.span || 1}
-                    className={`align-top p-1 ${backgroundColor} ${borderColor} ${textColor} border cursor-pointer transition-colors hover:brightness-95 overflow-hidden`}
+                    className="relative cursor-pointer border border-slate-100 bg-white p-0"
                     onClick={(e) => onCourseClick(e, course)}
                 >
-                    <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
-                        <div className="w-full px-0.5 text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.name}</div>
+                    <div className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 transition-[filter] hover:brightness-95 ${backgroundColor} ${textColor}`}>
+                        <div className="w-full break-words text-[11px] font-semibold leading-tight">{course.name}</div>
                         {course.professor && (
-                            <div className="w-full px-0.5 text-[10px] leading-none opacity-80 truncate">{course.professor}</div>
+                            <div className="mt-0.5 w-full truncate text-[10px] leading-none opacity-75">{course.professor}</div>
                         )}
                     </div>
                 </td>
@@ -79,8 +78,10 @@ const TimetableGrid = ({
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [showMenu, setShowMenu] = useState(false);
 
-    const timeColumnWidth = '40px';
+    const timeColumnWidth = '36px';
     const dayColumnWidth = isMobile ? '80px' : `calc((100% - ${timeColumnWidth}) / ${daysOfWeek.length})`;
+
+    const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
 
     const handleCourseClick = (event, course) => {
         event.preventDefault();
@@ -157,84 +158,87 @@ const TimetableGrid = ({
     }, [courses]);
 
     return (
-        <div ref={timetableRef} className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mini-timetable ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
+        <div ref={timetableRef} className={`card p-4 mini-timetable ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
             {showTitle && (
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h3 className="text-base font-semibold text-slate-900 tracking-tight">내 시간표</h3>
+                <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-[15px] font-semibold text-slate-900">내 시간표</h3>
                         {courses.length > 0 && (
-                            <p className="mt-1 text-sm text-slate-500">
-                                총 {courses.reduce((total, course) => total + (course.credits || 0), 0)}학점
-                            </p>
+                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
+                                {totalCredits}학점
+                            </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 text-slate-500">
+                    <div className="flex items-center gap-0.5">
                         {courses.length > 0 && onExportPDF && (
                             <button
                                 onClick={onExportPDF}
                                 disabled={isExportingPDF}
-                                className="p-2 rounded-full transition-colors hover:bg-slate-100 disabled:opacity-60 disabled:hover:bg-transparent"
+                                className="icon-btn"
                                 title="시간표를 PDF로 저장"
+                                aria-label="시간표를 PDF로 저장"
                             >
-                                <Download size={18} />
+                                <Download size={15} />
                             </button>
                         )}
                         {courses.length > 0 && onShowTimetableList && (
                             <button
                                 onClick={onShowTimetableList}
-                                className="p-2 rounded-full transition-colors hover:bg-slate-100 lg:hidden"
+                                className="icon-btn lg:hidden"
                                 title="시간표 리스트 보기"
+                                aria-label="시간표 리스트 보기"
                             >
-                                <CalendarDays size={18} />
+                                <CalendarDays size={15} />
                             </button>
                         )}
                         {courses.length > 0 && onClearAll && (
                             <button
                                 onClick={onClearAll}
-                                className="p-2 rounded-full transition-colors hover:bg-rose-100"
+                                className="icon-btn hover:bg-rose-50 hover:text-rose-500"
                                 title="시간표 전체 삭제"
+                                aria-label="시간표 전체 삭제"
                             >
-                                <X size={18} className="text-rose-500" />
+                                <Trash2 size={15} />
                             </button>
                         )}
                     </div>
                 </div>
             )}
 
+            {showTitle && courses.length === 0 && (
+                <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 ring-1 ring-slate-100">
+                    과목을 추가하면 시간표가 채워져요.
+                </p>
+            )}
+
             <div className={isMobile ? 'min-w-[500px]' : 'w-full'}>
-                <table className="w-full border-collapse border border-slate-200 table-fixed text-xs text-slate-700">
-                    <colgroup>
-                        <col style={{ width: timeColumnWidth }} />
-                        {daysOfWeek.map(day => (
-                            <col key={day} style={{ width: dayColumnWidth }} />
-                        ))}
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-500 border border-slate-200"></th>
+                <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
+                    <table className="w-full table-fixed border-collapse text-xs text-slate-700">
+                        <colgroup>
+                            <col style={{ width: timeColumnWidth }} />
                             {daysOfWeek.map(day => (
-                                <th key={day} className="bg-slate-50 p-1 text-center font-semibold text-[11px] text-slate-600 border border-slate-200">
-                                    {day}
-                                </th>
+                                <col key={day} style={{ width: dayColumnWidth }} />
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {timeSlots.map((slot, index) => {
-                            const isTopBorder = index > 0 && slot.endsWith('-1') && !slot.startsWith('야1');
-                            const isNightTopBorder = slot === '야1-1';
-                            return (
-                                <tr
-                                    key={slot}
-                                    style={{ height: '24px' }}
-                                    className={`${isTopBorder ? 'border-t border-slate-200' : ''} ${isNightTopBorder ? 'border-t border-blue-200' : ''}`}
-                                >
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th className="border border-slate-100 bg-slate-50/80 p-1"></th>
+                                {daysOfWeek.map(day => (
+                                    <th key={day} className="border border-slate-100 bg-slate-50/80 py-1.5 text-center text-[11px] font-semibold text-slate-500">
+                                        {day}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {timeSlots.map((slot, index) => (
+                                <tr key={slot} style={{ height: '24px' }}>
                                     {slot.endsWith('-1') && (
                                         <td
                                             rowSpan={2}
-                                            className={`text-center p-1 font-medium text-[11px] border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                                            className={`border border-slate-100 p-1 text-center text-[10px] font-medium tabular-nums ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
                                         >
-                                            {displayTimeSlots[Math.floor(index / 2)]}{slot.startsWith('야') ? '' : '교시'}
+                                            {displayTimeSlots[Math.floor(index / 2)]}
                                         </td>
                                     )}
                                     {daysOfWeek.map(day => (
@@ -248,44 +252,41 @@ const TimetableGrid = ({
                                         />
                                     ))}
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-200">
-                <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-2 w-3 rounded-sm bg-white border border-slate-200"></span>
-                        <span>주간</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-2 w-3 rounded-sm bg-slate-100 border border-slate-200"></span>
-                        <span>야간</span>
-                    </div>
+            <div className="mt-3 flex items-center justify-end gap-3 text-[11px] text-slate-400">
+                <div className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-3 rounded-sm bg-white ring-1 ring-slate-200"></span>
+                    <span>주간</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-3 rounded-sm bg-slate-100 ring-1 ring-slate-200"></span>
+                    <span>야간</span>
                 </div>
             </div>
 
             {/* Unscheduled / Online Courses */}
             {unscheduledCourses.length > 0 && (
-                <div className="mt-6">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">온라인 / 시간외 과목</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="mt-4">
+                    <h4 className="mb-2 text-xs font-semibold text-slate-500">온라인 · 시간 미지정</h4>
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                         {unscheduledCourses.map((course, idx) => (
-                            <div
+                            <button
+                                type="button"
                                 key={course.id || idx}
-                                className={`flex items-center justify-between p-3 rounded-xl border ${course.color} ${course.borderColor} ${course.textColor} cursor-pointer hover:brightness-95 transition-all shadow-sm`}
+                                className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-left transition-[filter] hover:brightness-95 ${course.color} ${course.textColor}`}
                                 onClick={(e) => handleCourseClick(e, course)}
                             >
                                 <div className="min-w-0 pr-2">
-                                    <div className="text-[11px] font-bold truncate">{course.name}</div>
-                                    <div className="text-[10px] opacity-80 truncate">
-                                        {course.professor} • 온라인
-                                    </div>
+                                    <div className="truncate text-[11px] font-semibold">{course.name}</div>
+                                    <div className="truncate text-[10px] opacity-75">{course.professor} · 온라인</div>
                                 </div>
-                                <CalendarDays size={14} className="flex-shrink-0 opacity-60" />
-                            </div>
+                                <CalendarDays size={13} className="flex-shrink-0 opacity-60" />
+                            </button>
                         ))}
                     </div>
                 </div>

@@ -15,23 +15,22 @@ import {
 const TimeSlotCell = ({ day, slot, index, grid }) => {
   const course = grid[day]?.[slot];
   const isFirstHalf = slot.endsWith('-1');
-  const emptyClass = `border border-slate-200 ${slot.startsWith('야') ? 'bg-slate-100' : 'bg-white'}`;
+  const emptyClass = `border border-slate-100 ${slot.startsWith('야') ? 'bg-slate-50' : 'bg-white'}`;
 
   // Case 1: Course exists
   if (course) {
     if (course.isStart) {
       const backgroundColor = course.colorScheme?.bg || 'bg-blue-100';
-      const borderColor = course.colorScheme?.border || 'border-blue-300';
       const textColor = course.colorScheme?.text || 'text-slate-900';
       return (
         <td
           rowSpan={course.span || 1}
-          className={`align-top p-0.5 sm:p-1 ${backgroundColor} ${borderColor} ${textColor} border transition-colors hover:brightness-95 overflow-hidden`}
+          className="relative border border-slate-100 bg-white p-0"
         >
-          <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center overflow-hidden">
-            <div className="w-full px-0.5 text-[9px] sm:text-[11px] font-semibold leading-tight break-words overflow-hidden">{course.subject.subjectName}</div>
+          <div className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1 py-0.5 sm:px-1.5 sm:py-1 ${backgroundColor} ${textColor}`}>
+            <div className="w-full break-words text-[9px] font-semibold leading-tight sm:text-[11px]">{course.subject.subjectName}</div>
             {course.subject.professor && (
-              <div className="w-full px-0.5 text-[8px] sm:text-[10px] leading-none opacity-80 truncate hidden sm:block">{course.subject.professor}</div>
+              <div className="mt-0.5 hidden w-full truncate text-[8px] leading-none opacity-75 sm:block sm:text-[10px]">{course.subject.professor}</div>
             )}
           </div>
         </td>
@@ -184,7 +183,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen / Desktop: Centered card */}
-      <div className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl">
+      <div className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-5">
@@ -270,7 +269,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                 {/* Unscheduled / Online Courses */}
                 {unscheduledCourses.length > 0 && (
                   <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">온라인 / 시간외 과목</h4>
+                    <h4 className="mb-2 text-xs font-semibold text-slate-500">온라인 · 시간 미지정</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {unscheduledCourses.map(({ subject, colorScheme }, idx) => (
                         <div

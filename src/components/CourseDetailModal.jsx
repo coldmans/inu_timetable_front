@@ -1,184 +1,135 @@
 import React from 'react';
-import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Users, UserCheck, GraduationCap, AlertTriangle, RotateCcw, Plus } from 'lucide-react';
+import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (schedules) => {
   if (!schedules || !Array.isArray(schedules)) return '시간 미정';
-  
+
   const dayMapping = {
     'MONDAY': '월',
-    'TUESDAY': '화', 
+    'TUESDAY': '화',
     'WEDNESDAY': '수',
     'THURSDAY': '목',
     'FRIDAY': '금',
     'SATURDAY': '토',
     'SUNDAY': '일'
   };
-  
+
   return schedules.map(schedule => {
     const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
     let timeStr = '';
-    
+
     if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
-      // HH:MM 형식
       timeStr = `${schedule.startTime}~${schedule.endTime}`;
     } else {
-      // 교시 번호 형식 (야간 교시 처리 포함)
       let startDisplay = schedule.startTime;
       let endDisplay = schedule.endTime;
-      
+
       if (schedule.startTime >= 10) {
         startDisplay = `야${schedule.startTime - 9}`;
         endDisplay = `야${schedule.endTime - 9}`;
       }
-      
+
       timeStr = `${startDisplay}~${endDisplay}교시`;
     }
-    
+
     return `${day} ${timeStr}`;
   }).join(', ');
 };
 
-const CourseDetailModal = ({ isOpen, onClose, course, stats, statsLoading, statsError, onRetryStats, onAddToTimetable }) => {
+const InfoRow = ({ icon: Icon, label, value, valueClass = 'text-slate-900' }) => (
+  <div className="flex items-center justify-between gap-3 py-2.5">
+    <div className="flex items-center gap-2 text-[13px] text-slate-500">
+      <Icon size={15} className="text-slate-400" />
+      {label}
+    </div>
+    <p className={`min-w-0 truncate text-right text-sm font-medium ${valueClass}`}>{value}</p>
+  </div>
+);
+
+const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
   if (!isOpen || !course) return null;
 
+  const classMethodLabel =
+    course.classMethod === 'ONLINE' ? '온라인' :
+    course.classMethod === 'OFFLINE' ? '오프라인' :
+    course.classMethod === 'HYBRID' ? '혼합' : course.classMethod;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="course-detail-title"
+        className="modal-panel flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
+      >
         {/* 헤더 */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-gray-800">{course.name}</h2>
-                <span className={`px-3 py-1 text-sm font-semibold ${course.color} ${course.textColor} rounded-full`}>
+        <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex flex-shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${course.color} ${course.textColor}`}>
                   {course.type}
                 </span>
+                <h2 id="course-detail-title" className="min-w-0 truncate text-lg font-bold tracking-tight text-slate-900">
+                  {course.name}
+                </h2>
               </div>
-              <p className="text-gray-600">{course.department}</p>
+              <p className="mt-1 text-[13px] text-slate-500">{course.department}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X size={24} className="text-gray-500" />
+            <button onClick={onClose} aria-label="닫기" className="icon-btn -mr-1 flex-shrink-0">
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* 내용 */}
-        <div className="p-6">
-          <div className="grid gap-6">
-            {/* 기본 정보 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <Star className="text-yellow-500" size={20} />
-                <div>
-                  <p className="text-sm text-gray-600">학점</p>
-                  <p className="font-semibold text-lg">{course.credits}학점</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <User className="text-blue-500" size={20} />
-                <div>
-                  <p className="text-sm text-gray-600">담당교수</p>
-                  <p className="font-semibold text-lg">{course.professor}</p>
-                </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="rounded-xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
+            <div className="flex items-start gap-2.5">
+              <Clock size={16} className="mt-0.5 flex-shrink-0 text-blue-500" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-blue-600">수업 시간</p>
+                <p className="mt-0.5 text-[15px] font-semibold text-blue-900">
+                  {formatTimeDisplay(course.schedules)}
+                </p>
               </div>
             </div>
-
-            {/* 시간 정보 */}
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Clock className="text-blue-500 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-sm text-blue-600 font-medium mb-1">수업 시간</p>
-                  <p className="text-lg font-semibold text-blue-800">
-                    {formatTimeDisplay(course.schedules)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 추가 정보 */}
-            <div className="space-y-4">
-              {course.location && (
-                <div className="flex items-center gap-3">
-                  <MapPin className="text-gray-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600">강의실</p>
-                    <p className="font-medium">{course.location}</p>
-                  </div>
-                </div>
-              )}
-
-              {course.grade && (
-                <div className="flex items-center gap-3">
-                  <BookOpen className="text-gray-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600">학년</p>
-                    <p className="font-medium">{course.grade}학년</p>
-                  </div>
-                </div>
-              )}
-
-              {course.classMethod && (
-                <div className="flex items-center gap-3">
-                  <Calendar className="text-gray-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600">수업 방식</p>
-                    <p className="font-medium">
-                      {course.classMethod === 'ONLINE' ? '온라인' : 
-                       course.classMethod === 'OFFLINE' ? '오프라인' : 
-                       course.classMethod === 'HYBRID' ? '혼합' : course.classMethod}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {course.isNight && (
-                <div className="flex items-center gap-3">
-                  <Tag className="text-purple-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600">특이사항</p>
-                    <p className="font-medium text-purple-600">야간 수업</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 과목 설명 (있는 경우) */}
-            {course.description && (
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-800 mb-2">과목 설명</h3>
-                <p className="text-gray-600 leading-relaxed">{course.description}</p>
-              </div>
-            )}
           </div>
+
+          <div className="mt-3 divide-y divide-slate-100">
+            <InfoRow icon={Star} label="학점" value={`${course.credits}학점`} />
+            <InfoRow icon={User} label="담당교수" value={course.professor || '미정'} />
+            {course.location && <InfoRow icon={MapPin} label="강의실" value={course.location} />}
+            {course.grade && <InfoRow icon={BookOpen} label="대상 학년" value={`${course.grade}학년`} />}
+            {course.classMethod && <InfoRow icon={Calendar} label="수업 방식" value={classMethodLabel} />}
+            {course.isNight && <InfoRow icon={Tag} label="특이사항" value="야간 수업" valueClass="text-violet-600" />}
+          </div>
+
+          {course.description && (
+            <div className="mt-3 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
+              <h3 className="text-[13px] font-semibold text-slate-700">과목 설명</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{course.description}</p>
+            </div>
+          )}
         </div>
 
         {/* 푸터 */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-xl">
-          <div className="flex justify-end gap-3">
-            {onAddToTimetable && (
-              <button
-                onClick={() => {
-                  onAddToTimetable(course);
-                  onClose();
-                }}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-semibold"
-              >
-                <Plus size={18} /> 시간표에 추가
-              </button>
-            )}
+        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3.5 sm:px-6">
+          <button onClick={onClose} className="btn-secondary">
+            닫기
+          </button>
+          {onAddToTimetable && (
             <button
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              onClick={() => {
+                onAddToTimetable(course);
+                onClose();
+              }}
+              className="btn-primary"
             >
-              닫기
+              <Plus size={15} /> 시간표에 추가
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

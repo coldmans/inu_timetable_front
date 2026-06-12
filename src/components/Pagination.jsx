@@ -1,13 +1,13 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Pagination = ({ 
-  currentPage, 
-  totalPages, 
-  totalElements, 
+const Pagination = ({
+  currentPage,
+  totalPages,
+  totalElements,
   pageSize,
   onPageChange,
-  isLoading = false 
+  isLoading = false
 }) => {
   const handlePrevious = () => {
     if (currentPage > 0 && !isLoading) {
@@ -33,8 +33,8 @@ const Pagination = ({
     const range = [];
     const rangeWithDots = [];
 
-    for (let i = Math.max(0, currentPage - delta); 
-         i <= Math.min(totalPages - 1, currentPage + delta); 
+    for (let i = Math.max(0, currentPage - delta);
+         i <= Math.min(totalPages - 1, currentPage + delta);
          i++) {
       range.push(i);
     }
@@ -66,31 +66,27 @@ const Pagination = ({
   const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
 
   return (
-    <div className="mt-6 flex flex-col items-center justify-between gap-4 px-4 sm:flex-row">
-      {/* 결과 정보 */}
-      <div className="text-sm text-slate-500">
-        총 <span className="font-semibold text-slate-900">{totalElements.toLocaleString()}</span>개 중 {' '}
-        <span className="font-semibold text-slate-900">{startItem}</span>-
-        <span className="font-semibold text-slate-900">{endItem}</span>개 표시
-      </div>
+    <nav aria-label="검색 결과 페이지 이동" className="flex flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-5">
+      <p className="text-xs tabular-nums text-slate-500">
+        총 <span className="font-semibold text-slate-700">{totalElements.toLocaleString()}</span>개 중{' '}
+        {startItem}-{endItem}
+      </p>
 
-      {/* 페이징 네비게이션 */}
-      <div className="flex items-center gap-2">
-        {/* 이전 버튼 */}
+      <div className="flex items-center gap-1">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 0 || isLoading}
-          className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="이전 페이지"
+          className="btn-secondary h-8 px-2.5 text-[13px]"
         >
-          <ChevronLeft size={16} />
-          이전
+          <ChevronLeft size={14} />
+          <span className="hidden sm:inline">이전</span>
         </button>
 
-        {/* 페이지 번호들 */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 px-1">
           {getVisiblePages().map((page, index) => (
             page === '...' ? (
-              <span key={`dots-${index}`} className="px-3 py-2 text-slate-400">
+              <span key={`dots-${index}`} className="px-1.5 text-xs text-slate-400">
                 ...
               </span>
             ) : (
@@ -98,11 +94,13 @@ const Pagination = ({
                 key={page}
                 onClick={() => handlePageClick(page)}
                 disabled={isLoading}
-                className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                aria-label={`${page + 1}페이지`}
+                aria-current={page === currentPage ? 'page' : undefined}
+                className={`grid h-8 w-8 place-items-center rounded-lg text-[13px] font-medium tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   page === currentPage
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    ? 'bg-blue-600 font-semibold text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
               >
                 {page + 1}
               </button>
@@ -110,17 +108,17 @@ const Pagination = ({
           ))}
         </div>
 
-        {/* 다음 버튼 */}
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages - 1 || isLoading}
-          className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="다음 페이지"
+          className="btn-secondary h-8 px-2.5 text-[13px]"
         >
-          다음
-          <ChevronRight size={16} />
+          <span className="hidden sm:inline">다음</span>
+          <ChevronRight size={14} />
         </button>
       </div>
-    </div>
+    </nav>
   );
 };
 

@@ -88,7 +88,7 @@ const WishlistModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:border sm:border-slate-200 shadow-2xl"
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
       >
 
         {/* === Header Shared Area === */}
@@ -138,7 +138,7 @@ const WishlistModal = ({
                 {wishlist.map(course => (
                   <div
                     key={course.id}
-                    className={`rounded-xl sm:rounded-2xl border p-3 sm:p-4 shadow-sm transition-colors ${course.isRequired ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'
+                    className={`rounded-xl p-3 sm:p-4 ring-1 transition-colors ${course.isRequired ? 'bg-rose-50/70 ring-rose-200' : 'bg-white ring-slate-200'
                       }`}
                   >
                     {/* Course Header */}
@@ -197,9 +197,9 @@ const WishlistModal = ({
                         href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1 rounded-lg bg-green-100 px-3 py-2 text-xs sm:text-sm font-medium text-green-700 transition-colors hover:bg-green-200"
+                        className="btn-secondary h-9 px-3 text-xs sm:text-sm"
                       >
-                        <MessageSquare size={14} /> 강의평
+                        <MessageSquare size={14} className="text-emerald-500" /> 강의평
                       </a>
                       <button
                         onClick={() => onAddToTimetable(course)}
@@ -295,7 +295,7 @@ const WishlistModal = ({
               <button
                 type="button"
                 onClick={() => setStep('setup')}
-                className="w-full rounded-xl bg-slate-900 px-6 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white shadow-lg transition-transform hover:bg-slate-800 active:scale-[0.99]"
+                className="btn-primary h-12 w-full rounded-xl text-sm sm:text-base"
               >
                 시간표 조합 생성하기 ({wishlist.length}과목)
               </button>
@@ -306,7 +306,7 @@ const WishlistModal = ({
                   onRunGenerator();
                   handleClose();
                 }}
-                className="w-full rounded-xl bg-blue-600 px-6 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white shadow-lg transition-transform hover:bg-blue-500 active:scale-[0.99]"
+                className="btn-primary h-12 w-full rounded-xl text-sm sm:text-base"
               >
                 {targetCredits}학점 조합 만들기 시작
               </button>
