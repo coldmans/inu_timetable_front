@@ -36,6 +36,42 @@ const handleResponse = async (response) => {
   return parseBody();
 };
 
+const readCookie = (name) => {
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const cookie = document.cookie
+    .split(';')
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(encodedName));
+  return cookie ? decodeURIComponent(cookie.slice(encodedName.length)) : '';
+};
+
+const fetchWithUserSession = (url, options = {}) => fetch(url, {
+  ...options,
+  credentials: 'include',
+});
+
+const getUserCsrfToken = async () => {
+  const cookieToken = readCookie('XSRF-TOKEN');
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  const response = await fetchWithUserSession(`${BASE_URL}/auth/csrf`);
+  const payload = await handleResponse(response);
+  return payload?.token || readCookie('XSRF-TOKEN');
+};
+
+const fetchWithUserCsrf = async (url, options = {}) => {
+  const csrfToken = await getUserCsrfToken();
+  return fetchWithUserSession(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      'X-XSRF-TOKEN': csrfToken,
+    },
+  });
+};
+
 const getAdminHeaders = (csrfToken) => ({
   'Content-Type': 'application/json',
   'X-Admin-Csrf': csrfToken || '',
@@ -186,7 +222,7 @@ export const adminAuthAPI = {
 export const authAPI = {
   // 회원가입
   register: async (userData) => {
-    const response = await fetch(`${BASE_URL}/auth/register`, {
+    const response = await fetchWithUserSession(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -198,12 +234,24 @@ export const authAPI = {
 
   // 로그인
   login: async (credentials) => {
-    const response = await fetch(`${BASE_URL}/auth/login`, {
+    const response = await fetchWithUserSession(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
+    });
+    return handleResponse(response);
+  },
+
+  me: async () => {
+    const response = await fetchWithUserSession(`${BASE_URL}/auth/me`);
+    return handleResponse(response);
+  },
+
+  logout: async () => {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/auth/logout`, {
+      method: 'POST',
     });
     return handleResponse(response);
   },
@@ -213,7 +261,7 @@ export const authAPI = {
 export const wishlistAPI = {
   // 위시리스트에 과목 추가 (필수 과목 지정 포함)
   add: async (data) => {
-    const response = await fetch(`${BASE_URL}/wishlist/add`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/wishlist/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,13 +273,13 @@ export const wishlistAPI = {
 
   // 위시리스트 조회
   getByUser: async (userId, semester = '2024-2') => {
-    const response = await fetch(`${BASE_URL}/wishlist/user/${userId}?semester=${semester}`);
+    const response = await fetchWithUserSession(`${BASE_URL}/wishlist/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
 
   // 위시리스트에서 제거
   remove: async (userId, subjectId) => {
-    const response = await fetch(`${BASE_URL}/wishlist/remove?userId=${userId}&subjectId=${subjectId}`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/wishlist/remove?userId=${userId}&subjectId=${subjectId}`, {
       method: 'DELETE',
     });
     return handleResponse(response);
@@ -239,7 +287,7 @@ export const wishlistAPI = {
 
   // 우선순위 변경
   updatePriority: async (data) => {
-    const response = await fetch(`${BASE_URL}/wishlist/priority`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/wishlist/priority`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -251,7 +299,7 @@ export const wishlistAPI = {
 
   // 필수 과목 설정 변경
   updateRequired: async (data) => {
-    const response = await fetch(`${BASE_URL}/wishlist/required`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/wishlist/required`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -266,7 +314,7 @@ export const wishlistAPI = {
 export const timetableAPI = {
   // 시간표에 과목 추가
   add: async (data) => {
-    const response = await fetch(`${BASE_URL}/timetable/add`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/timetable/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,13 +326,13 @@ export const timetableAPI = {
 
   // 개인 시간표 조회
   getByUser: async (userId, semester = '2024-2') => {
-    const response = await fetch(`${BASE_URL}/timetable/user/${userId}?semester=${semester}`);
+    const response = await fetchWithUserSession(`${BASE_URL}/timetable/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
 
   // 시간표에서 과목 제거
   remove: async (userId, subjectId) => {
-    const response = await fetch(`${BASE_URL}/timetable/remove?userId=${userId}&subjectId=${subjectId}`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/timetable/remove?userId=${userId}&subjectId=${subjectId}`, {
       method: 'DELETE',
     });
     return handleResponse(response);
@@ -292,7 +340,7 @@ export const timetableAPI = {
 
   // 메모 수정
   updateMemo: async (data) => {
-    const response = await fetch(`${BASE_URL}/timetable/memo`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/timetable/memo`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -307,7 +355,7 @@ export const timetableAPI = {
 export const combinationAPI = {
   // 시간표 자동 조합 생성
   generate: async (data) => {
-    const response = await fetch(`${BASE_URL}/timetable-combination/generate`, {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/timetable-combination/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

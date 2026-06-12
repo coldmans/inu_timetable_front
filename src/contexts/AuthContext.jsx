@@ -15,13 +15,31 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 페이지 로드 시 로컬 스토리지에서 사용자 정보 복원
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    let cancelled = false;
+
+    const restoreSession = async () => {
+      try {
+        const sessionUser = await authAPI.me();
+        if (cancelled) return;
+        setUser(sessionUser);
+        localStorage.setItem('user', JSON.stringify(sessionUser));
+      } catch {
+        if (cancelled) return;
+        setUser(null);
+        localStorage.removeItem('user');
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (credentials) => {
@@ -46,7 +64,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch {
+      // 세션이 이미 만료된 경우에도 클라이언트 상태는 정리한다.
+    }
     setUser(null);
     localStorage.removeItem('user');
   };
