@@ -242,12 +242,12 @@ const AdminSubjectManager = ({ showToast }) => {
     try {
       const username = sessionStorage.getItem(ADMIN_USERNAME_STORAGE_KEY) || '';
       return {
-        authenticated: false,
+        authenticated: null,
         username
       };
     } catch {
       return {
-        authenticated: false,
+        authenticated: null,
         username: ''
       };
     }
@@ -349,10 +349,11 @@ const AdminSubjectManager = ({ showToast }) => {
     }
   };
 
-  const isAdminAuthenticated = Boolean(adminSession.authenticated);
+  const isAdminSessionChecking = adminSession.authenticated === null;
+  const isAdminAuthenticated = adminSession.authenticated === true;
 
   const requireAdminAuth = () => (
-    isAdminAuthenticated ? '' : '관리자 로그인이 필요합니다.'
+    isAdminSessionChecking ? '관리자 세션을 확인 중입니다.' : isAdminAuthenticated ? '' : '관리자 로그인이 필요합니다.'
   );
 
   const persistAdminSession = (response) => {
@@ -1018,7 +1019,11 @@ const AdminSubjectManager = ({ showToast }) => {
             </p>
           </div>
           <div className="w-full md:w-[360px]">
-            {isAdminAuthenticated ? (
+            {isAdminSessionChecking ? (
+              <div className="flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-6 text-slate-500">
+                <Loader2 size={18} className="animate-spin" />
+              </div>
+            ) : isAdminAuthenticated ? (
               <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
