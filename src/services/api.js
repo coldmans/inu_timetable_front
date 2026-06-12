@@ -50,15 +50,29 @@ const fetchWithUserSession = (url, options = {}) => fetch(url, {
   credentials: 'include',
 });
 
+let csrfTokenPromise = null;
+
 const getUserCsrfToken = async () => {
   const cookieToken = readCookie('XSRF-TOKEN');
   if (cookieToken) {
     return cookieToken;
   }
 
-  const response = await fetchWithUserSession(`${BASE_URL}/auth/csrf`);
-  const payload = await handleResponse(response);
-  return payload?.token || readCookie('XSRF-TOKEN');
+  if (csrfTokenPromise) {
+    return csrfTokenPromise;
+  }
+
+  csrfTokenPromise = (async () => {
+    try {
+      const response = await fetchWithUserSession(`${BASE_URL}/auth/csrf`);
+      const payload = await handleResponse(response);
+      return payload?.token || readCookie('XSRF-TOKEN');
+    } finally {
+      csrfTokenPromise = null;
+    }
+  })();
+
+  return csrfTokenPromise;
 };
 
 const fetchWithUserCsrf = async (url, options = {}) => {

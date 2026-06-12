@@ -22,8 +22,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const sessionUser = await authAPI.me();
         if (cancelled) return;
-        setUser(sessionUser);
-        localStorage.setItem('user', JSON.stringify(sessionUser));
+        if (sessionUser) {
+          setUser(sessionUser);
+          localStorage.setItem('user', JSON.stringify(sessionUser));
+        } else {
+          setUser(null);
+          localStorage.removeItem('user');
+        }
       } catch {
         if (cancelled) return;
         setUser(null);
