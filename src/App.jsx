@@ -291,24 +291,25 @@ const formatScheduleLabel = (course) => {
 };
 
 const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
-  <li className="px-4 py-3.5 transition-colors hover:bg-slate-50/80 sm:px-5">
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+  <li className="px-4 py-3 transition-colors hover:bg-slate-50/80 sm:px-5 sm:py-2.5">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className={`inline-flex flex-shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${course.color} ${course.textColor}`}>
             {course.type}
           </span>
-          <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
+          <h3 className="min-w-0 truncate text-sm font-semibold text-slate-900" title={course.name}>
             {course.name}
           </h3>
           <span className="flex-shrink-0 text-xs font-medium text-slate-400">{course.credits}학점</span>
         </div>
-        <p className="mt-1 truncate text-[13px] text-slate-500">
-          {course.professor} · {course.department}
-        </p>
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
-          <Clock size={12} className="flex-shrink-0 text-slate-400" />
-          <span className="truncate font-medium">{formatScheduleLabel(course)}</span>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+          <span className="min-w-0 flex-shrink-[2] truncate">{course.professor} · {course.department}</span>
+          <span className="flex-shrink-0 text-slate-300">·</span>
+          <span className="flex min-w-0 flex-shrink items-center gap-1 font-medium text-slate-600">
+            <Clock size={11} className="flex-shrink-0 text-slate-400" />
+            <span className="truncate">{formatScheduleLabel(course)}</span>
+          </span>
         </div>
       </div>
 
@@ -345,14 +346,13 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
 );
 
 const CourseRowSkeleton = () => (
-  <li className="animate-pulse px-4 py-3.5 sm:px-5">
+  <li className="animate-pulse px-4 py-3 sm:px-5">
     <div className="flex items-center gap-2">
       <div className="h-4 w-9 rounded-md bg-slate-100" />
       <div className="h-4 w-44 rounded-md bg-slate-200" />
       <div className="h-3 w-10 rounded-md bg-slate-100" />
     </div>
-    <div className="mt-2 h-3 w-36 rounded-md bg-slate-100" />
-    <div className="mt-2 h-3 w-28 rounded-md bg-slate-100" />
+    <div className="mt-2 h-3 w-56 rounded-md bg-slate-100" />
   </li>
 );
 
@@ -412,6 +412,7 @@ function AppContent() {
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
 
   const timetableRef = useRef(null);
+  const resultsListRef = useRef(null);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
@@ -627,7 +628,8 @@ function AppContent() {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     loadCourses(newPage);
-    // 페이지 변경 시 맨 위로 스크롤
+    // 페이지 변경 시 리스트와 페이지 맨 위로 스크롤
+    resultsListRef.current?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1627,7 +1629,10 @@ function AppContent() {
               ) : filteredCourses.length === 0 ? (
                 <EmptyResults onReset={handleResetFilters} />
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul
+                  ref={resultsListRef}
+                  className="divide-y divide-slate-100 lg:max-h-[calc(100vh-22rem)] lg:min-h-[320px] lg:overflow-y-auto lg:overscroll-contain"
+                >
                   {filteredCourses.map(course => (
                     <CourseRow
                       key={course.id}
