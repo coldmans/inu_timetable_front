@@ -615,9 +615,8 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
       {isOpen && (
         <div className={`select-menu ${optionWrap ? 'select-menu-wide' : ''}`}>
           <div id={listboxId} role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1">
-            {options.map(option => {
+            {options.map((option, optionIndex) => {
               const isSelected = String(option.value) === String(value);
-              const optionIndex = options.findIndex(candidate => String(candidate.value) === String(option.value));
               const isActive = optionIndex === activeIndex;
 
               return (
