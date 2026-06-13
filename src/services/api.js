@@ -1,5 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const ADMIN_BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || '/admin/api';
+const DEFAULT_SEMESTER = '2026-1';
 
 // API 응답 처리 헬퍼
 const handleResponse = async (response) => {
@@ -45,12 +46,21 @@ const readCookie = (name) => {
   return cookie ? decodeURIComponent(cookie.slice(encodedName.length)) : '';
 };
 
+const clearCookie = (name) => {
+  document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; path=/`;
+};
+
 const fetchWithUserSession = (url, options = {}) => fetch(url, {
   ...options,
   credentials: 'include',
 });
 
 let csrfTokenPromise = null;
+
+const resetUserCsrfToken = () => {
+  csrfTokenPromise = null;
+  clearCookie('XSRF-TOKEN');
+};
 
 const getUserCsrfToken = async () => {
   const cookieToken = readCookie('XSRF-TOKEN');
@@ -77,13 +87,39 @@ const getUserCsrfToken = async () => {
 
 const fetchWithUserCsrf = async (url, options = {}) => {
   const csrfToken = await getUserCsrfToken();
-  return fetchWithUserSession(url, {
+  const requestOptions = {
     ...options,
     headers: {
       ...(options.headers || {}),
       'X-XSRF-TOKEN': csrfToken,
     },
+  };
+
+  const response = await fetchWithUserSession(url, requestOptions);
+  if (response.status !== 403) {
+    return response;
+  }
+
+  resetUserCsrfToken();
+  const refreshedToken = await getUserCsrfToken();
+  return fetchWithUserSession(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      'X-XSRF-TOKEN': refreshedToken,
+    },
   });
+};
+
+const handleUserSessionMutationResponse = async (response) => {
+  try {
+    const payload = await handleResponse(response);
+    resetUserCsrfToken();
+    return payload;
+  } catch (error) {
+    resetUserCsrfToken();
+    throw error;
+  }
 };
 
 const getAdminHeaders = (csrfToken) => ({
@@ -243,7 +279,7 @@ export const authAPI = {
       },
       body: JSON.stringify(userData),
     });
-    return handleResponse(response);
+    return handleUserSessionMutationResponse(response);
   },
 
   // 로그인
@@ -255,7 +291,18 @@ export const authAPI = {
       },
       body: JSON.stringify(credentials),
     });
-    return handleResponse(response);
+    return handleUserSessionMutationResponse(response);
+  },
+
+  createDevSession: async ({ semester, seedWishlist = true, reset = false } = {}) => {
+    const response = await fetchWithUserSession(`${BASE_URL}/dev/session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ semester, seedWishlist, reset }),
+    });
+    return handleUserSessionMutationResponse(response);
   },
 
   me: async () => {
@@ -267,7 +314,7 @@ export const authAPI = {
     const response = await fetchWithUserCsrf(`${BASE_URL}/auth/logout`, {
       method: 'POST',
     });
-    return handleResponse(response);
+    return handleUserSessionMutationResponse(response);
   },
 };
 
@@ -286,7 +333,7 @@ export const wishlistAPI = {
   },
 
   // 위시리스트 조회
-  getByUser: async (userId, semester = '2024-2') => {
+  getByUser: async (userId, semester = DEFAULT_SEMESTER) => {
     const response = await fetchWithUserSession(`${BASE_URL}/wishlist/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
@@ -339,7 +386,7 @@ export const timetableAPI = {
   },
 
   // 개인 시간표 조회
-  getByUser: async (userId, semester = '2024-2') => {
+  getByUser: async (userId, semester = DEFAULT_SEMESTER) => {
     const response = await fetchWithUserSession(`${BASE_URL}/timetable/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
@@ -383,7 +430,7 @@ export const combinationAPI = {
 // 과목 통계 API
 export const statisticsAPI = {
   // 과목별 참여자 통계 조회
-  getSubjectStats: async (subjectId, semester = '2024-2') => {
+  getSubjectStats: async (subjectId, semester = DEFAULT_SEMESTER) => {
     if (!subjectId) {
       throw new Error('과목 ID가 필요합니다.');
     }

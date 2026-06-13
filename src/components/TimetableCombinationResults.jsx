@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check, MessageSquare } from 'lucide-react';
 
 import {
@@ -75,8 +75,9 @@ const TimeSlotCell = ({ day, slot, index, grid }) => {
   }
 };
 
-const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) => {
+const TimetableCombinationResults = ({ results, onClose, onSelectCombination, isApplying = false }) => {
   const [currentCombination, setCurrentCombination] = useState(0);
+  const titleId = useId();
 
   if (!results || !results.combinations || results.combinations.length === 0) {
     return null;
@@ -146,10 +147,12 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   }, [combination]);
 
   const handlePrevious = () => {
+    if (isApplying) return;
     setCurrentCombination(prev => Math.max(0, prev - 1));
   };
 
   const handleNext = () => {
+    if (isApplying) return;
     setCurrentCombination(prev => Math.min(results.combinations.length - 1, prev + 1));
   };
 
@@ -184,19 +187,27 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen / Desktop: Centered card */}
-      <div className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-busy={isApplying}
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-5">
           <div className="min-w-0">
-            <h2 className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">시간표 조합</h2>
+            <h2 id={titleId} className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">시간표 조합</h2>
             <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
               {results.totalCount}개 중 {currentCombination + 1}번째
             </p>
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+            disabled={isApplying}
+            className="icon-btn h-10 w-10 flex-shrink-0"
+            aria-label="시간표 조합 결과 닫기"
           >
             <X size={22} />
           </button>
@@ -207,7 +218,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
             {/* Timetable Grid */}
             <div className="lg:col-span-2">
-              <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-5">
+              <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
                 <div className="mb-3 sm:mb-4 flex items-center gap-2 text-slate-700">
                   <Calendar size={18} className="text-slate-400" />
                   <span className="text-sm sm:text-base font-semibold text-slate-900">
@@ -216,7 +227,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
                 </div>
                 {/* Horizontal scroll wrapper for mobile */}
                 <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-                  <div className="min-w-[320px] sm:min-w-0 overflow-hidden rounded-lg sm:rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <div className="min-w-[320px] sm:min-w-0 overflow-hidden rounded-lg sm:rounded-xl border border-slate-200 bg-white">
                     <table className="w-full table-fixed border-collapse text-[10px] sm:text-xs text-slate-700">
                       <colgroup>
                         <col className="w-8 sm:w-10" />
@@ -269,17 +280,22 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
 
                 {/* Unscheduled / Online Courses */}
                 {unscheduledCourses.length > 0 && (
-                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                    <h4 className="mb-2 text-xs font-semibold text-slate-500">온라인 · 시간 미지정</h4>
-                    <div className="grid grid-cols-1 gap-2">
+                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div className="border-b border-slate-100 px-3 py-2">
+                      <h4 className="text-xs font-semibold text-slate-500">온라인 · 시간 미지정</h4>
+                    </div>
+                    <div className="course-list">
                       {unscheduledCourses.map(({ subject, colorScheme }, idx) => (
                         <div
                           key={subject.id || idx}
-                          className={`flex items-center justify-between p-2 rounded-lg border ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text}`}
+                          className="course-list-row py-2.5"
                         >
                           <div className="min-w-0 pr-2">
-                            <div className="text-[10px] font-bold truncate">{subject.subjectName}</div>
-                            <div className="text-[9px] opacity-80 truncate">온라인 과목</div>
+                            <div className="truncate text-xs font-semibold text-slate-900">{subject.subjectName}</div>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <span className={`course-type-badge ${colorScheme.bg} ${colorScheme.text}`}>{subject.subjectType}</span>
+                              <span className="meta-chip bg-white">온라인</span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -292,39 +308,45 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
             {/* Subject List & Stats */}
             <div className="space-y-4 sm:space-y-6">
               {/* Subject List */}
-              <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-                <div className="mb-3 sm:mb-4 flex items-center gap-2 text-slate-700">
+              <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-3 text-slate-700 sm:px-4">
                   <BookOpen size={18} className="text-slate-400" />
                   <span className="text-sm sm:text-base font-semibold text-slate-900">과목 목록</span>
                 </div>
-                <div className="max-h-48 sm:max-h-60 space-y-2 sm:space-y-3 overflow-y-auto">
+                <div className="course-list max-h-56 overflow-y-auto sm:max-h-64">
                   {combination.map((subject) => {
                     const colorClass = getCourseTypeBadgeClass(subject.subjectType);
 
                     return (
-                      <div key={subject.id} className="rounded-lg sm:rounded-xl border border-slate-200 p-2 sm:p-3">
-                        <div className="flex items-start justify-between gap-2">
+                      <div key={subject.id} className="course-list-row">
+                        <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                              <span className="text-sm font-semibold text-slate-900 truncate">{subject.subjectName}</span>
-                              <span className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${colorClass}`}>{subject.subjectType}</span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="truncate text-sm font-semibold text-slate-900">{subject.subjectName}</span>
+                              <span className={`course-type-badge ${colorClass}`}>{subject.subjectType}</span>
+                              <span className="meta-chip flex-shrink-0 bg-white">{subject.credits}학점</span>
                             </div>
-                            <div className="space-y-0.5 text-xs text-slate-600">
-                              <div className="flex items-center gap-1"><User size={10} className="text-slate-400" />{subject.professor}</div>
-                              <div className="flex items-center gap-1 truncate"><Clock size={10} className="text-slate-400" />{formatTimeDisplay(subject)}</div>
+                            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-600">
+                              <span className="inline-flex min-w-0 items-center gap-1 truncate">
+                                <User size={11} className="flex-shrink-0 text-slate-400" />
+                                <span className="truncate">{subject.professor}</span>
+                              </span>
+                              <span className="meta-chip min-w-0 bg-white">
+                                <Clock size={11} className="flex-shrink-0 text-slate-400" />
+                                <span className="truncate">{formatTimeDisplay(subject)}</span>
+                              </span>
                             </div>
                             <div className="mt-1.5">
                               <a
                                 href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(subject.subjectName)}&condition=name`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 font-medium transition-colors"
+                                className="action-chip-link"
                               >
-                                <MessageSquare size={10} /> 강의평 보기
+                                <MessageSquare size={11} /> 강의평
                               </a>
                             </div>
                           </div>
-                          <div className="flex-shrink-0 text-xs sm:text-sm font-medium text-slate-700">{subject.credits}학점</div>
                         </div>
                       </div>
                     );
@@ -333,17 +355,17 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
               </div>
 
               {/* Stats - Hidden on very small screens */}
-              <div className="hidden sm:block rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-                <div className="mb-3 sm:mb-4 flex items-center gap-2 text-slate-700">
+              <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm sm:block sm:rounded-2xl">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 text-slate-700">
                   <Award size={18} className="text-slate-400" />
                   <span className="text-sm sm:text-base font-semibold text-slate-900">통계</span>
                 </div>
-                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-slate-600">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <div className="space-y-2 p-4 text-xs sm:text-sm text-slate-600">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span>총 학점</span>
                     <span className="font-semibold text-slate-900">{stats.totalCredits}학점</span>
                   </div>
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span>과목 수</span>
                     <span className="font-semibold text-slate-900">{stats.subjectCount}개</span>
                   </div>
@@ -370,16 +392,16 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           <div className="flex items-center gap-2 order-2 sm:order-1">
             <button
               onClick={handlePrevious}
-              disabled={currentCombination === 0}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentCombination === 0 || isApplying}
+              className="btn-secondary h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
             >
               <ChevronLeft size={14} /> 이전
             </button>
             <span className="text-xs sm:text-sm text-slate-500 min-w-[60px] text-center">{currentCombination + 1} / {results.combinations.length}</span>
             <button
               onClick={handleNext}
-              disabled={currentCombination === results.combinations.length - 1}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentCombination === results.combinations.length - 1 || isApplying}
+              className="btn-secondary h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
             >
               다음 <ChevronRight size={14} />
             </button>
@@ -389,15 +411,26 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination }) 
           <div className="flex gap-2 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">
             <button
               onClick={onClose}
-              className="flex-1 sm:flex-none rounded-full border border-slate-300 px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+              disabled={isApplying}
+              className="btn-secondary h-11 flex-1 text-sm sm:h-10 sm:flex-none"
             >
               닫기
             </button>
             <button
               onClick={handleSelectThis}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+              disabled={isApplying}
+              className="btn-primary h-11 flex-1 text-sm sm:h-10 sm:flex-none"
             >
-              <Check size={14} /> 이 조합 선택
+              {isApplying ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  적용 중
+                </>
+              ) : (
+                <>
+                  <Check size={14} /> 이 조합 선택
+                </>
+              )}
             </button>
           </div>
         </div>

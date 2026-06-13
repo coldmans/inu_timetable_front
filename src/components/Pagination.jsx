@@ -77,7 +77,7 @@ const Pagination = ({
           onClick={handlePrevious}
           disabled={currentPage === 0 || isLoading}
           aria-label="이전 페이지"
-          className="btn-secondary h-8 px-2.5 text-[13px]"
+          className="btn-secondary h-10 px-3 text-[13px] sm:h-8 sm:px-2.5"
         >
           <ChevronLeft size={14} />
           <span className="hidden sm:inline">이전</span>
@@ -96,7 +96,7 @@ const Pagination = ({
                 disabled={isLoading}
                 aria-label={`${page + 1}페이지`}
                 aria-current={page === currentPage ? 'page' : undefined}
-                className={`grid h-8 w-8 place-items-center rounded-lg text-[13px] font-medium tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`grid h-10 w-10 place-items-center rounded-lg text-[13px] font-medium tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:h-8 sm:w-8 ${
                   page === currentPage
                     ? 'bg-blue-600 font-semibold text-white'
                     : 'text-slate-600 hover:bg-slate-100'
@@ -112,7 +112,7 @@ const Pagination = ({
           onClick={handleNext}
           disabled={currentPage === totalPages - 1 || isLoading}
           aria-label="다음 페이지"
-          className="btn-secondary h-8 px-2.5 text-[13px]"
+          className="btn-secondary h-10 px-3 text-[13px] sm:h-8 sm:px-2.5"
         >
           <span className="hidden sm:inline">다음</span>
           <ChevronRight size={14} />

@@ -69,6 +69,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const createDevSession = async (options = {}) => {
+    const payload = await authAPI.createDevSession(options);
+    const devUser = payload?.user || payload;
+    setUser(devUser);
+    localStorage.setItem('user', JSON.stringify(devUser));
+    return payload;
+  };
+
   const logout = async () => {
     try {
       await authAPI.logout();
@@ -85,6 +93,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     register,
+    createDevSession,
     logout,
   };
 
