@@ -1488,7 +1488,21 @@ function AppContent() {
     }
     lastClickRefs.current[courseToAdd.id] = now;
 
-    // 프론트 중복/충돌 검사 및 Optimistic UI 업데이트 제거
+    if (timetable.find(course => course.id === courseToAdd.id)) {
+      showToast(`'${courseToAdd.name}' 과목은 이미 시간표에 있어요.`, 'warning');
+      return;
+    }
+
+    const conflictingCourse = timetable.find(course => checkConflict(course, courseToAdd));
+    if (conflictingCourse) {
+      showToast(`'${courseToAdd.name}' 과목은 '${conflictingCourse.name}' 과목과 시간이 겹쳐요!`, 'warning');
+      return;
+    }
+
+    const optimisticCourse = formatCourse(courseToAdd);
+    setTimetable(prev => [...prev, optimisticCourse]);
+    showToast(`'${courseToAdd.name}' 과목을 시간표에 추가했어요!`);
+
     try {
       await timetableAPI.add({
         userId: user.id,
@@ -1496,15 +1510,12 @@ function AppContent() {
         semester: CURRENT_SEMESTER,
         memo: ''
       });
-      // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
-      const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
-      const formattedTimetable = timetableData.map((item, index) => formatCourse(item.subject, index));
-      setTimetable(formattedTimetable);
-      showToast(`'${courseToAdd.name}' 과목을 시간표에 추가했어요!`);
     } catch (error) {
+      setTimetable(prev => prev.filter(course => course.id !== courseToAdd.id));
+
       // 에러 메시지 처리
       if (error.message.includes('시간') || error.message.includes('충돌') || error.message.includes('겹치')) {
-        showToast(`'${courseToAdd.name}' 과목은 기존 시간표와 시간이 겹쳐요! (서버 검사)`, 'warning');
+        showToast(`'${courseToAdd.name}' 과목은 기존 시간표와 시간이 겹쳐서 되돌렸어요.`, 'warning');
       } else if (error.message.includes('이미') || error.message.includes('중복')) {
         showToast(`'${courseToAdd.name}' 과목은 이미 시간표에 있어요.`, 'warning');
       } else {
