@@ -333,64 +333,144 @@ const formatScheduleLabel = (course) => {
   return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
 };
 
-const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
-  <li className="course-list-row">
-    <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className={`course-type-badge ${course.color} ${course.textColor}`}>
-            {course.type}
-          </span>
-          <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
-            {course.name}
-          </h3>
-          <span className="meta-chip flex-shrink-0">{course.credits}학점</span>
-        </div>
-        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-500">
-          <span className="min-w-0 flex-shrink-[2] truncate">
-            {course.professor} · {course.department}
-          </span>
-          <span className="meta-chip min-w-0 flex-shrink bg-white">
-            <Clock size={11} className="flex-shrink-0 text-slate-400" />
-            <span className="truncate">{formatScheduleLabel(course)}</span>
-          </span>
-        </div>
-      </div>
+const extractWishlistCount = (course) => {
+  const countKeys = ['wishlistCount', 'wishlist_count', 'savedCount', 'saved_count', 'wishCount', 'wish_count', 'wishlistItemCount'];
 
-      <div className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-1.5 sm:ml-3 sm:flex sm:flex-shrink-0">
-        <a
-          data-tour="course-review"
-          href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${course.name} 강의평 보기`}
-          title="에브리타임 강의평"
-          className="icon-btn h-11 w-11 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
-        >
-          <MessageSquare size={15} />
-        </a>
-        <button
-          data-tour="course-wishlist"
-          type="button"
-          onClick={() => onAddToWishlist(course)}
-          disabled={actionsDisabled}
-          className="btn-secondary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
-        >
-          <ShoppingCart size={13} /> 담기
-        </button>
-        <button
-          data-tour="course-add"
-          type="button"
-          onClick={() => onAddToTimetable(course)}
-          disabled={actionsDisabled}
-          className="btn-primary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
-        >
-          <Plus size={13} /> 추가
-        </button>
+  for (const key of countKeys) {
+    if (course[key] === undefined || course[key] === null) continue;
+
+    const count = Number(course[key]);
+    if (Number.isFinite(count)) {
+      return Math.max(0, count);
+    }
+  }
+
+  return null;
+};
+
+const getWishlistCountPreview = (course) => {
+  const source = `${course.id ?? ''}:${course.name ?? ''}:${course.department ?? ''}`;
+  let hash = 17;
+
+  for (let i = 0; i < source.length; i += 1) {
+    hash = (hash * 31 + source.charCodeAt(i)) % 9973;
+  }
+
+  return 4 + (hash % 136);
+};
+
+const getCourseWishlistCount = (course, allowPreview = false) => {
+  const realCount = extractWishlistCount(course);
+  if (realCount !== null) return realCount;
+  if (!allowPreview) return 0;
+
+  return getWishlistCountPreview(course);
+};
+
+const formatWishlistCountLabel = (count) => {
+  if (count >= 1000) {
+    return `${(Math.floor(count / 100) / 10).toLocaleString()}천명 담음`;
+  }
+
+  return `${count.toLocaleString()}명 담음`;
+};
+
+const WishlistCountChip = ({ count, variant = 'meta', className = '' }) => {
+  if (!count || count <= 0) return null;
+
+  if (variant === 'action') {
+    return (
+      <span className={`inline-flex h-7 items-center gap-1 rounded-lg bg-blue-50 px-2 text-[11px] font-semibold tabular-nums text-blue-700 ring-1 ring-inset ring-blue-100 ${className}`}>
+        <ShoppingCart size={12} className="text-blue-500" />
+        {formatWishlistCountLabel(count)}
+      </span>
+    );
+  }
+
+  return (
+    <span className={`meta-chip flex-shrink-0 bg-blue-50 text-blue-700 ring-blue-100 ${className}`}>
+      <ShoppingCart size={11} className="text-blue-500" />
+      {formatWishlistCountLabel(count)}
+    </span>
+  );
+};
+
+const CourseRow = ({
+  course,
+  onAddToTimetable,
+  onAddToWishlist,
+  actionsDisabled = false,
+  showWishlistCountPreview = false
+}) => {
+  const wishlistCount = getCourseWishlistCount(course, showWishlistCountPreview);
+
+  return (
+    <li className="course-list-row">
+      <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className={`course-type-badge ${course.color} ${course.textColor}`}>
+              {course.type}
+            </span>
+            <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
+              {course.name}
+            </h3>
+            <span className="meta-chip flex-shrink-0">{course.credits}학점</span>
+            <WishlistCountChip count={wishlistCount} className="sm:hidden" />
+          </div>
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-500">
+            <span className="min-w-0 flex-shrink-[2] truncate">
+              {course.professor} · {course.department}
+            </span>
+            <span className="meta-chip min-w-0 flex-shrink bg-white">
+              <Clock size={11} className="flex-shrink-0 text-slate-400" />
+              <span className="truncate">{formatScheduleLabel(course)}</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="sm:ml-3 sm:flex-shrink-0">
+          <div className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-1.5 sm:flex sm:justify-end">
+            {wishlistCount > 0 && (
+              <div className="col-span-3 flex justify-end sm:col-span-1">
+                <WishlistCountChip count={wishlistCount} variant="action" className="hidden sm:inline-flex" />
+              </div>
+            )}
+            <a
+              data-tour="course-review"
+              href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${course.name} 강의평 보기`}
+              title="에브리타임 강의평"
+              className="icon-btn h-11 w-11 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
+            >
+              <MessageSquare size={15} />
+            </a>
+            <button
+              data-tour="course-wishlist"
+              type="button"
+              onClick={() => onAddToWishlist(course)}
+              disabled={actionsDisabled}
+              className="btn-secondary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+            >
+              <ShoppingCart size={13} /> 담기
+            </button>
+            <button
+              data-tour="course-add"
+              type="button"
+              onClick={() => onAddToTimetable(course)}
+              disabled={actionsDisabled}
+              className="btn-primary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+            >
+              <Plus size={13} /> 추가
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </li>
-);
+    </li>
+  );
+};
 
 const CourseRowSkeleton = () => (
   <li className="course-list-row animate-pulse">
@@ -1105,6 +1185,7 @@ function AppContent() {
   const [freeDays, setFreeDays] = useState([]);
   const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
   const canCreateDevSession = import.meta.env.DEV && !isLoggedIn;
+  const showWishlistCountPreview = import.meta.env.DEV;
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -2471,6 +2552,7 @@ function AppContent() {
                       onAddToTimetable={handleAddToTimetable}
                       onAddToWishlist={handleAddToWishlist}
                       actionsDisabled={showWishlistModal}
+                      showWishlistCountPreview={showWishlistCountPreview}
                     />
                   ))}
                 </ul>

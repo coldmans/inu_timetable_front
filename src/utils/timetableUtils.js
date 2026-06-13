@@ -174,6 +174,15 @@ export const formatCourse = (subject) => {
         time: timeString,
         schedules: subject.schedules,
         classMethod: subject.classMethod,
+        wishlistCount:
+            subject.wishlistCount ??
+            subject.wishlist_count ??
+            subject.savedCount ??
+            subject.saved_count ??
+            subject.wishCount ??
+            subject.wish_count ??
+            subject.wishlistItemCount ??
+            null,
         rating: subject.rating || 4.0,
         reviews: subject.reviews || 0,
         ...colorScheme
