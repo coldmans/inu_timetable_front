@@ -1,4 +1,4 @@
-export const CURRENT_SEMESTER = '2024-2';
+export const CURRENT_SEMESTER = '2026-1';
 
 export const convertToPeriod = (timeValue) => {
     const PERIOD_START_HOUR_OFFSET = 8;

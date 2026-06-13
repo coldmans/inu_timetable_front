@@ -100,10 +100,10 @@ const WishlistModal = ({
                 <button
                   type="button"
                   onClick={() => setStep('list')}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  className="btn-secondary h-10 px-3 text-sm"
                   aria-label="위시리스트 목록으로 돌아가기"
                 >
-                  <ChevronLeft size={22} className="text-slate-600" />
+                  <ChevronLeft size={18} className="text-slate-500" />
                   <span className="hidden sm:inline">목록으로</span>
                 </button>
               )}
@@ -122,7 +122,7 @@ const WishlistModal = ({
             <button
               type="button"
               onClick={handleClose}
-              className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+              className="icon-btn h-10 w-10 flex-shrink-0"
               aria-label="위시리스트 닫기"
             >
               <X size={22} />
@@ -135,12 +135,11 @@ const WishlistModal = ({
           {step === 'list' ? (
             // --- List View ---
             wishlist.length > 0 ? (
-              <div className="space-y-3 sm:space-y-4">
+              <ul className="course-list overflow-hidden rounded-xl border border-slate-200 bg-white">
                 {wishlist.map(course => (
-                  <div
+                  <li
                     key={course.id}
-                    className={`rounded-xl p-3 sm:p-4 ring-1 transition-colors ${course.isRequired ? 'bg-rose-50/70 ring-rose-200' : 'bg-white ring-slate-200'
-                      }`}
+                    className={`course-list-row ${course.isRequired ? 'bg-rose-50/70' : ''}`}
                   >
                     {/* Course Header */}
                     <div className="mb-2 sm:mb-3 flex items-start justify-between gap-2">
@@ -154,7 +153,8 @@ const WishlistModal = ({
                       </div>
                       <button
                         onClick={() => onViewCourseDetails(course)}
-                        className="flex-shrink-0 inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                        className="icon-btn h-10 w-10 flex-shrink-0 bg-white ring-1 ring-inset ring-slate-200 sm:h-8 sm:w-auto sm:px-3"
+                        aria-label={`${course.name} 상세 정보 보기`}
                       >
                         <Info size={14} className="sm:w-4 sm:h-4" />
                         <span className="hidden sm:inline">상세보기</span>
@@ -162,63 +162,62 @@ const WishlistModal = ({
                     </div>
 
                     {/* Course Info */}
-                    <div className="mb-2 sm:mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-slate-600">
-                      <div className="flex items-center gap-1.5">
+                    <div className="mb-2 sm:mb-3 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm text-slate-600">
+                      <div className="meta-chip bg-white">
                         <Star size={14} className="text-amber-500" />
                         <span>{course.credits}학점</span>
                       </div>
-                      <span className="font-medium text-slate-700">{course.professor}</span>
+                      <span className="min-w-0 truncate font-medium text-slate-700">{course.professor}</span>
                     </div>
 
-                    <div className="mb-2 sm:mb-3 flex items-start gap-1.5 text-xs sm:text-sm text-blue-600">
-                      <Clock size={14} className="mt-0.5 flex-shrink-0" />
-                      <span className="font-medium">{formatTimeDisplay(course)}</span>
+                    <div className="mb-2 sm:mb-3 meta-chip w-fit max-w-full bg-white text-blue-600">
+                      <Clock size={14} className="flex-shrink-0" />
+                      <span className="truncate font-medium">{formatTimeDisplay(course)}</span>
                     </div>
 
                     {/* Required Checkbox */}
-                    <div className="mb-2 sm:mb-3 flex items-center gap-2">
+                    <label
+                      htmlFor={`required-modal-${course.id}`}
+                      className="mb-2 flex min-h-10 w-fit cursor-pointer items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-100 sm:mb-3 sm:text-sm"
+                    >
                       <input
                         type="checkbox"
                         id={`required-modal-${course.id}`}
                         checked={course.isRequired || false}
                         onChange={() => onToggleRequired(course.id, course.isRequired)}
-                        className="h-4 w-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                        className="h-5 w-5 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                       />
-                      <label
-                        htmlFor={`required-modal-${course.id}`}
-                        className="cursor-pointer text-xs sm:text-sm text-slate-600"
-                      >
-                        필수 포함 과목
-                      </label>
-                    </div>
+                      <span>필수 포함 과목</span>
+                    </label>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-2 sm:pt-3">
+                    <div className="grid grid-cols-[1fr_1fr_2.75rem] gap-2 border-t border-slate-200 pt-2 sm:flex sm:pt-3">
                       <a
                         href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-secondary h-9 px-3 text-xs sm:text-sm"
+                        className="btn-secondary h-11 px-3 text-xs sm:h-9 sm:text-sm"
                       >
                         <MessageSquare size={14} className="text-emerald-500" /> 강의평
                       </a>
                       <button
                         onClick={() => onAddToTimetable(course)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500"
+                        className="btn-primary h-11 px-3 text-xs sm:h-9 sm:flex-1 sm:text-sm"
                       >
                         <Plus size={14} /> 시간표 추가
                       </button>
                       <button
                         onClick={() => onRemoveFromWishlist(course.id)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                        className="icon-btn h-11 w-11 text-rose-600 ring-1 ring-inset ring-rose-200 hover:bg-rose-50 sm:h-9 sm:w-auto sm:px-3"
+                        aria-label={`${course.name} 위시리스트에서 제거`}
                       >
                         <Trash2 size={14} />
                         <span className="hidden sm:inline">제거</span>
                       </button>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <div className="rounded-xl sm:rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 sm:py-12 text-center">
                 <h3 className="text-base sm:text-lg font-medium text-slate-600">위시리스트가 비어있어요</h3>

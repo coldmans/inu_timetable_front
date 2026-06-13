@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutList, Grid } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
 
@@ -52,6 +52,7 @@ const TimetableListModal = ({
   onExportPDF
 }) => {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+  const titleId = useId();
 
   if (!isOpen) return null;
 
@@ -60,16 +61,22 @@ const TimetableListModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
       {/* Mobile: Full screen / Desktop: Centered card */}
-      <div className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
+      >
         <div className="sticky top-0 z-10 flex flex-col border-b border-slate-200 bg-white">
           <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">내 시간표</h2>
+              <h2 id={titleId} className="text-lg sm:text-2xl font-semibold text-slate-900 truncate">내 시간표</h2>
               <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">총 {courses.length}개 과목 • {totalCredits}학점</p>
             </div>
             <button
               onClick={onClose}
-              className="flex-shrink-0 rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100"
+              className="icon-btn h-10 w-10 flex-shrink-0"
+              aria-label="내 시간표 닫기"
             >
               <X size={22} />
             </button>
@@ -80,14 +87,14 @@ const TimetableListModal = ({
             <div className="flex w-full rounded-lg bg-slate-100 p-1">
               <button
                 onClick={() => setViewMode('list')}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <LayoutList size={14} />
                 목록 보기
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-md text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <Grid size={14} />
                 시간표 보기
@@ -103,20 +110,20 @@ const TimetableListModal = ({
               <p className="mt-2 text-xs sm:text-sm text-slate-400">과목을 검색해서 시간표에 담아보세요.</p>
             </div>
           ) : viewMode === 'list' ? (
-            <div className="space-y-3 sm:space-y-4">
+            <ul className="course-list overflow-hidden rounded-xl border border-slate-200 bg-white">
               {courses.map((course, index) => (
-                <div
+                <li
                   key={course.id || index}
-                  className="rounded-xl p-3 ring-1 ring-slate-200 bg-white transition-colors hover:ring-slate-300 sm:p-4"
+                  className="course-list-row"
                 >
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
                         <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{course.name}</h3>
-                        <span className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold ${course.color} ${course.textColor}`}>
+                        <span className={`course-type-badge ${course.color} ${course.textColor}`}>
                           {course.type}
                         </span>
-                        <span className="flex-shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-blue-700">
+                        <span className="meta-chip flex-shrink-0 bg-white text-blue-700">
                           {course.credits}학점
                         </span>
                       </div>
@@ -132,48 +139,52 @@ const TimetableListModal = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-blue-600">
+                      <div className="meta-chip w-fit max-w-full bg-white text-blue-600">
                         <Clock size={14} className="flex-shrink-0" />
-                        <span className="font-medium">{formatTimeDisplay(course)}</span>
+                        <span className="truncate font-medium">{formatTimeDisplay(course)}</span>
                       </div>
                     </div>
 
-                    <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                    <div className="ml-auto grid grid-cols-2 gap-1 sm:flex sm:items-center sm:gap-2">
                       <a
                         href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full p-1.5 sm:p-2 text-slate-500 transition-colors hover:bg-green-100 hover:text-green-700"
+                        className="icon-btn h-10 w-10 hover:bg-green-100 hover:text-green-700 sm:h-8 sm:w-8"
                         title="강의평 보기"
+                        aria-label={`${course.name} 강의평 보기`}
                       >
                         <MessageSquare size={14} className="sm:w-4 sm:h-4" />
                       </a>
                       <button
                         onClick={() => onViewCourseDetails(course)}
-                        className="rounded-full p-1.5 sm:p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                        className="icon-btn h-10 w-10 sm:h-8 sm:w-8"
                         title="상세 정보 보기"
+                        aria-label={`${course.name} 상세 정보 보기`}
                       >
                         <Info size={14} className="sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => onAddToWishlist(course)}
-                        className="rounded-full p-1.5 sm:p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-blue-600"
+                        className="icon-btn h-10 w-10 hover:text-blue-600 sm:h-8 sm:w-8"
                         title="위시리스트에 담기"
+                        aria-label={`${course.name} 위시리스트에 담기`}
                       >
                         <Heart size={14} className="sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => onRemoveCourse(course)}
-                        className="rounded-full p-1.5 sm:p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-rose-600"
+                        className="icon-btn h-10 w-10 hover:text-rose-600 sm:h-8 sm:w-8"
                         title="시간표에서 제거"
+                        aria-label={`${course.name} 시간표에서 제거`}
                       >
                         <Trash2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
             <div className="h-full">
               <TimetableGrid
@@ -197,7 +208,7 @@ const TimetableListModal = ({
             </div>
             <button
               onClick={onClose}
-              className="rounded-full border border-slate-300 px-4 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+              className="btn-secondary h-10 px-4 text-xs sm:px-5 sm:text-sm"
             >
               닫기
             </button>

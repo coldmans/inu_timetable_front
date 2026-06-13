@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useId } from 'react';
 import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings, CheckCircle2, XCircle, RotateCcw, SearchX } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -296,36 +296,37 @@ const formatScheduleLabel = (course) => {
 };
 
 const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled = false }) => (
-  <li className="px-4 py-3 transition-colors hover:bg-slate-50/80 sm:px-5 sm:py-2.5">
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+  <li className="course-list-row">
+    <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className={`inline-flex flex-shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${course.color} ${course.textColor}`}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className={`course-type-badge ${course.color} ${course.textColor}`}>
             {course.type}
           </span>
-          <h3 className="min-w-0 truncate text-sm font-semibold text-slate-900" title={course.name}>
+          <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
             {course.name}
           </h3>
-          <span className="flex-shrink-0 text-xs font-medium text-slate-400">{course.credits}학점</span>
+          <span className="meta-chip flex-shrink-0">{course.credits}학점</span>
         </div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
-          <span className="min-w-0 flex-shrink-[2] truncate">{course.professor} · {course.department}</span>
-          <span className="flex-shrink-0 text-slate-300">·</span>
-          <span className="flex min-w-0 flex-shrink items-center gap-1 font-medium text-slate-600">
+        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-500">
+          <span className="min-w-0 flex-shrink-[2] truncate">
+            {course.professor} · {course.department}
+          </span>
+          <span className="meta-chip min-w-0 flex-shrink bg-white">
             <Clock size={11} className="flex-shrink-0 text-slate-400" />
             <span className="truncate">{formatScheduleLabel(course)}</span>
           </span>
         </div>
       </div>
 
-      <div className="flex flex-shrink-0 items-center gap-1.5 sm:ml-3">
+      <div className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-1.5 sm:ml-3 sm:flex sm:flex-shrink-0">
         <a
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${course.name} 강의평 보기`}
           title="에브리타임 강의평"
-          className="icon-btn"
+          className="icon-btn h-11 w-11 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
         >
           <MessageSquare size={15} />
         </a>
@@ -333,7 +334,7 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
           type="button"
           onClick={() => onAddToWishlist(course)}
           disabled={actionsDisabled}
-          className="btn-secondary h-8 flex-1 px-3 text-[13px] sm:flex-none"
+          className="btn-secondary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
         >
           <ShoppingCart size={13} /> 담기
         </button>
@@ -341,7 +342,7 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
           type="button"
           onClick={() => onAddToTimetable(course)}
           disabled={actionsDisabled}
-          className="btn-primary h-8 flex-1 px-3 text-[13px] sm:flex-none"
+          className="btn-primary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
         >
           <Plus size={13} /> 추가
         </button>
@@ -351,13 +352,25 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
 );
 
 const CourseRowSkeleton = () => (
-  <li className="animate-pulse px-4 py-3 sm:px-5">
-    <div className="flex items-center gap-2">
-      <div className="h-4 w-9 rounded-md bg-slate-100" />
-      <div className="h-4 w-44 rounded-md bg-slate-200" />
-      <div className="h-3 w-10 rounded-md bg-slate-100" />
+  <li className="course-list-row animate-pulse">
+    <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-9 rounded-md bg-slate-100" />
+          <div className="h-5 w-44 rounded-md bg-slate-200" />
+          <div className="h-5 w-10 rounded-md bg-slate-100" />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="h-5 w-24 rounded-md bg-slate-100 sm:w-36" />
+          <div className="h-5 w-32 rounded-md bg-slate-100 sm:w-48" />
+        </div>
+      </div>
+      <div className="grid grid-cols-[2.75rem_1fr_1fr] gap-1.5 sm:flex">
+        <div className="h-11 rounded-lg bg-slate-100 sm:h-8 sm:w-8" />
+        <div className="h-11 rounded-lg bg-slate-100 sm:h-8 sm:w-14" />
+        <div className="h-11 rounded-lg bg-slate-200 sm:h-8 sm:w-14" />
+      </div>
     </div>
-    <div className="mt-2 h-3 w-56 rounded-md bg-slate-100" />
   </li>
 );
 
@@ -374,16 +387,110 @@ const EmptyResults = ({ onReset }) => (
   </div>
 );
 
-const FilterSelect = ({ value, onChange, active, label, disabled = false, children }) => {
+const developerNoteEntries = [
+  {
+    date: '2026.06.13',
+    title: '검색 화면과 온라인 과목 정리',
+    items: [
+      '검색 결과를 한 줄 리스트 중심으로 정리했습니다.',
+      '온라인 과목을 필터로 찾을 수 있게 하고 표시 문구를 정리했습니다.',
+      '모바일 버튼, 위시리스트, 조합 결과 화면의 터치 영역을 다듬었습니다.',
+    ],
+  },
+  {
+    date: '2026.06.12',
+    title: '로그인과 과목 데이터 관리 개선',
+    items: [
+      '로그인 세션과 개인 시간표 접근 흐름을 더 안전하게 정리했습니다.',
+      '관리자 과목 업로드 흐름을 분리해 다음 학기 데이터 교체를 준비했습니다.',
+      '과목 검색 속도를 안정적으로 유지하기 위한 캐시 적용 방향을 검증했습니다.',
+    ],
+  },
+];
+
+const upcomingDeveloperNotes = [
+  '회원 탈퇴와 개인정보 정리 흐름 검토',
+  '다음 학기 과목 import 전 semester 데이터 정리',
+];
+
+const DeveloperNotesModal = ({ onClose }) => {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="developer-notes-title">
+      <div className="modal-panel max-h-[88vh] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-w-xl sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold text-blue-600">서비스 개선 기록</p>
+            <h2 id="developer-notes-title" className="mt-1 text-lg font-bold text-slate-900">방학 개발 노트</h2>
+          </div>
+          <button type="button" onClick={onClose} className="icon-btn h-9 w-9" aria-label="개발 노트 닫기">
+            <X size={17} />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto px-5 py-4">
+          <ol className="space-y-4">
+            {developerNoteEntries.map((entry) => (
+              <li key={entry.date} className="grid grid-cols-[5.25rem_minmax(0,1fr)] gap-3">
+                <time className="pt-0.5 text-xs font-semibold tabular-nums text-slate-400">{entry.date}</time>
+                <div className="border-l border-slate-200 pl-4">
+                  <h3 className="text-sm font-bold text-slate-900">{entry.title}</h3>
+                  <ul className="mt-2 space-y-1.5">
+                    {entry.items.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-relaxed text-slate-600">
+                        <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0 text-blue-500" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h3 className="text-sm font-bold text-slate-900">다음에 볼 것</h3>
+            <ul className="mt-2 space-y-1.5">
+              {upcomingDeveloperNotes.map((item) => (
+                <li key={item} className="flex gap-2 text-sm leading-relaxed text-slate-500">
+                  <Info size={14} className="mt-0.5 flex-shrink-0 text-slate-400" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FilterSelect = ({ value, onChange, active, label, disabled = false, optionWrap = false, children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const selectId = useId();
   const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const optionRefs = useRef([]);
   const options = React.Children.toArray(children)
     .filter(React.isValidElement)
     .map(child => ({
       value: child.props.value,
       label: child.props.children
     }));
-  const selectedOption = options.find(option => String(option.value) === String(value)) || options[0];
+  const selectedIndex = options.findIndex(option => String(option.value) === String(value));
+  const selectedOption = options[selectedIndex] || options[0];
+  const listboxId = `${selectId}-listbox`;
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -408,6 +515,16 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, childr
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const nextIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    setActiveIndex(nextIndex);
+    requestAnimationFrame(() => {
+      optionRefs.current[nextIndex]?.focus();
+    });
+  }, [isOpen, selectedIndex]);
+
   const handleSelect = (nextValue) => {
     if (disabled) return;
     setIsOpen(false);
@@ -416,20 +533,77 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, childr
     }
   };
 
+  const focusOption = (nextIndex) => {
+    const normalizedIndex = (nextIndex + options.length) % options.length;
+    setActiveIndex(normalizedIndex);
+    optionRefs.current[normalizedIndex]?.focus();
+  };
+
+  const handleTriggerKeyDown = (event) => {
+    if (disabled) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsOpen(true);
+    }
+  };
+
+  const handleOptionKeyDown = (event, index, optionValue) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusOption(index + 1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusOption(index - 1);
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusOption(0);
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusOption(options.length - 1);
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSelect(optionValue);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-label={label}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
         disabled={disabled}
+        onKeyDown={handleTriggerKeyDown}
         onClick={() => {
           if (!disabled) {
             setIsOpen(prev => !prev);
           }
         }}
-        className={`field flex items-center justify-between rounded-xl bg-slate-50/70 pr-3 text-left text-[13px] shadow-inner shadow-slate-100/60 hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none ${active && !disabled ? 'border-blue-200 bg-blue-50/80 font-medium text-blue-700 shadow-blue-100/50' : 'text-slate-600'}`}
+        className={`field select-trigger ${active && !disabled ? 'select-trigger-active' : 'text-slate-600'}`}
       >
         <span className="truncate">{selectedOption?.label}</span>
         <ChevronDown
@@ -439,21 +613,29 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, childr
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5">
-          <div role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1">
-            {options.map(option => {
+        <div className={`select-menu ${optionWrap ? 'select-menu-wide' : ''}`}>
+          <div id={listboxId} role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1">
+            {options.map((option, optionIndex) => {
               const isSelected = String(option.value) === String(value);
+              const isActive = optionIndex === activeIndex;
 
               return (
                 <button
                   key={option.value}
+                  ref={(element) => {
+                    optionRefs.current[optionIndex] = element;
+                  }}
                   type="button"
                   role="option"
                   aria-selected={isSelected}
+                  tabIndex={isActive ? 0 : -1}
+                  title={typeof option.label === 'string' ? option.label : undefined}
                   onClick={() => handleSelect(option.value)}
-                  className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-[13px] transition-colors ${isSelected ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                  onKeyDown={(event) => handleOptionKeyDown(event, optionIndex, option.value)}
+                  className={`select-option ${isSelected ? 'select-option-active' : ''}`}
                 >
-                  <span className="truncate">{option.label}</span>
+                  <span className={optionWrap ? 'break-keep leading-snug' : 'truncate'}>{option.label}</span>
+                  {isSelected && <CheckCircle2 size={14} className="flex-shrink-0 text-blue-500" />}
                 </button>
               );
             })}
@@ -466,7 +648,7 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, childr
 
 // 메인 애플리케이션 컴포넌트
 function AppContent() {
-  const { user, isLoggedIn, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoggedIn, isLoading: authLoading, logout, createDevSession } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
@@ -505,10 +687,13 @@ function AppContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNewUserTutorial, setShowNewUserTutorial] = useState(false);
+  const [isCreatingDevSession, setIsCreatingDevSession] = useState(false);
+  const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
 
   // 시간표 조합 결과
   const [combinationResults, setCombinationResults] = useState(null);
   const [showCombinationResults, setShowCombinationResults] = useState(false);
+  const [isApplyingCombination, setIsApplyingCombination] = useState(false);
 
   // 목표 학점 설정
   const [targetCredits, setTargetCredits] = useState(18);
@@ -516,6 +701,7 @@ function AppContent() {
   // 희망 공강 요일 설정
   const [freeDays, setFreeDays] = useState([]);
   const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
+  const canCreateDevSession = import.meta.env.DEV && !isLoggedIn;
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -990,6 +1176,14 @@ function AppContent() {
 
   // 시간표 조합 선택 핸들러
   const handleSelectCombination = async (selectedCombination) => {
+    if (!user) {
+      showToast('로그인 후 시간표 조합을 적용할 수 있어요.', 'warning');
+      return;
+    }
+
+    if (isApplyingCombination) return;
+
+    setIsApplyingCombination(true);
     try {
       console.log('🔄 조합 선택:', selectedCombination);
 
@@ -1023,12 +1217,40 @@ function AppContent() {
       showToast('시간표에 선택한 조합이 적용되었습니다!');
     } catch (error) {
       console.error('❌ 조합 선택 오류:', error);
-      showToast('시간표 적용 중 오류가 발생했습니다.', 'warning');
+      try {
+        const latestTimetable = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
+        const latestCourses = latestTimetable.map((subject, index) => formatCourse(subject, index));
+        setTimetable(latestCourses);
+        showToast('시간표 적용 중 오류가 발생해 서버 상태로 다시 동기화했어요.', 'warning');
+      } catch (syncError) {
+        console.error('❌ 시간표 재동기화 실패:', syncError);
+        showToast('시간표 적용 중 오류가 발생했습니다. 새로고침 후 다시 확인해주세요.', 'warning');
+      }
+    } finally {
+      setIsApplyingCombination(false);
     }
   };
 
   const handleLogin = () => {
     setShowAuthModal(true);
+  };
+
+  const handleCreateDevSession = async () => {
+    if (isCreatingDevSession) return;
+
+    setIsCreatingDevSession(true);
+    try {
+      const payload = await createDevSession({
+        semester: CURRENT_SEMESTER,
+        seedWishlist: true,
+      });
+      const seededCount = payload?.seededWishlistCount || payload?.wishlistCount || 0;
+      showToast(`디자인 QA 세션을 열었어요. 위시리스트 ${seededCount}개를 준비했습니다.`);
+    } catch (error) {
+      showToast(`디자인 QA 세션 생성 실패: ${error.message}`, 'warning');
+    } finally {
+      setIsCreatingDevSession(false);
+    }
   };
 
   const handleLogout = () => {
@@ -1451,6 +1673,7 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
+  const hasBlockingOverlay = showWishlistModal || showNewUserTutorial || showDeveloperNotes;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -1500,36 +1723,42 @@ function AppContent() {
         onClearAll={handleClearAllTimetable}
         onExportPDF={handleExportTimetablePDF}
       />
+      {showDeveloperNotes && (
+        <DeveloperNotesModal onClose={() => setShowDeveloperNotes(false)} />
+      )}
 
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
           results={combinationResults}
           onClose={() => setShowCombinationResults(false)}
           onSelectCombination={handleSelectCombination}
+          isApplying={isApplyingCombination}
         />
       )}
 
       <header
-        aria-hidden={showWishlistModal || showNewUserTutorial}
-        inert={showWishlistModal || showNewUserTutorial ? '' : undefined}
+        aria-hidden={hasBlockingOverlay}
+        inert={hasBlockingOverlay ? '' : undefined}
         className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur"
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
-          <a href="/" className="flex min-w-0 items-center gap-2">
-            <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-blue-600 text-white shadow-sm">
-              <CalendarDays size={17} />
-            </span>
-            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">INU 시간표</span>
-          </a>
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
+            <a href="/" className="flex flex-shrink-0 items-center gap-2">
+              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-blue-600 text-white shadow-sm">
+                <CalendarDays size={17} />
+              </span>
+              <span className="hidden text-[15px] font-bold tracking-tight text-slate-900 sm:inline">INU 시간표</span>
+            </a>
+          </div>
           <div className="flex flex-shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={handleShowTimetableList}
-              className="icon-btn relative lg:hidden"
+              className="icon-btn relative h-10 w-10 lg:hidden"
               title="내 시간표 보기"
               aria-label={`내 시간표 보기${timetable.length > 0 ? `, ${timetable.length}개 과목` : ''}`}
             >
-              <CalendarDays size={15} />
+              <CalendarDays size={16} />
               {timetable.length > 0 && (
                 <span className="absolute -right-1 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
                   {timetable.length}
@@ -1542,12 +1771,12 @@ function AppContent() {
                   <p className="text-[13px] font-semibold leading-tight text-slate-900">{user.nickname}님</p>
                   <p className="text-[11px] leading-tight text-slate-500">{user.major} {user.grade}학년</p>
                 </div>
-                <button onClick={handleLogout} className="btn-ghost h-8 px-2.5 text-[13px]">
+                <button onClick={handleLogout} className="btn-ghost h-10 px-3 text-[13px] md:h-8 md:px-2.5">
                   <LogOut size={14} /> 로그아웃
                 </button>
               </>
             ) : (
-              <button onClick={handleLogin} className="btn-primary h-8 px-3 text-[13px]">
+              <button onClick={handleLogin} className="btn-primary h-10 px-3 text-[13px] md:h-8">
                 <LogIn size={14} /> 로그인
               </button>
             )}
@@ -1556,10 +1785,39 @@ function AppContent() {
       </header>
 
       <div
-        aria-hidden={showWishlistModal || showNewUserTutorial}
-        inert={showWishlistModal || showNewUserTutorial ? '' : undefined}
+        aria-hidden={hasBlockingOverlay}
+        inert={hasBlockingOverlay ? '' : undefined}
         className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
+        <>
+        {canCreateDevSession && (
+          <section className="mb-3 flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-blue-900 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 ring-1 ring-blue-200">
+                <Settings size={15} />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">디자인 QA 세션</p>
+                <p className="truncate text-xs text-blue-700">테스트 사용자 · 샘플 위시리스트</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCreateDevSession}
+              disabled={isCreatingDevSession}
+              className="btn-primary h-10 w-full bg-blue-700 px-4 text-sm hover:bg-blue-600 sm:w-auto"
+            >
+              {isCreatingDevSession ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  준비 중
+                </>
+              ) : (
+                '테스트 세션 시작'
+              )}
+            </button>
+          </section>
+        )}
 
         {/* 검색 바 */}
         <section aria-label="과목 검색" className="card p-3 md:p-4">
@@ -1591,6 +1849,7 @@ function AppContent() {
               label="학과 필터"
               value={filters.department}
               active={filters.department !== '전체'}
+              optionWrap
               onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
             >
               {departments.map(dept => (
@@ -1703,7 +1962,7 @@ function AppContent() {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={!canGoToPreviousPage}
                       aria-label="이전 페이지"
-                      className="icon-btn h-7 w-7 disabled:opacity-40"
+                      className="icon-btn h-10 w-10 disabled:opacity-40 sm:h-7 sm:w-7"
                     >
                       <ChevronLeft size={15} />
                     </button>
@@ -1715,7 +1974,7 @@ function AppContent() {
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={!canGoToNextPage}
                       aria-label="다음 페이지"
-                      className="icon-btn h-7 w-7 disabled:opacity-40"
+                      className="icon-btn h-10 w-10 disabled:opacity-40 sm:h-7 sm:w-7"
                     >
                       <ChevronRight size={15} />
                     </button>
@@ -1724,7 +1983,7 @@ function AppContent() {
               </div>
 
               {isLoading ? (
-                <ul aria-label="검색 결과 불러오는 중" className="divide-y divide-slate-100">
+                <ul aria-label="검색 결과 불러오는 중" className="course-list">
                   {Array.from({ length: 8 }).map((_, index) => (
                     <CourseRowSkeleton key={index} />
                   ))}
@@ -1734,7 +1993,7 @@ function AppContent() {
               ) : (
                 <ul
                   ref={resultsListRef}
-                  className="divide-y divide-slate-100 lg:max-h-[calc(100vh-22rem)] lg:min-h-[320px] lg:overflow-y-auto lg:overscroll-contain"
+                  className="course-list lg:max-h-[calc(100vh-22rem)] lg:min-h-[320px] lg:overflow-y-auto lg:overscroll-contain"
                 >
                   {filteredCourses.map(course => (
                     <CourseRow
@@ -1800,7 +2059,7 @@ function AppContent() {
                           setWishlistModalMode('list');
                           setShowWishlistModal(true);
                         }}
-                        className="icon-btn"
+                        className="icon-btn h-10 w-10"
                         title="위시리스트 확장 보기"
                         aria-label="위시리스트 확장 보기"
                       >
@@ -1901,9 +2160,14 @@ function AppContent() {
             </div>
           </aside>
         </div>
+        </>
       </div>
       {/* Footer */}
-      <footer className="mt-12 border-t border-slate-200 bg-white">
+      <footer
+        aria-hidden={hasBlockingOverlay}
+        inert={hasBlockingOverlay ? '' : undefined}
+        className="mt-12 border-t border-slate-200 bg-white"
+      >
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 sm:flex-row sm:items-center sm:justify-between md:px-8">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <span className="grid h-6 w-6 place-items-center rounded-md bg-blue-600 text-white">
@@ -1913,6 +2177,13 @@ function AppContent() {
             <span className="text-xs text-slate-400">인천대학교 비공식 서비스 · © 2026</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowDeveloperNotes(true)}
+              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+            >
+              <Info size={13} /> 개발 노트
+            </button>
             <a href="/admin/subjects" className="btn-ghost h-8 px-2.5 text-xs text-slate-500">
               <Settings size={13} /> 과목 관리
             </a>

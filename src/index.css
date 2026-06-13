@@ -5,7 +5,7 @@
 @layer base {
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
 
   ::selection {
@@ -15,11 +15,39 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 active:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none;
+    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-sm font-semibold text-white ring-1 ring-inset ring-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:bg-blue-300 disabled:shadow-none disabled:ring-transparent;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-blue-500;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    @apply bg-blue-700;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+    transform: translateY(0);
   }
 
   .btn-secondary {
-    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply bg-slate-50 text-slate-900;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary:active:not(:disabled) {
+    @apply bg-slate-100;
+    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+    transform: translateY(0);
   }
 
   .btn-ghost {
@@ -35,11 +63,70 @@
   }
 
   .card {
-    @apply rounded-2xl bg-white ring-1 ring-slate-200;
+    @apply rounded-2xl bg-white shadow-sm shadow-slate-900/5 ring-1 ring-slate-200;
+  }
+
+  .course-list {
+    @apply divide-y divide-slate-100;
+  }
+
+  .course-list-row {
+    @apply relative px-4 py-3 transition-colors sm:px-5 sm:py-2.5;
+  }
+
+  .course-list-row::before {
+    content: '';
+    @apply absolute bottom-2 left-0 top-2 w-0.5 rounded-r-full bg-blue-500 opacity-0 transition-opacity;
+  }
+
+  .course-type-badge {
+    @apply inline-flex flex-shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ring-black/5;
+  }
+
+  .meta-chip {
+    @apply inline-flex max-w-full items-center gap-1 rounded-md bg-slate-50 px-1.5 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200/80;
+  }
+
+  .action-chip-link {
+    @apply inline-flex h-7 items-center justify-center gap-1 rounded-md bg-emerald-50 px-2 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-100 transition-colors hover:bg-emerald-100 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500;
+  }
+
+  .select-trigger {
+    @apply flex h-11 items-center justify-between rounded-xl bg-slate-50/70 pr-3 text-left text-[13px] shadow-inner shadow-slate-100/60 hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none sm:h-9;
+  }
+
+  .select-trigger-active {
+    @apply border-blue-200 bg-blue-50/80 font-medium text-blue-700 shadow-blue-100/50;
+  }
+
+  .select-menu {
+    @apply absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5;
+  }
+
+  .select-menu-wide {
+    @apply min-w-[16rem] max-w-[calc(100vw-2rem)];
+  }
+
+  .select-option {
+    @apply flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[13px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900;
+  }
+
+  .select-option-active {
+    @apply bg-blue-50 font-semibold text-blue-700;
   }
 
   .modal-panel {
     animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .course-list-row:hover {
+    background: linear-gradient(90deg, rgba(239, 246, 255, 0.82), rgba(255, 255, 255, 0));
+  }
+
+  .course-list-row:hover::before {
+    @apply opacity-100;
   }
 }
 
@@ -60,5 +147,12 @@
   ::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled) {
+    transform: none;
   }
 }
