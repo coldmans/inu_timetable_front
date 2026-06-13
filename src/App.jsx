@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, useId } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings, CheckCircle2, XCircle, RotateCcw, SearchX } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings, CheckCircle2, XCircle, RotateCcw, SearchX, Trash2, UserCircle } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -21,7 +21,9 @@ import {
   parseTime,
   parseTimeString,
   checkConflict,
-  departments,
+  departmentGroups,
+  getDepartmentFilterParams,
+  getDepartmentFilterSelection,
   courseTypes,
   grades,
   filterDaysOfWeek,
@@ -396,6 +398,7 @@ const developerNoteEntries = [
       '온라인 과목을 필터로 찾을 수 있게 하고 표시 문구를 정리했습니다.',
       '모바일 버튼, 위시리스트, 조합 결과 화면의 사용성을 다듬었습니다.',
       '사이트 footer에서 확인할 수 있는 개발자 노트를 추가했습니다.',
+      '회원 탈퇴 시 계정은 익명화하고 누적 이용 통계는 보존하도록 정리했습니다.',
     ],
   },
   {
@@ -472,7 +475,7 @@ const developerNoteEntries = [
 ];
 
 const upcomingDeveloperNotes = [
-  '회원 탈퇴와 계정 설정 화면 정리',
+  '계정 설정 화면 세부 정리',
   '다음 학기 과목 업로드와 학기 전환 기능',
   '인기 과목과 위시리스트 기반 통계',
   '시간표 공유와 이미지 내보내기 개선',
@@ -711,9 +714,302 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
   );
 };
 
+const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
+  const selection = getDepartmentFilterSelection(value);
+  const active = value !== '전체';
+  const selectedGroup = useMemo(
+    () => departmentGroups.find(group => group.id === value || group.departments.includes(value)),
+    [value]
+  );
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const visibleGroups = useMemo(() => (
+    departmentGroups
+      .map(group => {
+        const groupMatches = group.label.toLowerCase().includes(normalizedQuery);
+        const visibleDepartments = !normalizedQuery || groupMatches
+          ? group.departments
+          : group.departments.filter(department => department.toLowerCase().includes(normalizedQuery));
+
+        return {
+          ...group,
+          departments: visibleDepartments,
+          groupMatches
+        };
+      })
+      .filter(group => !normalizedQuery || group.groupMatches || group.departments.length > 0)
+  ), [normalizedQuery]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    if (selectedGroup) {
+      setExpandedGroupIds(prev => {
+        const next = new Set(prev);
+        next.add(selectedGroup.id);
+        return next;
+      });
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, selectedGroup]);
+
+  const handleSelect = (nextValue) => {
+    onChange({ target: { value: nextValue } });
+    setIsOpen(false);
+    setQuery('');
+  };
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroupIds(prev => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        data-testid="department-filter-trigger"
+        aria-label="학과/전공 필터"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen(true)}
+        className={`field select-trigger ${active ? 'select-trigger-active' : 'text-slate-600'}`}
+      >
+        <span className="truncate">{selection.label}</span>
+        <ChevronDown size={14} className={`ml-2 flex-shrink-0 ${active ? 'text-blue-500' : 'text-slate-400'}`} />
+      </button>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div
+            role="dialog"
+            data-testid="department-filter-modal"
+            aria-modal="true"
+            aria-labelledby="department-filter-title"
+            className="modal-panel flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-h-[82vh] sm:max-w-xl sm:rounded-2xl"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 id="department-filter-title" className="text-lg font-bold tracking-tight text-slate-900">학과/전공</h2>
+              </div>
+              <button type="button" onClick={() => setIsOpen(false)} className="icon-btn h-9 w-9" aria-label="학과/전공 창 닫기">
+                <X size={17} />
+              </button>
+            </div>
+
+            <div className="border-b border-slate-100 px-4 py-3 sm:px-5">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="학과/전공 검색"
+                  className="field h-10 pl-9"
+                  autoFocus
+                />
+              </div>
+              <button
+                type="button"
+                data-testid="department-filter-all"
+                onClick={() => handleSelect('전체')}
+                className={`mt-2.5 flex h-10 w-full items-center justify-between rounded-xl px-3 text-left text-sm transition-colors ${value === '전체' ? 'bg-blue-50 font-semibold text-blue-700 ring-1 ring-blue-100' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
+              >
+                <span>전체</span>
+                {value === '전체' && <CheckCircle2 size={15} className="text-blue-500" />}
+              </button>
+              {majorShortcuts.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {majorShortcuts.map(shortcut => (
+                    <button
+                      key={`${shortcut.type}-${shortcut.department}`}
+                      type="button"
+                      onClick={() => handleSelect(shortcut.department)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${value === shortcut.department ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}
+                    >
+                      {shortcut.label} · {shortcut.department}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 py-2 sm:px-4">
+              {visibleGroups.length === 0 ? (
+                <div className="px-3 py-10 text-center text-sm text-slate-500">
+                  검색 결과가 없습니다.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {visibleGroups.map(group => {
+                    const isExpanded = Boolean(normalizedQuery) || expandedGroupIds.has(group.id);
+                    const isGroupSelected = value === group.id;
+
+                    return (
+                      <div key={group.id} className="py-1">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(group.id)}
+                            className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 text-left text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+                            aria-expanded={isExpanded}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown size={15} className="flex-shrink-0 text-slate-400" />
+                            ) : (
+                              <ChevronRight size={15} className="flex-shrink-0 text-slate-400" />
+                            )}
+                            <span className="truncate">{group.label}</span>
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="department-group-select"
+                            data-department-group={group.label}
+                            onClick={() => handleSelect(group.id)}
+                            className={`h-8 flex-shrink-0 rounded-lg px-2.5 text-xs font-semibold transition-colors ${isGroupSelected ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                          >
+                            전체
+                          </button>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="ml-7 border-l border-slate-100 pl-2">
+                            {group.departments.map(department => {
+                              const isSelected = value === department;
+
+                              return (
+                                <button
+                                  key={department}
+                                  type="button"
+                                  data-testid="department-option"
+                                  data-department={department}
+                                  onClick={() => handleSelect(department)}
+                                  className={`flex min-h-[42px] w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                                >
+                                  <span className="break-keep leading-snug">{department}</span>
+                                  {isSelected && <CheckCircle2 size={15} className="flex-shrink-0 text-blue-500" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const AccountModal = ({ user, onClose, onLogout, onWithdraw, isWithdrawing }) => {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isWithdrawing) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isWithdrawing, onClose]);
+
+  const displayName = user?.nickname || user?.username || '사용자';
+  const displayMajors = Array.isArray(user?.majors) && user.majors.length > 0
+    ? user.majors
+    : (user?.major ? [{ type: 'PRIMARY', label: '전공', department: user.major }] : []);
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+      <div className="modal-panel w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-w-md sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold text-blue-600">내 계정</p>
+            <h2 id="account-modal-title" className="mt-1 text-lg font-bold text-slate-900">{displayName}님</h2>
+            <p className="mt-1 text-sm text-slate-500">{user?.major || '전공 미입력'} {user?.grade ? `${user.grade}학년` : ''}</p>
+            {displayMajors.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {displayMajors.map(major => (
+                  <span key={`${major.type}-${major.department}`} className="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                    {major.label || '전공'} · {major.department}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="button" onClick={onClose} disabled={isWithdrawing} className="icon-btn h-9 w-9" aria-label="계정 창 닫기">
+            <X size={17} />
+          </button>
+        </div>
+        <div className="space-y-4 px-5 py-5">
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={isWithdrawing}
+            className="btn-secondary h-11 w-full justify-center rounded-xl"
+          >
+            <LogOut size={15} /> 로그아웃
+          </button>
+
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <div className="flex gap-3">
+              <span className="mt-0.5 grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-white text-rose-600 ring-1 ring-rose-200">
+                <AlertTriangle size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-rose-900">회원 탈퇴</p>
+                <p className="mt-1 text-sm leading-6 text-rose-800">
+                  로그인 정보는 익명화되고 다시 로그인할 수 없습니다. 과목 선택 기록은 누적 이용자와 기능 개선 통계용으로만 남습니다.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onWithdraw}
+              disabled={isWithdrawing}
+              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-rose-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:bg-rose-300"
+            >
+              <Trash2 size={15} /> {isWithdrawing ? '탈퇴 처리 중...' : '회원 탈퇴'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 메인 애플리케이션 컴포넌트
 function AppContent() {
-  const { user, isLoggedIn, isLoading: authLoading, logout, createDevSession } = useAuth();
+  const { user, isLoggedIn, isLoading: authLoading, logout, withdraw, createDevSession } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
@@ -738,6 +1034,7 @@ function AppContent() {
 
   const timetableRef = useRef(null);
   const resultsListRef = useRef(null);
+  const courseRequestSeqRef = useRef(0);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
@@ -754,6 +1051,8 @@ function AppContent() {
   const [showNewUserTutorial, setShowNewUserTutorial] = useState(false);
   const [isCreatingDevSession, setIsCreatingDevSession] = useState(false);
   const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   // 시간표 조합 결과
   const [combinationResults, setCombinationResults] = useState(null);
@@ -777,11 +1076,6 @@ function AppContent() {
 
 
 
-  // 과목 검색 및 로드
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
   // 사용자 데이터 로드 - 인증 로딩 완료 후 실행
   useEffect(() => {
     console.log('useEffect 실행 - authLoading:', authLoading, 'user:', user);
@@ -794,16 +1088,21 @@ function AppContent() {
 
 
   const loadCourses = async (page = 0) => {
+    const requestSeq = courseRequestSeqRef.current + 1;
+    courseRequestSeqRef.current = requestSeq;
+    const isLatestRequest = () => requestSeq === courseRequestSeqRef.current;
+
     try {
       setIsLoading(true);
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
       const gradeFilter = filters.grade === '전체' ? undefined :
         parseInt(filters.grade.replace('학년', ''));
       const isUnassignedTimeFilter = filters.dayOfWeek === UNASSIGNED_TIME_FILTER;
+      const departmentFilterParams = getDepartmentFilterParams(filters.department);
 
       const response = await subjectAPI.filter({
         subjectName: searchTerm,
-        department: filters.department,
+        ...departmentFilterParams,
         subjectType: filters.subjectType,
         grade: gradeFilter,
         credits: filters.credits === '전체' ? undefined : parseInt(filters.credits.replace('학점', '')),
@@ -812,6 +1111,10 @@ function AppContent() {
         endTime: filters.endTime === '전체' || isUnassignedTimeFilter ? undefined : filters.endTime,
         unassignedTime: isUnassignedTimeFilter ? true : undefined
       }, page, pageSize);
+
+      if (!isLatestRequest()) {
+        return;
+      }
 
       // 페이징 응답 처리
       console.log('📥 API 응답 데이터:', response);
@@ -834,6 +1137,10 @@ function AppContent() {
         setCurrentPage(0);
       }
     } catch (error) {
+      if (!isLatestRequest()) {
+        return;
+      }
+
       console.log('서버 연결 실패, Mock 데이터 사용:', error.message);
       // Fallback to comprehensive mock data if server is not available
       const mockData = [
@@ -869,7 +1176,9 @@ function AppContent() {
       setTotalElements(mockData.length);
       setCurrentPage(page);
     } finally {
-      setIsLoading(false);
+      if (isLatestRequest()) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -934,6 +1243,30 @@ function AppContent() {
 
   const defaultFilters = { department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' };
   const activeFilterCount = Object.values(filters).filter(value => value !== '전체').length;
+  const userMajorShortcuts = useMemo(() => {
+    if (!user) {
+      return [];
+    }
+
+    const savedMajors = Array.isArray(user.majors) && user.majors.length > 0
+      ? user.majors
+      : (user.major ? [{ type: 'PRIMARY', label: '전공', department: user.major }] : []);
+
+    const seenDepartments = new Set();
+    return savedMajors.reduce((shortcuts, item) => {
+      if (!item?.department || seenDepartments.has(item.department)) {
+        return shortcuts;
+      }
+
+      seenDepartments.add(item.department);
+      shortcuts.push({
+          type: item.type || item.label || item.department,
+          label: item.label || (item.type === 'DOUBLE' ? '복수전공' : item.type === 'MINOR' ? '부전공' : '전공'),
+          department: item.department,
+      });
+      return shortcuts;
+    }, []);
+  }, [user]);
 
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -1318,13 +1651,37 @@ function AppContent() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const clearPersonalState = () => {
     setWishlist([]);
     setTimetable([]);
-    // 필터 초기화
     setFilters({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+    setShowWishlistModal(false);
+    setShowTimetableListModal(false);
+    setShowCombinationResults(false);
+    setCombinationResults(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    clearPersonalState();
+    setShowAccountModal(false);
     showToast('로그아웃되었습니다.');
+  };
+
+  const handleWithdraw = async () => {
+    if (isWithdrawing) return;
+
+    setIsWithdrawing(true);
+    try {
+      await withdraw();
+      clearPersonalState();
+      setShowAccountModal(false);
+      showToast('회원탈퇴가 완료되었습니다. 계정 정보는 익명화되었어요.');
+    } catch (error) {
+      showToast(`회원탈퇴 실패: ${error.message}`, 'warning');
+    } finally {
+      setIsWithdrawing(false);
+    }
   };
 
   // 시간표에서 과목 제거
@@ -1738,7 +2095,8 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showNewUserTutorial || showDeveloperNotes;
+  const hasBlockingOverlay = showWishlistModal || showNewUserTutorial || showDeveloperNotes || showAccountModal;
+  const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -1792,6 +2150,16 @@ function AppContent() {
         <DeveloperNotesModal onClose={() => setShowDeveloperNotes(false)} />
       )}
 
+      {showAccountModal && (
+        <AccountModal
+          user={user}
+          onClose={() => setShowAccountModal(false)}
+          onLogout={handleLogout}
+          onWithdraw={handleWithdraw}
+          isWithdrawing={isWithdrawing}
+        />
+      )}
+
       {showCombinationResults && combinationResults && (
         <TimetableCombinationResults
           results={combinationResults}
@@ -1833,11 +2201,13 @@ function AppContent() {
             {isLoggedIn ? (
               <>
                 <div className="hidden text-right md:block">
-                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{user.nickname}님</p>
-                  <p className="text-[11px] leading-tight text-slate-500">{user.major} {user.grade}학년</p>
+                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{userDisplayName}님</p>
+                  <p className="text-[11px] leading-tight text-slate-500">
+                    {user?.major || '전공 미입력'} {user?.grade ? `${user.grade}학년` : ''}
+                  </p>
                 </div>
-                <button onClick={handleLogout} className="btn-ghost h-10 px-3 text-[13px] md:h-8 md:px-2.5">
-                  <LogOut size={14} /> 로그아웃
+                <button onClick={() => setShowAccountModal(true)} className="btn-ghost h-10 px-3 text-[13px] md:h-8 md:px-2.5">
+                  <UserCircle size={14} /> 계정
                 </button>
               </>
             ) : (
@@ -1910,17 +2280,11 @@ function AppContent() {
           </div>
 
           <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
-            <FilterSelect
-              label="학과 필터"
+            <DepartmentFilterButton
               value={filters.department}
-              active={filters.department !== '전체'}
-              optionWrap
+              majorShortcuts={userMajorShortcuts}
               onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-            >
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept === '전체' ? '학과' : dept}</option>
-              ))}
-            </FilterSelect>
+            />
             <FilterSelect
               label="이수구분 필터"
               value={filters.subjectType}
@@ -2009,9 +2373,9 @@ function AppContent() {
         </section>
 
         {/* Main Content Area */}
-        <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-3 lg:gap-6">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:gap-6">
           {/* Left: Course List */}
-          <main className="lg:col-span-2">
+          <main>
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2">
@@ -2058,7 +2422,7 @@ function AppContent() {
               ) : (
                 <ul
                   ref={resultsListRef}
-                  className="course-list lg:max-h-[calc(100vh-22rem)] lg:min-h-[320px] lg:overflow-y-auto lg:overscroll-contain"
+                  className="course-list lg:max-h-[calc(100vh-18rem)] lg:min-h-[420px] lg:overflow-y-auto lg:overscroll-contain"
                 >
                   {filteredCourses.map(course => (
                     <CourseRow

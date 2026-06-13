@@ -153,6 +153,13 @@ export const subjectAPI = {
 
     // 필터 파라미터 추가
     Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value
+          .filter(item => item !== undefined && item !== '' && item !== '전체')
+          .forEach(item => params.append(key, item));
+        return;
+      }
+
       if (value !== undefined && value !== '' && value !== '전체') {
         params.append(key, value);
       }
@@ -313,6 +320,13 @@ export const authAPI = {
   logout: async () => {
     const response = await fetchWithUserCsrf(`${BASE_URL}/auth/logout`, {
       method: 'POST',
+    });
+    return handleUserSessionMutationResponse(response);
+  },
+
+  withdraw: async () => {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/auth/me`, {
+      method: 'DELETE',
     });
     return handleUserSessionMutationResponse(response);
   },

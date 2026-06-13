@@ -87,6 +87,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const withdraw = async () => {
+    try {
+      return await authAPI.withdraw();
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+    }
+  };
+
   const value = {
     user,
     isLoggedIn: !!user,
@@ -95,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     register,
     createDevSession,
     logout,
+    withdraw,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
