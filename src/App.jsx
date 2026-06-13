@@ -194,91 +194,127 @@ const LoadingOverlay = ({ isGenerating }) => {
   );
 };
 
-const NewUserTutorialModal = ({ isOpen, onClose }) => {
-  useEffect(() => {
-    if (!isOpen) return undefined;
+const tutorialSteps = [
+  {
+    element: '[data-tour="course-search"]',
+    popover: {
+      title: '먼저 과목을 좁혀요',
+      description: '과목명으로 찾고, 학과·구분·요일 필터로 이번 학기에 볼 강의를 빠르게 줄일 수 있어요.',
+      side: 'bottom',
+      align: 'start'
+    }
+  },
+  {
+    element: '[data-tour="course-review"]',
+    popover: {
+      title: '말풍선은 에타 후기',
+      description: '말풍선 버튼을 누르면 해당 과목명으로 에브리타임 강의평 검색이 열려요. 교수님이나 과제 분위기를 확인할 때 쓰면 됩니다.',
+      side: 'left',
+      align: 'center'
+    }
+  },
+  {
+    element: '[data-tour="course-wishlist"]',
+    popover: {
+      title: '담기는 후보 보관',
+      description: '아직 바로 넣을지 애매한 과목은 위시리스트에 담아두세요. 나중에 필수 포함 여부를 정하고 조합을 만들 수 있어요.',
+      side: 'left',
+      align: 'center'
+    }
+  },
+  {
+    element: '[data-tour="course-add"]',
+    popover: {
+      title: '추가는 바로 시간표 반영',
+      description: '시간이 확정된 과목을 바로 내 시간표에 넣는 버튼이에요. 서버에서 시간 겹침도 한 번 더 확인합니다.',
+      side: 'left',
+      align: 'center'
+    }
+  },
+  {
+    element: '[data-tour="wishlist-panel"]',
+    popover: {
+      title: '담은 과목으로 조합 만들기',
+      description: '위시리스트에 후보를 모은 뒤 목표 학점과 공강 요일을 정하면 가능한 시간표 조합을 비교할 수 있어요.',
+      side: 'left',
+      align: 'start'
+    }
+  }
+];
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+const NewUserTutorial = ({ shouldStart, onFinish }) => {
+  useEffect(() => {
+    if (!shouldStart) return undefined;
+
+    let timeoutId;
+    let tourInstance;
+    let attempts = 0;
+    let cleanedUp = false;
+
+    const startTour = async () => {
+      const hasCourseActionTargets = tutorialSteps
+        .filter(step => step.element.includes('course-') && step.element !== '[data-tour="course-search"]')
+        .every(step => document.querySelector(step.element));
+      const availableSteps = tutorialSteps.filter(step => document.querySelector(step.element));
+
+      if (availableSteps.length === 0) {
+        onFinish();
+        return;
+      }
+
+      if (!hasCourseActionTargets && attempts < 10) {
+        attempts += 1;
+        timeoutId = window.setTimeout(startTour, 150);
+        return;
+      }
+
+      let driverFactory;
+      try {
+        const driverModule = await import('driver.js');
+        await import('driver.js/dist/driver.css');
+        driverFactory = driverModule.driver;
+      } catch (error) {
+        console.error('튜토리얼 라이브러리를 불러오지 못했습니다.', error);
+        onFinish();
+        return;
+      }
+
+      if (cleanedUp) return;
+
+      tourInstance = driverFactory({
+        animate: true,
+        allowClose: true,
+        showButtons: ['next', 'previous', 'close'],
+        showProgress: true,
+        popoverClass: 'inu-tour-popover',
+        stagePadding: 8,
+        stageRadius: 14,
+        overlayOpacity: 0.58,
+        nextBtnText: '다음',
+        prevBtnText: '이전',
+        doneBtnText: '이해했어요',
+        progressText: '{{current}}/{{total}}',
+        steps: availableSteps,
+        onDestroyed: () => {
+          if (!cleanedUp) {
+            onFinish();
+          }
+        }
+      });
+
+      tourInstance.drive();
+    };
+
+    timeoutId = window.setTimeout(startTour, 80);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      cleanedUp = true;
+      window.clearTimeout(timeoutId);
+      tourInstance?.destroy();
     };
-  }, [isOpen]);
+  }, [shouldStart, onFinish]);
 
-  if (!isOpen) return null;
-
-  const steps = [
-    {
-      icon: Search,
-      title: '과목 찾기',
-      description: '과목명, 학과, 이수구분, 요일로 필요한 강의를 빠르게 좁혀보세요.'
-    },
-    {
-      icon: ShoppingCart,
-      title: '위시리스트 담기',
-      description: '관심 과목은 먼저 담아두고 필수 포함 여부를 체크할 수 있어요.'
-    },
-    {
-      icon: Star,
-      title: '조건 맞춰 조합',
-      description: '목표 학점과 공강 요일을 고르면 가능한 시간표 조합을 확인할 수 있어요.'
-    },
-    {
-      icon: CalendarDays,
-      title: '시간표 적용',
-      description: '마음에 드는 조합을 내 시간표에 적용하고 PDF로 저장할 수 있어요.'
-    }
-  ];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="new-user-tutorial-title"
-        className="modal-panel w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
-      >
-        <div className="border-b border-slate-100 px-5 py-4 md:px-6">
-          <h2 id="new-user-tutorial-title" className="text-lg font-bold tracking-tight text-slate-900">
-            시간표, 이렇게 만들어요
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            과목을 바로 추가해도 되고, 위시리스트에 모아둔 뒤 조합을 만들 수도 있습니다.
-          </p>
-        </div>
-
-        <div className="grid gap-2 p-4 md:grid-cols-2 md:p-6">
-          {steps.map((step, index) => {
-            const StepIcon = step.icon;
-
-            return (
-              <div key={step.title} className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                <div className="flex items-start gap-3">
-                  <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/60">
-                    <StepIcon size={17} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold tabular-nums text-blue-600">{index + 1}</span>
-                      <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
-                    </div>
-                    <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{step.description}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex justify-end border-t border-slate-100 px-5 py-4 md:px-6">
-          <button type="button" onClick={onClose} className="btn-primary h-10 px-5">
-            과목 검색 시작하기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 // Timetable components moved to components/TimetableGrid.jsx
@@ -323,6 +359,7 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
 
       <div className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-1.5 sm:ml-3 sm:flex sm:flex-shrink-0">
         <a
+          data-tour="course-review"
           href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
           target="_blank"
           rel="noopener noreferrer"
@@ -333,6 +370,7 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
           <MessageSquare size={15} />
         </a>
         <button
+          data-tour="course-wishlist"
           type="button"
           onClick={() => onAddToWishlist(course)}
           disabled={actionsDisabled}
@@ -341,6 +379,7 @@ const CourseRow = ({ course, onAddToTimetable, onAddToWishlist, actionsDisabled 
           <ShoppingCart size={13} /> 담기
         </button>
         <button
+          data-tour="course-add"
           type="button"
           onClick={() => onAddToTimetable(course)}
           disabled={actionsDisabled}
@@ -1070,6 +1109,10 @@ function AppContent() {
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+  }, []);
+
+  const closeNewUserTutorial = useCallback(() => {
+    setShowNewUserTutorial(false);
   }, []);
 
 
@@ -2095,7 +2138,7 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showNewUserTutorial || showDeveloperNotes || showAccountModal;
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal;
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
@@ -2108,10 +2151,7 @@ function AppContent() {
         showToast={showToast}
         onRegisterSuccess={() => setShowNewUserTutorial(true)}
       />
-      <NewUserTutorialModal
-        isOpen={showNewUserTutorial}
-        onClose={() => setShowNewUserTutorial(false)}
-      />
+      <NewUserTutorial shouldStart={showNewUserTutorial} onFinish={closeNewUserTutorial} />
       <WishlistModal
         isOpen={showWishlistModal}
         onClose={() => setShowWishlistModal(false)}
@@ -2255,7 +2295,7 @@ function AppContent() {
         )}
 
         {/* 검색 바 */}
-        <section aria-label="과목 검색" className="card p-3 md:p-4">
+        <section data-tour="course-search" aria-label="과목 검색" className="card p-3 md:p-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -2430,7 +2470,7 @@ function AppContent() {
                       course={course}
                       onAddToTimetable={handleAddToTimetable}
                       onAddToWishlist={handleAddToWishlist}
-                      actionsDisabled={showWishlistModal || showNewUserTutorial}
+                      actionsDisabled={showWishlistModal}
                     />
                   ))}
                 </ul>
@@ -2470,7 +2510,7 @@ function AppContent() {
               </div>
 
               {/* Wishlist */}
-              <div className="card">
+              <div data-tour="wishlist-panel" className="card">
                 <div className="border-b border-slate-100 px-4 py-3.5 sm:px-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -2606,6 +2646,13 @@ function AppContent() {
             <span className="text-xs text-slate-400">인천대학교 비공식 서비스 · © 2026</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowNewUserTutorial(true)}
+              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+            >
+              <Info size={13} /> 사용법
+            </button>
             <button
               type="button"
               onClick={() => setShowDeveloperNotes(true)}

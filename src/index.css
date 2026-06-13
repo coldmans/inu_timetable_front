@@ -118,6 +118,48 @@
   .modal-panel {
     animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .driver-popover.inu-tour-popover {
+    @apply max-w-[360px] rounded-2xl bg-white p-4 text-slate-900 shadow-2xl shadow-slate-950/20 ring-1 ring-slate-200 sm:p-5;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-title {
+    @apply pr-7 text-base font-bold leading-6 text-slate-900;
+    font-family: inherit;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-description {
+    @apply mt-2 text-sm leading-6 text-slate-600;
+    font-family: inherit;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-progress-text {
+    @apply rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-slate-500;
+    font-family: inherit;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-footer {
+    @apply mt-4;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-footer button {
+    @apply inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
+    font-family: inherit;
+    text-shadow: none;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-next-btn {
+    @apply border-blue-500 bg-blue-600 text-white hover:bg-blue-500;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-prev-btn {
+    @apply border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900;
+  }
+
+  .driver-popover.inu-tour-popover .driver-popover-close-btn {
+    @apply text-slate-400 hover:text-slate-700 focus:text-slate-700;
+    font-family: inherit;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
