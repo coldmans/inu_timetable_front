@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, LogIn, UserPlus, ChevronDown } from 'lucide-react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { X, LogIn, UserPlus, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { departmentGroups } from '../utils/timetableUtils';
 
@@ -23,6 +23,171 @@ const defaultMajorGroupSelections = {
   PRIMARY: findGroupIdByDepartment(defaultMajorSelections.PRIMARY),
   DOUBLE: '',
   MINOR: '',
+};
+
+const AuthSelect = ({ label, value, options, onChange, active = false, disabled = false, optionWrap = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const selectId = useId();
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const optionRefs = useRef([]);
+  const selectedIndex = options.findIndex(option => String(option.value) === String(value));
+  const selectedOption = options[selectedIndex] || options[0];
+  const listboxId = `${selectId}-listbox`;
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!containerRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const nextIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    setActiveIndex(nextIndex);
+    requestAnimationFrame(() => {
+      optionRefs.current[nextIndex]?.focus();
+    });
+  }, [isOpen, selectedIndex]);
+
+  const handleSelect = (nextValue) => {
+    if (disabled) return;
+    setIsOpen(false);
+    if (String(nextValue) !== String(value)) {
+      onChange(nextValue);
+    }
+  };
+
+  const focusOption = (nextIndex) => {
+    const normalizedIndex = (nextIndex + options.length) % options.length;
+    setActiveIndex(normalizedIndex);
+    optionRefs.current[normalizedIndex]?.focus();
+  };
+
+  const handleTriggerKeyDown = (event) => {
+    if (disabled) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsOpen(true);
+    }
+  };
+
+  const handleOptionKeyDown = (event, index, optionValue) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusOption(index + 1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusOption(index - 1);
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusOption(0);
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusOption(options.length - 1);
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSelect(optionValue);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        disabled={disabled}
+        onKeyDown={handleTriggerKeyDown}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(prev => !prev);
+          }
+        }}
+        className={`field select-trigger ${active && !disabled ? 'select-trigger-active' : 'text-slate-600'}`}
+      >
+        <span className={optionWrap ? 'min-w-0 break-keep leading-snug' : 'truncate'}>{selectedOption?.label}</span>
+        <ChevronDown
+          size={14}
+          className={`ml-2 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''} ${active && !disabled ? 'text-blue-500' : 'text-slate-400'}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className={`select-menu ${optionWrap ? 'select-menu-wide' : ''}`}>
+          <div id={listboxId} role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1">
+            {options.map((option, optionIndex) => {
+              const isSelected = String(option.value) === String(value);
+              const isActive = optionIndex === activeIndex;
+
+              return (
+                <button
+                  key={option.value}
+                  ref={(element) => {
+                    optionRefs.current[optionIndex] = element;
+                  }}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  tabIndex={isActive ? 0 : -1}
+                  title={typeof option.label === 'string' ? option.label : undefined}
+                  onClick={() => handleSelect(option.value)}
+                  onKeyDown={(event) => handleOptionKeyDown(event, optionIndex, option.value)}
+                  className={`select-option ${isSelected ? 'select-option-active' : ''}`}
+                >
+                  <span className={optionWrap ? 'break-keep leading-snug' : 'truncate'}>{option.label}</span>
+                  {isSelected && <CheckCircle2 size={14} className="flex-shrink-0 text-blue-500" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
@@ -108,6 +273,18 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   const activeMajorTab = majorTabs.find(tab => tab.type === activeMajorType) || majorTabs[0];
   const activeMajorGroup = departmentGroups.find(group => group.id === majorGroupSelections[activeMajorType]);
   const activeDepartmentOptions = activeMajorGroup?.departments || [];
+  const gradeOptions = [1, 2, 3, 4].map(grade => ({
+    value: grade,
+    label: `${grade}학년`,
+  }));
+  const majorGroupOptions = [
+    ...(!activeMajorTab.required ? [{ value: '', label: '선택 안 함' }] : []),
+    ...departmentGroups.map(group => ({ value: group.id, label: group.label })),
+  ];
+  const majorDepartmentOptions = [
+    ...(!activeMajorTab.required ? [{ value: '', label: '선택 안 함' }] : []),
+    ...activeDepartmentOptions.map(department => ({ value: department, label: department })),
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
@@ -171,25 +348,16 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
               <>
                 <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label htmlFor="auth-grade" className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                  <label className="mb-1.5 block text-[13px] font-medium text-slate-700">
                     학년
                   </label>
-                  <div className="relative">
-                    <select
-                      id="auth-grade"
-                      name="grade"
-                      value={formData.grade}
-                      onChange={handleInputChange}
-                      required
-                      className="field h-11 appearance-none pr-7"
-                    >
-                      <option value={1}>1학년</option>
-                      <option value={2}>2학년</option>
-                      <option value={3}>3학년</option>
-                      <option value={4}>4학년</option>
-                    </select>
-                    <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  </div>
+                  <AuthSelect
+                    label="학년 선택"
+                    value={formData.grade}
+                    options={gradeOptions}
+                    active={formData.grade !== 1}
+                    onChange={(nextGrade) => setFormData(prev => ({ ...prev, grade: Number(nextGrade) }))}
+                  />
                 </div>
 
                 <div className="col-span-2">
@@ -225,39 +393,27 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <label className="block">
                       <span className="mb-1.5 block text-[12px] font-medium text-slate-600">단과대</span>
-                      <div className="relative">
-                        <select
-                          value={majorGroupSelections[activeMajorType]}
-                          onChange={(event) => handleMajorGroupChange(activeMajorType, event.target.value)}
-                          required={activeMajorTab.required}
-                          className="field h-10 appearance-none pr-8 text-sm"
-                        >
-                          {!activeMajorTab.required && <option value="">선택 안 함</option>}
-                          {departmentGroups.map(group => (
-                            <option key={group.id} value={group.id}>{group.label}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      </div>
+                      <AuthSelect
+                        label={`${activeMajorTab.label} 단과대 선택`}
+                        value={majorGroupSelections[activeMajorType]}
+                        options={majorGroupOptions}
+                        active={Boolean(majorGroupSelections[activeMajorType])}
+                        optionWrap
+                        onChange={(nextGroupId) => handleMajorGroupChange(activeMajorType, nextGroupId)}
+                      />
                     </label>
 
                     <label className="block">
                       <span className="mb-1.5 block text-[12px] font-medium text-slate-600">학과</span>
-                      <div className="relative">
-                        <select
-                          value={majorSelections[activeMajorType]}
-                          onChange={(event) => handleMajorDepartmentChange(activeMajorType, event.target.value)}
-                          required={activeMajorTab.required}
-                          disabled={!activeMajorGroup}
-                          className="field h-10 appearance-none pr-8 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-                        >
-                          {!activeMajorTab.required && <option value="">선택 안 함</option>}
-                          {activeDepartmentOptions.map(department => (
-                            <option key={department} value={department}>{department}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      </div>
+                      <AuthSelect
+                        label={`${activeMajorTab.label} 학과 선택`}
+                        value={majorSelections[activeMajorType]}
+                        options={majorDepartmentOptions}
+                        active={Boolean(majorSelections[activeMajorType])}
+                        disabled={!activeMajorGroup && !activeMajorTab.required}
+                        optionWrap
+                        onChange={(nextDepartment) => handleMajorDepartmentChange(activeMajorType, nextDepartment)}
+                      />
                     </label>
                   </div>
                 </div>

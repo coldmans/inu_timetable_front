@@ -108,7 +108,7 @@
   }
 
   .select-option {
-    @apply flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[13px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900;
+    @apply flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[13px] text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:bg-blue-50 focus-visible:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500/30;
   }
 
   .select-option-active {
