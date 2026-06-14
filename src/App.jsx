@@ -9,6 +9,7 @@ import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
 import AdminSubjectManager from './components/AdminSubjectManager';
+import TimetableExportView from './components/TimetableExportView';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 import html2canvas from 'html2canvas';
@@ -1152,6 +1153,7 @@ function AppContent() {
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
 
   const timetableRef = useRef(null);
+  const timetableExportRef = useRef(null);
   const resultsListRef = useRef(null);
   const courseRequestSeqRef = useRef(0);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
@@ -1427,17 +1429,24 @@ function AppContent() {
       return;
     }
 
-    if (!timetableRef.current) {
-      showToast('시간표 화면을 찾을 수 없어요.', 'warning');
+    if (!timetableExportRef.current) {
+      showToast('시간표 저장 화면을 준비하지 못했어요.', 'warning');
       return;
     }
 
     try {
       setIsExportingPDF(true);
-      const canvas = await html2canvas(timetableRef.current, {
-        scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
+      const exportNode = timetableExportRef.current;
+      const canvas = await html2canvas(exportNode, {
+        scale: 2,
         backgroundColor: '#ffffff',
-        useCORS: true
+        useCORS: true,
+        windowWidth: exportNode.scrollWidth,
+        windowHeight: exportNode.scrollHeight
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -2278,6 +2287,20 @@ function AppContent() {
         onClearAll={handleClearAllTimetable}
         onExportPDF={handleExportTimetablePDF}
       />
+      {timetable.length > 0 && (
+        <div
+          data-export-wrapper
+          aria-hidden="true"
+          className="pointer-events-none fixed top-0 overflow-hidden"
+          style={{ left: '-20000px', width: '1600px' }}
+        >
+          <TimetableExportView
+            ref={timetableExportRef}
+            courses={timetable}
+            semester={CURRENT_SEMESTER}
+          />
+        </div>
+      )}
       {showDeveloperNotes && (
         <DeveloperNotesModal onClose={() => setShowDeveloperNotes(false)} />
       )}
