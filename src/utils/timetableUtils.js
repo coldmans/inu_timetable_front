@@ -174,7 +174,21 @@ export const formatCourse = (subject) => {
         time: timeString,
         schedules: subject.schedules,
         classMethod: subject.classMethod,
+        timetableAddCount:
+            subject.timetableAddCount ??
+            subject.timetable_add_count ??
+            subject.addCount ??
+            subject.add_count ??
+            subject.timetableCount ??
+            subject.timetable_count ??
+            null,
         wishlistCount:
+            subject.timetableAddCount ??
+            subject.timetable_add_count ??
+            subject.addCount ??
+            subject.add_count ??
+            subject.timetableCount ??
+            subject.timetable_count ??
             subject.wishlistCount ??
             subject.wishlist_count ??
             subject.savedCount ??

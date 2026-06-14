@@ -63,14 +63,14 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
 
 const TimetableGrid = ({
     courses,
-    onExportPDF,
+    onExportImage,
     onRemoveCourse,
     onAddToWishlist,
     onViewCourseDetails,
     onClearAll,
     onShowTimetableList,
     timetableRef,
-    isExportingPDF,
+    isExportingImage,
     showTitle = true,
     isMobile = false
 }) => {
@@ -170,13 +170,13 @@ const TimetableGrid = ({
                         )}
                     </div>
                     <div className="flex items-center gap-0.5">
-                        {courses.length > 0 && onExportPDF && (
+                        {courses.length > 0 && onExportImage && (
                             <button
-                                onClick={onExportPDF}
-                                disabled={isExportingPDF}
+                                onClick={onExportImage}
+                                disabled={isExportingImage}
                                 className="icon-btn"
-                                title="시간표를 PDF로 저장"
-                                aria-label="시간표를 PDF로 저장"
+                                title="시간표를 이미지로 저장"
+                                aria-label="시간표를 이미지로 저장"
                             >
                                 <Download size={15} />
                             </button>

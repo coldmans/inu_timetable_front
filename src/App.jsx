@@ -13,7 +13,6 @@ import TimetableExportView from './components/TimetableExportView';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import TimetableGrid from './components/TimetableGrid';
 import {
   CURRENT_SEMESTER,
@@ -335,7 +334,21 @@ const formatScheduleLabel = (course) => {
 };
 
 const extractWishlistCount = (course) => {
-  const countKeys = ['wishlistCount', 'wishlist_count', 'savedCount', 'saved_count', 'wishCount', 'wish_count', 'wishlistItemCount'];
+  const countKeys = [
+    'timetableAddCount',
+    'timetable_add_count',
+    'addCount',
+    'add_count',
+    'timetableCount',
+    'timetable_count',
+    'wishlistCount',
+    'wishlist_count',
+    'savedCount',
+    'saved_count',
+    'wishCount',
+    'wish_count',
+    'wishlistItemCount'
+  ];
 
   for (const key of countKeys) {
     if (course[key] === undefined || course[key] === null) continue;
@@ -370,10 +383,10 @@ const getCourseWishlistCount = (course, allowPreview = false) => {
 
 const formatWishlistCountLabel = (count) => {
   if (count >= 1000) {
-    return `${(Math.floor(count / 100) / 10).toLocaleString()}천명 담음`;
+    return `${(Math.floor(count / 100) / 10).toLocaleString()}천명 추가`;
   }
 
-  return `${count.toLocaleString()}명 담음`;
+  return `${count.toLocaleString()}명 추가`;
 };
 
 const WishlistCountChip = ({ count, variant = 'meta', className = '' }) => {
@@ -1157,7 +1170,7 @@ function AppContent() {
   const resultsListRef = useRef(null);
   const courseRequestSeqRef = useRef(0);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingImage, setIsExportingImage] = useState(false);
 
 
   // 페이징 상태
@@ -1423,7 +1436,29 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleExportTimetablePDF = async () => {
+  const downloadCanvasAsPng = async (canvas, fileName) => {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const link = document.createElement('a');
+
+    if (blob) {
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      return;
+    }
+
+    link.href = canvas.toDataURL('image/png');
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const handleExportTimetableImage = async () => {
     if (!timetable || timetable.length === 0) {
       showToast('시간표에 과목을 먼저 담아주세요.', 'warning');
       return;
@@ -1435,7 +1470,7 @@ function AppContent() {
     }
 
     try {
-      setIsExportingPDF(true);
+      setIsExportingImage(true);
       if (document.fonts?.ready) {
         await document.fonts.ready;
       }
@@ -1449,32 +1484,14 @@ function AppContent() {
         windowHeight: exportNode.scrollHeight
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('portrait', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const aspectRatio = canvas.width / canvas.height;
-
-      let renderWidth = pageWidth - 20;
-      let renderHeight = renderWidth / aspectRatio;
-
-      if (renderHeight > pageHeight - 20) {
-        renderHeight = pageHeight - 20;
-        renderWidth = renderHeight * aspectRatio;
-      }
-
-      const offsetX = (pageWidth - renderWidth) / 2;
-      const offsetY = (pageHeight - renderHeight) / 2;
-
-      pdf.addImage(imgData, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
       const today = new Date().toISOString().slice(0, 10);
-      pdf.save(`inu-timetable-${today}.pdf`);
-      showToast('시간표를 PDF로 저장했어요!');
+      await downloadCanvasAsPng(canvas, `inu-timetable-${today}.png`);
+      showToast('시간표를 이미지로 저장했어요!');
     } catch (error) {
-      console.error('시간표 PDF 저장 실패:', error);
-      showToast('PDF 저장에 실패했어요. 잠시 후 다시 시도해주세요.', 'error');
+      console.error('시간표 이미지 저장 실패:', error);
+      showToast('이미지 저장에 실패했어요. 잠시 후 다시 시도해주세요.', 'error');
     } finally {
-      setIsExportingPDF(false);
+      setIsExportingImage(false);
     }
   };
 
@@ -2285,7 +2302,7 @@ function AppContent() {
         onAddToWishlist={handleMoveToWishlistFromTimetable}
         onViewCourseDetails={handleViewCourseDetails}
         onClearAll={handleClearAllTimetable}
-        onExportPDF={handleExportTimetablePDF}
+        onExportImage={handleExportTimetableImage}
       />
       {timetable.length > 0 && (
         <div
@@ -2614,14 +2631,14 @@ function AppContent() {
               <div className="hidden lg:block">
                 <TimetableGrid
                   courses={timetable}
-                  onExportPDF={handleExportTimetablePDF}
+                  onExportImage={handleExportTimetableImage}
                   onRemoveCourse={handleRemoveFromTimetable}
                   onAddToWishlist={handleMoveToWishlistFromTimetable}
                   onViewCourseDetails={handleViewCourseDetails}
                   onClearAll={handleClearAllTimetable}
                   onShowTimetableList={handleShowTimetableList}
                   timetableRef={timetableRef}
-                  isExportingPDF={isExportingPDF}
+                  isExportingImage={isExportingImage}
                 />
               </div>
 
