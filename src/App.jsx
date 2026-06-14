@@ -1450,7 +1450,7 @@ function AppContent() {
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const aspectRatio = canvas.width / canvas.height;
@@ -2292,7 +2292,7 @@ function AppContent() {
           data-export-wrapper
           aria-hidden="true"
           className="pointer-events-none fixed top-0 overflow-hidden"
-          style={{ left: '-20000px', width: '1600px' }}
+          style={{ left: '-20000px', width: '760px' }}
         >
           <TimetableExportView
             ref={timetableExportRef}
