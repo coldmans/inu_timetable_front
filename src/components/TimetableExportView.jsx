@@ -146,13 +146,6 @@ const buildTimetableGrid = (courses) => {
   return { grid };
 };
 
-const ExportSummaryPill = ({ label, value }) => (
-  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-slate-200 bg-white text-center shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-    <div className="grid h-3 place-items-center text-[9px] font-bold leading-none text-slate-400">{label}</div>
-    <div className="grid h-5 place-items-center text-[16px] font-black leading-none text-slate-900">{value}</div>
-  </div>
-);
-
 const ExportOnlineCourseList = ({ courses }) => {
   if (courses.length === 0) {
     return null;
@@ -165,13 +158,14 @@ const ExportOnlineCourseList = ({ courses }) => {
     <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 과목</h2>
-        <span className="grid h-5 min-w-[34px] place-items-center rounded-full bg-slate-900 px-2 text-center text-[9px] font-black leading-none text-white" style={{ paddingTop: '1px' }}>
-          {courses.length}개
+        <span className="text-[10px] font-bold leading-none text-slate-500">
+          총 {courses.length}개
         </span>
       </div>
       <div className="space-y-2">
         {visibleCourses.map((course, index) => {
           const colorScheme = getCourseColorScheme(course);
+          const onlineMeta = [getOnlineCourseMeta(course), '온라인'].filter(Boolean).join(' · ');
           return (
             <div
               key={course.id || `${course.name}-${index}`}
@@ -203,12 +197,9 @@ const ExportOnlineCourseList = ({ courses }) => {
                     whiteSpace: 'normal',
                   }}
                 >
-                  {getOnlineCourseMeta(course) || '과목 정보'}
+                  {onlineMeta || '온라인'}
                 </div>
               </div>
-              <span className="grid h-5 min-w-[42px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50 px-2 text-center text-[8px] font-black leading-none text-blue-600" style={{ paddingTop: '1px' }}>
-                온라인
-              </span>
             </div>
           );
         })}
@@ -323,9 +314,10 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
               <span className="text-[44px] font-bold text-slate-950">표</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <ExportSummaryPill label="학점" value={`${totalCredits}`} />
-            <ExportSummaryPill label="과목" value={`${courses.length}`} />
+          <div className="text-right text-[18px] font-black leading-none text-slate-950">
+            <span>{totalCredits}학점</span>
+            <span className="mx-2 text-slate-300">·</span>
+            <span>{courses.length}과목</span>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
