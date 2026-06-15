@@ -4,9 +4,9 @@ import { parseTime, parseTimeString, daysOfWeek, timeSlots } from '../utils/time
 const EXPORT_WIDTH = 760;
 const EXPORT_HORIZONTAL_PADDING = 16;
 const EXPORT_TABLE_BORDER_WIDTH = 2;
-const TIME_LABEL_COLUMN_WIDTH = 40;
+const TIME_LABEL_COLUMN_WIDTH = 44;
 const WEEKDAY_EXPORT_DAYS = ['월', '화', '수', '목', '금'];
-const EXPORT_TIME_LABELS = ['9', '10', '11', '12', '1', '2', '3', '4', '5', '야1', '야2', '야3', '야4'];
+const EXPORT_TIME_LABELS = ['9시', '10시', '11시', '12시', '13시', '14시', '15시', '16시', '17시', '18시', '19시', '20시', '21시'];
 const COURSE_COLOR_SCHEMES = [
   { backgroundColor: '#dbeafe', color: '#1e3a8a', borderColor: '#bfdbfe' },
   { backgroundColor: '#e0f2fe', color: '#075985', borderColor: '#bae6fd' },
@@ -43,6 +43,18 @@ const getCourseTimes = (course) => (
   course.schedules ? parseTime(course.schedules) : parseTimeString(course.time)
 );
 
+const isOnlineCourse = (course) => (
+  getCourseTimes(course).length === 0 ||
+  course.classMethod === 'ONLINE' ||
+  String(course.time || '').includes('온라인')
+);
+
+const getOnlineCourseMeta = (course) => [
+  course.professor,
+  course.department,
+  course.credits ? `${course.credits}학점` : null,
+].filter(Boolean).join(' · ');
+
 const getTextLength = (value) => [...String(value || '')].length;
 
 const getExportCourseNameTypography = (course, isCompact) => {
@@ -77,7 +89,7 @@ const getExportCourseNameTypography = (course, isCompact) => {
 };
 
 const hasNightCourse = (courses) => courses.some(course => (
-  getCourseTimes(course).some(({ start, end }) => start >= 10 || end > 10)
+  !isOnlineCourse(course) && getCourseTimes(course).some(({ start, end }) => start >= 10 || end > 10)
 ));
 
 const buildTimetableGrid = (courses) => {
@@ -95,6 +107,10 @@ const buildTimetableGrid = (courses) => {
   };
 
   courses.forEach((course, courseIndex) => {
+    if (isOnlineCourse(course)) {
+      return;
+    }
+
     const exportColorScheme = COURSE_COLOR_SCHEMES[courseIndex % COURSE_COLOR_SCHEMES.length];
     const times = getCourseTimes(course);
 
@@ -140,6 +156,59 @@ const ExportSummaryPill = ({ label, value }) => (
     <div className="mt-1 text-[16px] font-black leading-none text-slate-900">{value}</div>
   </div>
 );
+
+const ExportOnlineCourseList = ({ courses }) => {
+  if (courses.length === 0) {
+    return null;
+  }
+
+  const visibleCourses = courses.slice(0, 6);
+  const hiddenCount = Math.max(courses.length - visibleCourses.length, 0);
+
+  return (
+    <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 과목</h2>
+        <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[9px] font-black leading-none text-white">
+          {courses.length}개
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {visibleCourses.map((course, index) => {
+          const colorScheme = getCourseColorScheme(course);
+          return (
+            <div
+              key={course.id || `${course.name}-${index}`}
+              className="grid grid-cols-[12px_1fr_auto] items-center gap-2 rounded-[10px] border border-white bg-white px-2.5 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
+            >
+              <span
+                className="h-3 w-3 rounded-full border"
+                style={{
+                  backgroundColor: colorScheme.backgroundColor,
+                  borderColor: colorScheme.borderColor,
+                }}
+              ></span>
+              <div className="min-w-0">
+                <div className="truncate text-[11px] font-black leading-tight text-slate-900">{course.name}</div>
+                <div className="mt-0.5 truncate text-[9px] font-semibold leading-tight text-slate-500">
+                  {getOnlineCourseMeta(course) || '과목 정보'}
+                </div>
+              </div>
+              <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[8px] font-black leading-none text-blue-600">
+                온라인
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {hiddenCount > 0 && (
+        <div className="mt-2 text-center text-[9px] font-bold text-slate-500">
+          외 {hiddenCount}개 온라인 과목
+        </div>
+      )}
+    </section>
+  );
+};
 
 const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
   const course = grid[day]?.[slot];
@@ -202,17 +271,19 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
 const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
   const { grid } = useMemo(() => buildTimetableGrid(courses), [courses]);
   const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
+  const onlineCourses = useMemo(() => courses.filter(isOnlineCourse), [courses]);
+  const scheduledCourses = useMemo(() => courses.filter(course => !isOnlineCourse(course)), [courses]);
   const visibleDays = useMemo(() => {
-    const hasSaturdayCourse = courses.some(course => getCourseTimes(course).some(time => time.day === '토'));
+    const hasSaturdayCourse = scheduledCourses.some(course => getCourseTimes(course).some(time => time.day === '토'));
 
     return hasSaturdayCourse ? daysOfWeek : WEEKDAY_EXPORT_DAYS;
-  }, [courses]);
+  }, [scheduledCourses]);
   const visibleTimeSlots = useMemo(() => (
-    hasNightCourse(courses) ? timeSlots : timeSlots.slice(0, 18)
-  ), [courses]);
+    hasNightCourse(scheduledCourses) ? timeSlots : timeSlots.slice(0, 18)
+  ), [scheduledCourses]);
   const visibleTimeLabels = useMemo(() => (
-    hasNightCourse(courses) ? EXPORT_TIME_LABELS : EXPORT_TIME_LABELS.slice(0, 9)
-  ), [courses]);
+    hasNightCourse(scheduledCourses) ? EXPORT_TIME_LABELS : EXPORT_TIME_LABELS.slice(0, 9)
+  ), [scheduledCourses]);
   const dayColumnWidth = (
     EXPORT_WIDTH - (EXPORT_HORIZONTAL_PADDING * 2) - EXPORT_TABLE_BORDER_WIDTH - TIME_LABEL_COLUMN_WIDTH
   ) / visibleDays.length;
@@ -278,7 +349,7 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
                 {slot.endsWith('-1') && (
                   <td
                     rowSpan={2}
-                    className={`border border-slate-200 text-center text-[15px] font-bold tabular-nums ${slot.startsWith('야') ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                    className={`border border-slate-200 text-center text-[13px] font-bold tabular-nums ${slot.startsWith('야') ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
                   >
                     {visibleTimeLabels[Math.floor(index / 2)]}
                   </td>
@@ -298,6 +369,8 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
           </tbody>
         </table>
       </section>
+
+      <ExportOnlineCourseList courses={onlineCourses} />
 
       <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-400">
         <span>INU 시간표</span>
