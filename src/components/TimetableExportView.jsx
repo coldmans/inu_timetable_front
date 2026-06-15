@@ -43,24 +43,6 @@ const getCourseTimes = (course) => (
   course.schedules ? parseTime(course.schedules) : parseTimeString(course.time)
 );
 
-const formatCourseDays = (course) => {
-  const times = getCourseTimes(course);
-  if (times.length === 0) {
-    return course.classMethod === 'ONLINE' || String(course.time || '').includes('온라인')
-      ? '온라인'
-      : '시간 미지정';
-  }
-
-  const uniqueDays = [...new Set(times.map(time => time.day).filter(Boolean))];
-  return uniqueDays.join(' · ');
-};
-
-const getCourseListMeta = (course) => [
-  course.professor,
-  course.department,
-  course.credits ? `${course.credits}학점` : null,
-].filter(Boolean).join(' · ');
-
 const getTextLength = (value) => [...String(value || '')].length;
 
 const getExportCourseNameTypography = (course, isCompact) => {
@@ -69,27 +51,27 @@ const getExportCourseNameTypography = (course, isCompact) => {
 
   if (isCompact) {
     return {
-      className: nameLength > 12 ? 'text-[11px] leading-[1.08]' : 'text-[12px] leading-[1.1]',
+      className: nameLength > 12 ? 'text-[10px] leading-[1.05]' : 'text-[11px] leading-[1.08]',
       lineClamp: 2,
     };
   }
 
   if (nameLength >= 24) {
     return {
-      className: span >= 6 ? 'text-[13px] leading-[1.08]' : 'text-[12px] leading-[1.08]',
+      className: span >= 6 ? 'text-[12px] leading-[1.06]' : 'text-[11px] leading-[1.06]',
       lineClamp: span >= 6 ? 4 : 3,
     };
   }
 
   if (nameLength >= 16) {
     return {
-      className: 'text-[14px] leading-[1.08]',
+      className: 'text-[12px] leading-[1.06]',
       lineClamp: 3,
     };
   }
 
   return {
-    className: 'text-[15px] leading-[1.1]',
+    className: 'text-[13px] leading-[1.08]',
     lineClamp: 3,
   };
 };
@@ -159,80 +141,6 @@ const ExportSummaryPill = ({ label, value }) => (
   </div>
 );
 
-const ExportCourseList = ({ courses }) => {
-  const visibleCourses = courses.slice(0, 8);
-  const hiddenCount = Math.max(courses.length - visibleCourses.length, 0);
-
-  return (
-    <section className="mt-3 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-        <h2 className="text-[14px] font-black leading-none text-slate-800">담은 과목</h2>
-        <span className="rounded-full bg-blue-600 px-3 py-1 text-[11px] font-black leading-none text-white">
-          {courses.length}개
-        </span>
-      </div>
-      <div>
-        {visibleCourses.map((course, index) => {
-          const colorScheme = getCourseColorScheme(course);
-          return (
-            <div
-              key={course.id || `${course.name}-${index}`}
-              className="grid min-h-[54px] grid-cols-[18px_1fr_auto] items-start gap-3 border-b border-slate-100 px-4 py-2.5 last:border-b-0"
-            >
-              <span
-                className="mt-1 h-4 w-4 rounded-full border"
-                style={{
-                  backgroundColor: colorScheme.backgroundColor,
-                  borderColor: colorScheme.borderColor,
-                }}
-              ></span>
-              <div className="min-w-0">
-                <div
-                  className="text-[12px] font-black leading-[1.18] text-slate-900"
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {course.name}
-                </div>
-                <div
-                  className="mt-1 text-[9px] font-semibold leading-[1.2] text-slate-500"
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {getCourseListMeta(course) || '과목 정보'}
-                </div>
-              </div>
-              <span
-                className="max-w-[82px] rounded-full border px-2.5 py-1 text-center text-[9px] font-black leading-tight"
-                style={{
-                  backgroundColor: colorScheme.backgroundColor,
-                  borderColor: colorScheme.borderColor,
-                  color: colorScheme.color,
-                }}
-              >
-                {formatCourseDays(course)}
-              </span>
-            </div>
-          );
-        })}
-        {hiddenCount > 0 && (
-          <div className="bg-slate-50 px-4 py-2 text-center text-[11px] font-bold text-slate-500">
-            외 {hiddenCount}개 과목
-          </div>
-        )}
-      </div>
-    </section>
-  );
-};
-
 const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
   const course = grid[day]?.[slot];
   const isFirstHalf = slot.endsWith('-1');
@@ -265,7 +173,7 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
           >
             {course.name}
           </div>
-          <div data-export-course-meta className={`${isCompact ? 'mt-0.5 text-[9px]' : 'mt-1 text-[10px]'} font-semibold leading-tight opacity-95`}>
+          <div data-export-course-meta className={`${isCompact ? 'mt-0.5 text-[8px]' : 'mt-1 text-[9px]'} font-semibold leading-tight opacity-95`}>
             {course.professor && <span>{course.professor}</span>}
             {course.professor && course.credits && <span> · </span>}
             {course.credits && <span>{course.credits}학점</span>}
@@ -390,8 +298,6 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
           </tbody>
         </table>
       </section>
-
-      <ExportCourseList courses={courses} />
 
       <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-400">
         <span>INU 시간표</span>
