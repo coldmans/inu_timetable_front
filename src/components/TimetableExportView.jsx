@@ -153,6 +153,7 @@ const ExportOnlineCourseList = ({ courses }) => {
 
   const visibleCourses = courses.slice(0, 6);
   const hiddenCount = Math.max(courses.length - visibleCourses.length, 0);
+  const useCompactGrid = courses.length >= 3;
 
   return (
     <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
@@ -162,14 +163,14 @@ const ExportOnlineCourseList = ({ courses }) => {
           총 {courses.length}개
         </span>
       </div>
-      <div className="space-y-2">
+      <div className={useCompactGrid ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
         {visibleCourses.map((course, index) => {
           const colorScheme = getCourseColorScheme(course);
           const onlineMeta = [getOnlineCourseMeta(course), '온라인'].filter(Boolean).join(' · ');
           return (
             <div
               key={course.id || `${course.name}-${index}`}
-              className="flex min-h-[48px] items-center gap-2 rounded-[10px] border border-white bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
+              className={`flex min-h-[48px] items-center gap-2 rounded-[10px] border border-white bg-white py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${useCompactGrid ? 'px-2.5' : 'px-3'}`}
             >
               <span
                 className="h-3 w-3 shrink-0 rounded-full border"
