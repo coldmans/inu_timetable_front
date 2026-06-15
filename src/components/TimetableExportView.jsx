@@ -63,28 +63,24 @@ const getExportCourseNameTypography = (course, isCompact) => {
 
   if (isCompact) {
     return {
-      className: nameLength > 12 ? 'text-[10px] leading-[1.05]' : 'text-[11px] leading-[1.08]',
-      lineClamp: 2,
+      className: nameLength > 12 ? 'text-[10px] leading-[1.28]' : 'text-[11px] leading-[1.24]',
     };
   }
 
   if (nameLength >= 24) {
     return {
-      className: span >= 6 ? 'text-[12px] leading-[1.06]' : 'text-[11px] leading-[1.06]',
-      lineClamp: span >= 6 ? 4 : 3,
+      className: span >= 6 ? 'text-[12px] leading-[1.24]' : 'text-[11px] leading-[1.26]',
     };
   }
 
   if (nameLength >= 16) {
     return {
-      className: 'text-[12px] leading-[1.06]',
-      lineClamp: 3,
+      className: 'text-[12px] leading-[1.24]',
     };
   }
 
   return {
-    className: 'text-[13px] leading-[1.08]',
-    lineClamp: 3,
+    className: 'text-[13px] leading-[1.22]',
   };
 };
 
@@ -179,7 +175,7 @@ const ExportOnlineCourseList = ({ courses }) => {
           return (
             <div
               key={course.id || `${course.name}-${index}`}
-              className="grid grid-cols-[12px_1fr_auto] items-center gap-2 rounded-[10px] border border-white bg-white px-2.5 py-2 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
+              className="grid min-h-[48px] grid-cols-[12px_1fr_auto] items-center gap-2 rounded-[10px] border border-white bg-white px-2.5 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
             >
               <span
                 className="h-3 w-3 rounded-full border"
@@ -189,8 +185,8 @@ const ExportOnlineCourseList = ({ courses }) => {
                 }}
               ></span>
               <div className="min-w-0">
-                <div className="truncate text-[11px] font-black leading-tight text-slate-900">{course.name}</div>
-                <div className="mt-0.5 truncate text-[9px] font-semibold leading-tight text-slate-500">
+                <div className="truncate text-[10px] font-bold leading-[1.35] text-slate-900">{course.name}</div>
+                <div className="mt-0.5 truncate text-[8px] font-semibold leading-[1.35] text-slate-500">
                   {getOnlineCourseMeta(course) || '과목 정보'}
                 </div>
               </div>
@@ -232,17 +228,16 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
         >
           <div
             data-export-course-name
-            className={`${nameTypography.className} font-extrabold tracking-normal`}
+            className={`${nameTypography.className} font-bold tracking-normal`}
             style={{
-              display: '-webkit-box',
-              WebkitLineClamp: nameTypography.lineClamp,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              overflowWrap: 'anywhere',
+              wordBreak: 'keep-all',
+              whiteSpace: 'normal',
             }}
           >
             {course.name}
           </div>
-          <div data-export-course-meta className={`${isCompact ? 'mt-0.5 text-[8px]' : 'mt-1 text-[9px]'} font-semibold leading-tight opacity-95`}>
+          <div data-export-course-meta className={`${isCompact ? 'mt-0.5 text-[8px] leading-[1.25]' : 'mt-1 text-[9px] leading-[1.25]'} font-semibold opacity-95`}>
             {course.professor && <span>{course.professor}</span>}
             {course.professor && course.credits && <span> · </span>}
             {course.credits && <span>{course.credits}학점</span>}
@@ -345,7 +340,7 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
           </thead>
           <tbody>
             {visibleTimeSlots.map((slot, index) => (
-              <tr key={slot} style={{ height: '27px' }}>
+              <tr key={slot} style={{ height: '42px' }}>
                 {slot.endsWith('-1') && (
                   <td
                     rowSpan={2}
