@@ -147,9 +147,9 @@ const buildTimetableGrid = (courses) => {
 };
 
 const ExportSummaryPill = ({ label, value }) => (
-  <div className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-    <div className="text-[10px] font-bold leading-none text-slate-400">{label}</div>
-    <div className="mt-1 text-[16px] font-black leading-none text-slate-900">{value}</div>
+  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-slate-200 bg-white text-center shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+    <div className="grid h-3 place-items-center text-[9px] font-bold leading-none text-slate-400">{label}</div>
+    <div className="grid h-5 place-items-center text-[16px] font-black leading-none text-slate-900">{value}</div>
   </div>
 );
 
@@ -165,7 +165,7 @@ const ExportOnlineCourseList = ({ courses }) => {
     <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 과목</h2>
-        <span className="inline-flex h-5 min-w-[34px] items-center justify-center rounded-full bg-slate-900 px-2 text-[9px] font-black leading-[1.2] text-white">
+        <span className="grid h-5 min-w-[34px] place-items-center rounded-full bg-slate-900 px-2 text-center text-[9px] font-black leading-none text-white" style={{ paddingTop: '1px' }}>
           {courses.length}개
         </span>
       </div>
@@ -175,10 +175,10 @@ const ExportOnlineCourseList = ({ courses }) => {
           return (
             <div
               key={course.id || `${course.name}-${index}`}
-              className="flex min-h-[48px] items-start gap-2 rounded-[10px] border border-white bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
+              className="flex min-h-[48px] items-center gap-2 rounded-[10px] border border-white bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
             >
               <span
-                className="mt-1 h-3 w-3 shrink-0 rounded-full border"
+                className="h-3 w-3 shrink-0 rounded-full border"
                 style={{
                   backgroundColor: colorScheme.backgroundColor,
                   borderColor: colorScheme.borderColor,
@@ -206,7 +206,7 @@ const ExportOnlineCourseList = ({ courses }) => {
                   {getOnlineCourseMeta(course) || '과목 정보'}
                 </div>
               </div>
-              <span className="inline-flex h-5 min-w-[42px] shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 px-2 text-[8px] font-black leading-[1.2] text-blue-600">
+              <span className="grid h-5 min-w-[42px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50 px-2 text-center text-[8px] font-black leading-none text-blue-600" style={{ paddingTop: '1px' }}>
                 온라인
               </span>
             </div>
@@ -236,7 +236,7 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
     const colorScheme = getCourseColorScheme(course);
     const nameTypography = getExportCourseNameTypography(course, isCompact);
     return (
-      <td rowSpan={course.span || 1} className="relative border border-slate-200 bg-white p-0">
+      <td rowSpan={course.span || 1} className="relative border border-slate-200 bg-white p-0 align-middle">
         <div
           data-export-course-block
           className="absolute inset-[2px] flex flex-col overflow-hidden rounded-[6px] border px-1.5 py-1.5"
@@ -268,15 +268,15 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
     const nextCourse = grid[day]?.[nextSlot];
 
     if (nextCourse && nextCourse.isStart) {
-      return <td rowSpan={1} className={emptyClass}></td>;
+      return <td rowSpan={1} className={`${emptyClass} align-middle`}></td>;
     }
 
-    return <td rowSpan={2} className={emptyClass}></td>;
+    return <td rowSpan={2} className={`${emptyClass} align-middle`}></td>;
   }
 
   const prevSlot = timeSlotList[index - 1];
   const prevCourse = grid[day]?.[prevSlot];
-  return prevCourse ? <td rowSpan={1} className={emptyClass}></td> : null;
+  return prevCourse ? <td rowSpan={1} className={`${emptyClass} align-middle`}></td> : null;
 };
 
 const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
@@ -312,7 +312,7 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
       style={{ width: `${EXPORT_WIDTH}px` }}
     >
       <header className="mb-3 rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-white to-blue-50 px-5 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.07)]">
-        <div className="flex items-end justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <div className="text-[20px] font-semibold leading-none text-slate-400">
               {semester}
@@ -346,9 +346,9 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
           </colgroup>
           <thead>
             <tr>
-              <th className="border border-slate-200 bg-slate-50 p-2"></th>
+              <th className="border border-slate-200 bg-slate-50 p-2 align-middle"></th>
               {visibleDays.map(day => (
-                <th key={day} className="border border-slate-200 bg-slate-50 py-2 text-center text-[15px] font-extrabold text-slate-500">
+                <th key={day} className="border border-slate-200 bg-slate-50 py-2 text-center align-middle text-[15px] font-extrabold text-slate-500">
                   {day}
                 </th>
               ))}
@@ -360,7 +360,7 @@ const TimetableExportView = React.forwardRef(({ courses, semester }, ref) => {
                 {slot.endsWith('-1') && (
                   <td
                     rowSpan={2}
-                    className={`border border-slate-200 text-center text-[13px] font-bold tabular-nums ${slot.startsWith('야') ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
+                    className={`border border-slate-200 text-center align-middle text-[13px] font-bold tabular-nums ${slot.startsWith('야') ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}
                   >
                     {visibleTimeLabels[Math.floor(index / 2)]}
                   </td>
