@@ -165,32 +165,48 @@ const ExportOnlineCourseList = ({ courses }) => {
     <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 과목</h2>
-        <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[9px] font-black leading-none text-white">
+        <span className="inline-flex h-5 min-w-[34px] items-center justify-center rounded-full bg-slate-900 px-2 text-[9px] font-black leading-[1.2] text-white">
           {courses.length}개
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
         {visibleCourses.map((course, index) => {
           const colorScheme = getCourseColorScheme(course);
           return (
             <div
               key={course.id || `${course.name}-${index}`}
-              className="grid min-h-[48px] grid-cols-[12px_1fr_auto] items-center gap-2 rounded-[10px] border border-white bg-white px-2.5 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
+              className="flex min-h-[48px] items-start gap-2 rounded-[10px] border border-white bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]"
             >
               <span
-                className="h-3 w-3 rounded-full border"
+                className="mt-1 h-3 w-3 shrink-0 rounded-full border"
                 style={{
                   backgroundColor: colorScheme.backgroundColor,
                   borderColor: colorScheme.borderColor,
                 }}
               ></span>
-              <div className="min-w-0">
-                <div className="truncate text-[10px] font-bold leading-[1.35] text-slate-900">{course.name}</div>
-                <div className="mt-0.5 truncate text-[8px] font-semibold leading-[1.35] text-slate-500">
+              <div className="min-w-0 flex-1 pr-2">
+                <div
+                  className="text-[11px] font-bold leading-[1.35] text-slate-900"
+                  style={{
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'keep-all',
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  {course.name}
+                </div>
+                <div
+                  className="mt-1 text-[9px] font-semibold leading-[1.35] text-slate-500"
+                  style={{
+                    overflowWrap: 'anywhere',
+                    wordBreak: 'keep-all',
+                    whiteSpace: 'normal',
+                  }}
+                >
                   {getOnlineCourseMeta(course) || '과목 정보'}
                 </div>
               </div>
-              <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[8px] font-black leading-none text-blue-600">
+              <span className="inline-flex h-5 min-w-[42px] shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 px-2 text-[8px] font-black leading-[1.2] text-blue-600">
                 온라인
               </span>
             </div>
