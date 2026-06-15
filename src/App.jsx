@@ -8,7 +8,6 @@ import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
-import AdminSubjectManager from './components/AdminSubjectManager';
 import TimetableExportView from './components/TimetableExportView';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
@@ -522,6 +521,26 @@ const EmptyResults = ({ onReset }) => (
   </div>
 );
 
+const HiddenPage = () => (
+  <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-center">
+    <div className="max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">
+        <SearchX size={22} />
+      </div>
+      <h1 className="mt-4 text-xl font-bold text-slate-900">페이지를 찾을 수 없어요</h1>
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        주소가 바뀌었거나 더 이상 제공되지 않는 화면입니다.
+      </p>
+      <a
+        href="/"
+        className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+      >
+        시간표로 돌아가기
+      </a>
+    </div>
+  </div>
+);
+
 const developerNoteEntries = [
   {
     date: '2026.06.13',
@@ -536,10 +555,10 @@ const developerNoteEntries = [
   },
   {
     date: '2026.06.12',
-    title: '로그인, 관리자, 검색 성능 개선',
+    title: '로그인과 검색 성능 개선',
     items: [
       '로그인 세션과 개인 시간표 접근 흐름을 정리했습니다.',
-      '관리자 과목 업로드 흐름을 분리해 다음 학기 데이터 교체를 준비했습니다.',
+      '다음 학기 데이터 교체를 위한 과목 업로드 흐름을 분리했습니다.',
       '과목 검색 속도를 안정적으로 유지하기 위한 캐시와 warm-up 방향을 검증했습니다.',
       '검색 노출을 위해 메타데이터, robots, sitemap 구성을 점검했습니다.',
     ],
@@ -556,7 +575,7 @@ const developerNoteEntries = [
     date: '2026.04.29',
     title: '과목 관리와 공식 데이터 import 준비',
     items: [
-      '관리자 과목 관리 화면을 추가했습니다.',
+      '공식 과목 데이터를 관리할 수 있는 내부 도구를 준비했습니다.',
       '공식 과목 엑셀을 미리보기한 뒤 반영할 수 있는 흐름을 만들었습니다.',
       '중복 과목과 학기별 과목 데이터 충돌을 줄이기 위한 검증을 보강했습니다.',
     ],
@@ -2216,28 +2235,7 @@ function AppContent() {
   const isAdminSubjectsPage = window.location.pathname === '/admin/subjects';
 
   if (isAdminSubjectsPage) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
-        <div className="max-w-7xl mx-auto px-3 py-4 md:px-8 md:py-10">
-          <header className="mb-4 md:mb-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-xl md:text-4xl font-bold tracking-tight text-slate-900">과목 관리</h1>
-                <p className="mt-1 text-sm md:text-base text-slate-500">관리자 전용 과목 데이터 관리 페이지입니다.</p>
-              </div>
-              <a
-                href="/"
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-              >
-                과목 검색으로 돌아가기
-              </a>
-            </div>
-          </header>
-          <AdminSubjectManager showToast={showToast} />
-        </div>
-      </div>
-    );
+    return <HiddenPage />;
   }
 
   if (currentView === 'login') {
@@ -2793,9 +2791,6 @@ function AppContent() {
             >
               <Info size={13} /> 개발 노트
             </button>
-            <a href="/admin/subjects" className="btn-ghost h-8 px-2.5 text-xs text-slate-500">
-              <Settings size={13} /> 과목 관리
-            </a>
             <a
               href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
               target="_blank"

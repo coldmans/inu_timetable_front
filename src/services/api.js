@@ -1,9 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const ADMIN_BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || '/admin/api';
 const DEFAULT_SEMESTER = '2026-1';
 
 // API 응답 처리 헬퍼
-const handleResponse = async (response) => {
+export const handleResponse = async (response) => {
   console.log(`API 응답: ${response.status} ${response.statusText} - ${response.url}`);
 
   const responseText = await response.text();
@@ -122,19 +121,6 @@ const handleUserSessionMutationResponse = async (response) => {
   }
 };
 
-const getAdminHeaders = (csrfToken) => ({
-  'Content-Type': 'application/json',
-  'X-Admin-Csrf': csrfToken || '',
-});
-
-const createSubjectImportFormData = (semester, file, deactivateMissing = false) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('semester', semester);
-  formData.append('deactivateMissing', String(Boolean(deactivateMissing)));
-  return formData;
-};
-
 // 과목 조회 API
 export const subjectAPI = {
   // 전체 과목 조회 (페이징)
@@ -173,104 +159,9 @@ export const subjectAPI = {
     return handleResponse(response);
   },
 
-  // 과목 상세 조회
-  getById: async (subjectId) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // 관리자 과목 생성
-  create: async (subjectData, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects`, {
-      method: 'POST',
-      headers: getAdminHeaders(csrfToken),
-      credentials: 'include',
-      body: JSON.stringify(subjectData),
-    });
-    return handleResponse(response);
-  },
-
-  // 관리자 과목 수정
-  update: async (subjectId, subjectData, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
-      method: 'PUT',
-      headers: getAdminHeaders(csrfToken),
-      credentials: 'include',
-      body: JSON.stringify(subjectData),
-    });
-    return handleResponse(response);
-  },
-
-  // 관리자 과목 삭제
-  delete: async (subjectId, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
-      method: 'DELETE',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
   // 과목 개수 조회
   getCount: async () => {
     const response = await fetch(`${BASE_URL}/subjects/count`);
-    return handleResponse(response);
-  },
-
-  importPreview: async ({ semester, file, deactivateMissing }, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/import/preview`, {
-      method: 'POST',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
-      body: createSubjectImportFormData(semester, file, deactivateMissing),
-    });
-    return handleResponse(response);
-  },
-
-  importApply: async ({ semester, file, deactivateMissing }, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/import/apply`, {
-      method: 'POST',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
-      body: createSubjectImportFormData(semester, file, deactivateMissing),
-    });
-    return handleResponse(response);
-  },
-};
-
-export const adminAuthAPI = {
-  login: async ({ username, password }) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ username, password }),
-    });
-    return handleResponse(response);
-  },
-
-  me: async () => {
-    const response = await fetch(`${ADMIN_BASE_URL}/auth/me`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  logout: async () => {
-    const response = await fetch(`${ADMIN_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
     return handleResponse(response);
   },
 };

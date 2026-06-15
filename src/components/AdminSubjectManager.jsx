@@ -14,7 +14,8 @@ import {
   X
 } from 'lucide-react';
 import Pagination from './Pagination';
-import { adminAuthAPI, subjectAPI } from '../services/api';
+import { subjectAPI } from '../services/api';
+import { adminAuthAPI, adminSubjectAPI } from '../services/adminApi';
 import { departments, grades } from '../utils/timetableUtils';
 
 const ADMIN_USERNAME_STORAGE_KEY = 'inu_admin_username';
@@ -537,7 +538,7 @@ const AdminSubjectManager = ({ showToast }) => {
 
     try {
       setDetailLoadingId(subject.id);
-      const detail = await subjectAPI.getById(subject.id);
+      const detail = await adminSubjectAPI.getById(subject.id);
       setFormMode('edit');
       setEditingSubject(detail);
       setSubjectForm(toSubjectForm(detail));
@@ -607,9 +608,9 @@ const AdminSubjectManager = ({ showToast }) => {
     try {
       setIsSaving(true);
       if (mode === 'create') {
-        await subjectAPI.create(payload, adminCsrfToken);
+        await adminSubjectAPI.create(payload, adminCsrfToken);
       } else {
-        await subjectAPI.update(editingSubject.id, payload, adminCsrfToken);
+        await adminSubjectAPI.update(editingSubject.id, payload, adminCsrfToken);
       }
 
       notify(mode === 'create' ? '과목을 생성했습니다.' : '과목을 수정했습니다.');
@@ -655,7 +656,7 @@ const AdminSubjectManager = ({ showToast }) => {
 
     try {
       setIsDeleting(true);
-      await subjectAPI.delete(subjectToDelete.id, adminCsrfToken);
+      await adminSubjectAPI.delete(subjectToDelete.id, adminCsrfToken);
       notify('과목을 삭제했습니다.');
       setSubjectToDelete(null);
       await loadSubjects(currentPage);
@@ -703,7 +704,7 @@ const AdminSubjectManager = ({ showToast }) => {
       setPreviewResult(null);
       setIsImportConfirmOpen(false);
 
-      const response = await subjectAPI.importPreview({
+      const response = await adminSubjectAPI.importPreview({
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
@@ -740,7 +741,7 @@ const AdminSubjectManager = ({ showToast }) => {
 
     try {
       setIsApplyingImport(true);
-      await subjectAPI.importApply({
+      await adminSubjectAPI.importApply({
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
