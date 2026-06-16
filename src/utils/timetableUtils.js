@@ -324,11 +324,11 @@ const departmentGroupDefinitions = [
     },
     {
         label: '정보기술대학',
-        departments: ['컴퓨터공학부', '정보통신공학과', '임베디드시스템공학과', '데이터과학과']
+        departments: ['컴퓨터공학부', '정보통신공학과', '임베디드시스템공학과']
     },
     {
         label: '경영대학',
-        departments: ['경영학부', '세무회계학과']
+        departments: ['경영학부', '데이터과학과', '세무회계학과']
     },
     {
         label: '예술체육대학',
