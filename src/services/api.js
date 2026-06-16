@@ -208,6 +208,17 @@ export const authAPI = {
     return handleResponse(response);
   },
 
+  updateProfile: async (userData) => {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    return handleResponse(response);
+  },
+
   logout: async () => {
     const response = await fetchWithUserCsrf(`${BASE_URL}/auth/logout`, {
       method: 'POST',

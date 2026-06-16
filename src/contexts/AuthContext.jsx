@@ -77,6 +77,13 @@ export const AuthProvider = ({ children }) => {
     return payload;
   };
 
+  const updateProfile = async (profileData) => {
+    const updatedUser = await authAPI.updateProfile(profileData);
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    return updatedUser;
+  };
+
   const logout = async () => {
     try {
       await authAPI.logout();
@@ -103,6 +110,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     createDevSession,
+    updateProfile,
     logout,
     withdraw,
   };

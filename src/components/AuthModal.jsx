@@ -25,7 +25,7 @@ const defaultMajorGroupSelections = {
   MINOR: '',
 };
 
-const AuthSelect = ({ label, value, options, onChange, active = false, disabled = false, optionWrap = false }) => {
+export const AuthSelect = ({ label, value, options, onChange, active = false, disabled = false, optionWrap = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectId = useId();
