@@ -36,3 +36,14 @@ test('asks anonymous users to log in before saving a course', async ({ page }) =
   await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible();
   await expect(page.getByText('INU 시간표 계정으로 계속하세요.')).toBeVisible();
 });
+
+test('opens compact mobile filter sheet', async ({ page, isMobile }) => {
+  test.skip(!isMobile, '모바일 전용 필터 시트 검증');
+
+  await page.goto('/');
+  await page.getByRole('button', { name: '필터', exact: true }).click();
+
+  await expect(page.getByRole('heading', { name: '상세 필터' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '상세 필터 닫기' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '적용하고 닫기' })).toBeVisible();
+});

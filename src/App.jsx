@@ -443,7 +443,7 @@ const CourseRow = ({
         </div>
 
         <div className="sm:ml-3 sm:flex-shrink-0">
-          <div className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-1.5 sm:flex sm:justify-end">
+          <div className="grid grid-cols-[2.5rem_1fr_1fr] items-center gap-1 sm:flex sm:justify-end sm:gap-1.5">
             {wishlistCount > 0 && (
               <div className="col-span-3 flex justify-end sm:col-span-1">
                 <WishlistCountChip count={wishlistCount} variant="action" className="hidden sm:inline-flex" />
@@ -456,7 +456,7 @@ const CourseRow = ({
               rel="noopener noreferrer"
               aria-label={`${course.name} 강의평 보기`}
               title="에브리타임 강의평"
-              className="icon-btn h-11 w-11 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
+              className="icon-btn h-10 w-10 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
             >
               <MessageSquare size={15} />
             </a>
@@ -465,7 +465,7 @@ const CourseRow = ({
               type="button"
               onClick={() => onAddToWishlist(course)}
               disabled={actionsDisabled}
-              className="btn-secondary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+              className="btn-secondary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
             >
               <ShoppingCart size={13} /> 담기
             </button>
@@ -474,7 +474,7 @@ const CourseRow = ({
               type="button"
               onClick={() => onAddToTimetable(course)}
               disabled={actionsDisabled}
-              className="btn-primary h-11 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+              className="btn-primary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
             >
               <Plus size={13} /> 추가
             </button>
@@ -1080,6 +1080,155 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [] }) => {
         </div>
       )}
     </>
+  );
+};
+
+const MobileFilterSheet = ({
+  isOpen,
+  onClose,
+  filters,
+  setFilters,
+  activeFilterCount,
+  onReset,
+  majorShortcuts
+}) => {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateDayFilter = (value) => {
+    setFilters(prev => ({
+      ...prev,
+      dayOfWeek: value,
+      startTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
+      endTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
+    }));
+  };
+
+  const resetFilters = () => {
+    onReset();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-filter-title">
+      <div className="modal-panel flex max-h-[86vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="min-w-0">
+            <h2 id="mobile-filter-title" className="text-base font-bold text-slate-900">상세 필터</h2>
+            <p className="mt-0.5 text-xs text-slate-500">{activeFilterCount > 0 ? `${activeFilterCount}개 적용 중` : '전체 과목'}</p>
+          </div>
+          <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="상세 필터 닫기">
+            <X size={17} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+          <DepartmentFilterButton
+            value={filters.department}
+            majorShortcuts={majorShortcuts}
+            onChange={(event) => updateFilter('department', event.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <FilterSelect
+              label="이수구분 필터"
+              value={filters.subjectType}
+              active={filters.subjectType !== '전체'}
+              onChange={(event) => updateFilter('subjectType', event.target.value)}
+            >
+              {courseTypes.map(type => (
+                <option key={type} value={type}>{type === '전체' ? '구분' : type}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="학년 필터"
+              value={filters.grade}
+              active={filters.grade !== '전체'}
+              onChange={(event) => updateFilter('grade', event.target.value)}
+            >
+              {grades.map(grade => (
+                <option key={grade} value={grade}>{grade === '전체' ? '학년' : grade}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="학점 필터"
+              value={filters.credits}
+              active={filters.credits !== '전체'}
+              onChange={(event) => updateFilter('credits', event.target.value)}
+            >
+              {creditOptions.map(credit => (
+                <option key={credit} value={credit}>{credit === '전체' ? '학점' : credit}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="요일 필터"
+              value={filters.dayOfWeek}
+              active={filters.dayOfWeek !== '전체'}
+              onChange={(event) => updateDayFilter(event.target.value)}
+            >
+              {filterDaysOfWeek.map(day => (
+                <option key={day} value={day}>{day === '전체' ? '요일' : day}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="시작 교시 필터"
+              value={filters.startTime}
+              active={filters.startTime !== '전체'}
+              disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
+              onChange={(event) => updateFilter('startTime', event.target.value)}
+            >
+              {timeOptions.map(time => (
+                <option key={time} value={time}>{time === '전체' ? '시작' : `${time}교시`}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="종료 교시 필터"
+              value={filters.endTime}
+              active={filters.endTime !== '전체'}
+              disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
+              onChange={(event) => updateFilter('endTime', event.target.value)}
+            >
+              {timeOptions.map(time => (
+                <option key={time} value={time}>{time === '전체' ? '종료' : `${time}교시`}</option>
+              ))}
+            </FilterSelect>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+          <button type="button" onClick={resetFilters} className="btn-secondary h-11 px-3 text-[13px]" disabled={activeFilterCount === 0}>
+            <RotateCcw size={13} /> 초기화
+          </button>
+          <button type="button" onClick={onClose} className="btn-primary h-11 text-[13px]">
+            적용하고 닫기
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -2478,7 +2627,7 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal;
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters;
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
@@ -2564,6 +2713,15 @@ function AppContent() {
           isApplying={isApplyingCombination}
         />
       )}
+      <MobileFilterSheet
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        setFilters={setFilters}
+        activeFilterCount={activeFilterCount}
+        onReset={handleResetFilters}
+        majorShortcuts={userMajorShortcuts}
+      />
 
       <header
         aria-hidden={hasBlockingOverlay}
@@ -2576,7 +2734,7 @@ function AppContent() {
               <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-blue-600 text-white shadow-sm">
                 <CalendarDays size={17} />
               </span>
-              <span className="hidden text-[15px] font-bold tracking-tight text-slate-900 sm:inline">INU 시간표</span>
+              <span className="max-w-[7rem] truncate text-[15px] font-bold tracking-tight text-slate-900">INU 시간표</span>
             </a>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
@@ -2675,7 +2833,58 @@ function AppContent() {
             </button>
           </div>
 
-          <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="mt-2.5 grid grid-cols-2 gap-1.5 md:hidden">
+            <DepartmentFilterButton
+              value={filters.department}
+              majorShortcuts={userMajorShortcuts}
+              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+            />
+            <FilterSelect
+              label="이수구분 필터"
+              value={filters.subjectType}
+              active={filters.subjectType !== '전체'}
+              onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
+            >
+              {courseTypes.map(type => (
+                <option key={type} value={type}>{type === '전체' ? '구분' : type}</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect
+              label="요일 필터"
+              value={filters.dayOfWeek}
+              active={filters.dayOfWeek !== '전체'}
+              onChange={(e) => {
+                const nextDayOfWeek = e.target.value;
+                setFilters(prev => ({
+                  ...prev,
+                  dayOfWeek: nextDayOfWeek,
+                  startTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
+                  endTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
+                }));
+              }}
+            >
+              {filterDaysOfWeek.map(day => (
+                <option key={day} value={day}>
+                  {day === '전체' ? '요일' : day}
+                </option>
+              ))}
+            </FilterSelect>
+            <button
+              type="button"
+              onClick={() => setShowFilters(true)}
+              className={`field select-trigger ${activeFilterCount > 0 ? 'select-trigger-active' : 'text-slate-600'}`}
+              aria-haspopup="dialog"
+              aria-expanded={showFilters}
+            >
+              <span className="flex min-w-0 items-center gap-1.5 truncate">
+                <Filter size={13} className="flex-shrink-0" />
+                필터{activeFilterCount > 0 ? ` ${activeFilterCount}` : ''}
+              </span>
+              <ChevronDown size={14} className="ml-2 flex-shrink-0 text-slate-400" />
+            </button>
+          </div>
+
+          <div className="mt-2.5 hidden grid-cols-2 gap-1.5 md:grid md:grid-cols-4 lg:grid-cols-7">
             <DepartmentFilterButton
               value={filters.department}
               majorShortcuts={userMajorShortcuts}

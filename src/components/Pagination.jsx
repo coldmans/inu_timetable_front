@@ -72,18 +72,22 @@ const Pagination = ({
         {startItem}-{endItem}
       </p>
 
-      <div className="flex items-center gap-1">
+      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-1">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 0 || isLoading}
           aria-label="이전 페이지"
-          className="btn-secondary h-10 px-3 text-[13px] sm:h-8 sm:px-2.5"
+          className="btn-secondary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none sm:px-2.5"
         >
           <ChevronLeft size={14} />
           <span className="hidden sm:inline">이전</span>
         </button>
 
-        <div className="flex items-center gap-0.5 px-1">
+        <span className="min-w-[72px] rounded-lg bg-slate-50 px-3 py-2 text-center text-xs font-semibold tabular-nums text-slate-600 ring-1 ring-inset ring-slate-200 sm:hidden">
+          {currentPage + 1} / {totalPages}
+        </span>
+
+        <div className="hidden items-center gap-0.5 px-1 sm:flex">
           {getVisiblePages().map((page, index) => (
             page === '...' ? (
               <span key={`dots-${index}`} className="px-1.5 text-xs text-slate-400">
@@ -112,7 +116,7 @@ const Pagination = ({
           onClick={handleNext}
           disabled={currentPage === totalPages - 1 || isLoading}
           aria-label="다음 페이지"
-          className="btn-secondary h-10 px-3 text-[13px] sm:h-8 sm:px-2.5"
+          className="btn-secondary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none sm:px-2.5"
         >
           <span className="hidden sm:inline">다음</span>
           <ChevronRight size={14} />
