@@ -521,6 +521,78 @@ const EmptyResults = ({ onReset }) => (
   </div>
 );
 
+const MobileWorkspaceNav = ({
+  activeTab,
+  onChange,
+  timetableCount,
+  timetableCredits,
+  wishlistCount
+}) => {
+  const tabs = [
+    {
+      id: 'search',
+      label: '과목 찾기',
+      icon: Search,
+      meta: wishlistCount > 0 ? `${wishlistCount}개 담김` : '검색'
+    },
+    {
+      id: 'timetable',
+      label: '내 시간표',
+      icon: CalendarDays,
+      meta: timetableCount > 0 ? `${timetableCount}과목 · ${timetableCredits}학점` : '비어 있음',
+      count: timetableCount
+    }
+  ];
+
+  return (
+    <nav
+      data-tour="mobile-workspace-tabs"
+      aria-label="모바일 작업 전환"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur md:hidden"
+    >
+      <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onChange(tab.id)}
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex min-h-[3.25rem] items-center gap-2 rounded-xl px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-200'
+              }`}
+            >
+              <span className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg ${
+                isActive ? 'bg-white/15 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200'
+              }`}>
+                <Icon size={17} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-semibold">{tab.label}</span>
+                <span className={`block truncate text-[11px] ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
+                  {tab.meta}
+                </span>
+              </span>
+              {tab.count > 0 && (
+                <span className={`ml-auto grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[11px] font-bold tabular-nums ${
+                  isActive ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
 const HiddenPage = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-center">
     <div className="max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
@@ -1539,6 +1611,7 @@ function AppContent() {
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
+  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState('search');
 
   const timetableRef = useRef(null);
   const timetableExportRef = useRef(null);
@@ -1575,6 +1648,7 @@ function AppContent() {
   // 희망 공강 요일 설정
   const [freeDays, setFreeDays] = useState([]);
   const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
+  const timetableCredits = timetable.reduce((acc, course) => acc + Number(course.credits || 0), 0);
   const canCreateDevSession = import.meta.env.DEV && !isLoggedIn;
   const showWishlistCountPreview = import.meta.env.DEV;
 
@@ -2628,6 +2702,7 @@ function AppContent() {
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
   const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters;
+  const shouldHideMobileWorkspaceNav = hasBlockingOverlay || showAuthModal || showCourseDetailModal || showTimetableListModal || showCombinationResults;
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
@@ -2741,7 +2816,7 @@ function AppContent() {
             <button
               type="button"
               onClick={handleShowTimetableList}
-              className="icon-btn relative h-10 w-10 lg:hidden"
+              className="icon-btn relative hidden h-10 w-10 md:inline-flex lg:hidden"
               title="내 시간표 보기"
               aria-label={`내 시간표 보기${timetable.length > 0 ? `, ${timetable.length}개 과목` : ''}`}
             >
@@ -2776,7 +2851,7 @@ function AppContent() {
       <div
         aria-hidden={hasBlockingOverlay}
         inert={hasBlockingOverlay ? '' : undefined}
-        className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
+        className="mx-auto max-w-7xl px-4 pb-28 pt-4 md:px-8 md:py-6"
       >
         <>
         {canCreateDevSession && (
@@ -2809,7 +2884,11 @@ function AppContent() {
         )}
 
         {/* 검색 바 */}
-        <section data-tour="course-search" aria-label="과목 검색" className="card p-3 md:p-4">
+        <section
+          data-tour="course-search"
+          aria-label="과목 검색"
+          className={`card p-3 md:p-4 ${mobileWorkspaceTab === 'search' ? '' : 'hidden md:block'}`}
+        >
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -2979,8 +3058,61 @@ function AppContent() {
 
         {/* Main Content Area */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:gap-6">
+          <section
+            aria-label="모바일 내 시간표"
+            className={`${mobileWorkspaceTab === 'timetable' ? 'block' : 'hidden'} md:hidden`}
+          >
+            <TimetableGrid
+              courses={timetable}
+              onExportImage={handleExportTimetableImage}
+              onRemoveCourse={handleRemoveFromTimetable}
+              onAddToWishlist={handleMoveToWishlistFromTimetable}
+              onViewCourseDetails={handleViewCourseDetails}
+              onClearAll={handleClearAllTimetable}
+              onShowTimetableList={handleShowTimetableList}
+              timetableRef={timetableRef}
+              isExportingImage={isExportingImage}
+              isMobile
+            />
+            <div className="mt-3 rounded-2xl bg-white p-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200">
+              {wishlist.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWishlistModalMode('list');
+                      setShowWishlistModal(true);
+                    }}
+                    className="btn-secondary h-11 w-full rounded-xl text-[13px]"
+                  >
+                    <ShoppingCart size={14} /> 담은 과목 {wishlist.length}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWishlistModalMode('setup');
+                      setShowWishlistModal(true);
+                    }}
+                    disabled={isGenerating}
+                    className="btn-primary h-11 w-full rounded-xl text-[13px]"
+                  >
+                    <Star size={14} /> 조합 만들기
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMobileWorkspaceTab('search')}
+                  className="btn-secondary h-11 w-full rounded-xl text-[13px]"
+                >
+                  <Search size={14} /> 과목 찾으러 가기
+                </button>
+              )}
+            </div>
+          </section>
+
           {/* Left: Course List */}
-          <main>
+          <main className={`${mobileWorkspaceTab === 'search' ? 'block' : 'hidden'} md:block`}>
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2">
@@ -3058,7 +3190,7 @@ function AppContent() {
           </main>
 
           {/* Right: Timetable & Wishlist */}
-          <aside>
+          <aside className={`${mobileWorkspaceTab === 'search' ? 'block' : 'hidden'} md:block`}>
             <div className="space-y-4 lg:sticky lg:top-[4.5rem]">
               {/* Desktop: Mini Timetable */}
               <div className="hidden lg:block">
@@ -3237,6 +3369,15 @@ function AppContent() {
           </div>
         </div>
       </footer>
+      {!shouldHideMobileWorkspaceNav && (
+        <MobileWorkspaceNav
+          activeTab={mobileWorkspaceTab}
+          onChange={setMobileWorkspaceTab}
+          timetableCount={timetable.length}
+          timetableCredits={timetableCredits}
+          wishlistCount={wishlist.length}
+        />
+      )}
     </div>
   );
 }

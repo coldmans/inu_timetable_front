@@ -47,3 +47,19 @@ test('opens compact mobile filter sheet', async ({ page, isMobile }) => {
   await expect(page.getByRole('button', { name: '상세 필터 닫기' })).toBeVisible();
   await expect(page.getByRole('button', { name: '적용하고 닫기' })).toBeVisible();
 });
+
+test('switches mobile workspace to the timetable tab', async ({ page, isMobile }) => {
+  test.skip(!isMobile, '모바일 전용 작업 전환 검증');
+
+  await page.goto('/');
+
+  const workspaceNav = page.getByRole('navigation', { name: '모바일 작업 전환' });
+  await expect(workspaceNav).toBeVisible();
+
+  const timetableTab = workspaceNav.getByRole('button', { name: /내 시간표/ });
+  await timetableTab.click();
+
+  await expect(timetableTab).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { name: '내 시간표' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '과목명 검색' })).toBeHidden();
+});
