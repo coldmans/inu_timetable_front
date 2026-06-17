@@ -29,6 +29,7 @@ Live site: https://inuu-timetable.vercel.app
 | State | React Context, hooks |
 | API | Fetch API, service layer |
 | Export | html2canvas, jsPDF |
+| QA | Playwright E2E |
 | Deployment | Vercel config |
 
 ## Features
@@ -94,7 +95,10 @@ npm run dev
 npm run build
 npm run preview
 npm run lint
+npm run test:e2e
 ```
+
+`npm run test:e2e`는 기본으로 운영 배포 URL(`https://inuu-timetable.vercel.app`)을 대상으로 과목 검색, 회원가입 전공 선택, 비로그인 담기 보호 흐름을 검증합니다. 다른 환경을 확인할 때는 `E2E_BASE_URL`을 지정합니다.
 
 ## Related Repositories
 
