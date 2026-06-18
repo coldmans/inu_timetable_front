@@ -78,8 +78,8 @@ const TimetableGrid = ({
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [showMenu, setShowMenu] = useState(false);
 
-    const timeColumnWidth = '36px';
-    const dayColumnWidth = isMobile ? '80px' : `calc((100% - ${timeColumnWidth}) / ${daysOfWeek.length})`;
+    const timeColumnWidth = isMobile ? '30px' : '36px';
+    const dayColumnWidth = `calc((100% - ${timeColumnWidth}) / ${daysOfWeek.length})`;
 
     const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
 
@@ -158,7 +158,7 @@ const TimetableGrid = ({
     }, [courses]);
 
     return (
-        <div ref={timetableRef} className={`card p-4 mini-timetable ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
+        <div ref={timetableRef} className={`card mini-timetable ${isMobile ? 'overflow-hidden p-2' : 'p-4'}`}>
             {showTitle && (
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ const TimetableGrid = ({
                 </p>
             )}
 
-            <div className={isMobile ? 'min-w-[500px]' : 'w-full'}>
+            <div className="w-full">
                 <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
                     <table className="w-full table-fixed border-collapse text-xs text-slate-700">
                         <colgroup>
@@ -224,7 +224,7 @@ const TimetableGrid = ({
                             <tr>
                                 <th className="border border-slate-100 bg-slate-50/80 p-1"></th>
                                 {daysOfWeek.map(day => (
-                                    <th key={day} className="border border-slate-100 bg-slate-50/80 py-1.5 text-center text-[11px] font-semibold text-slate-500">
+                                    <th key={day} className={`border border-slate-100 bg-slate-50/80 text-center font-semibold text-slate-500 ${isMobile ? 'py-1 text-[10px]' : 'py-1.5 text-[11px]'}`}>
                                         {day}
                                     </th>
                                 ))}
@@ -236,7 +236,7 @@ const TimetableGrid = ({
                                     {slot.endsWith('-1') && (
                                         <td
                                             rowSpan={2}
-                                            className={`border border-slate-100 p-1 text-center text-[10px] font-medium tabular-nums ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
+                                            className={`border border-slate-100 text-center font-medium tabular-nums ${isMobile ? 'p-0.5 text-[9px]' : 'p-1 text-[10px]'} ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
                                         >
                                             {displayTimeSlots[Math.floor(index / 2)]}
                                         </td>

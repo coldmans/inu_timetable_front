@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, useId } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, Settings, CheckCircle2, XCircle, RotateCcw, SearchX, Trash2, UserCircle } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, CheckCircle2, XCircle, RotateCcw, SearchX, Trash2, UserCircle } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal, { AuthSelect } from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -408,26 +408,56 @@ const WishlistCountChip = ({ count, variant = 'meta', className = '' }) => {
   );
 };
 
+const getClassMethodLabel = (classMethod) => {
+  if (classMethod === 'ONLINE') return '온라인';
+  if (classMethod === 'OFFLINE') return '오프라인';
+  if (classMethod === 'HYBRID') return '혼합';
+  return classMethod || null;
+};
+
 const CourseRow = ({
   course,
   onAddToTimetable,
   onAddToWishlist,
   actionsDisabled = false,
-  showWishlistCountPreview = false
+  showWishlistCountPreview = false,
+  isExpanded = false,
+  onToggleExpanded = () => {}
 }) => {
   const wishlistCount = getCourseWishlistCount(course, showWishlistCountPreview);
+  const courseReviewUrl = `https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`;
+  const classMethodLabel = getClassMethodLabel(course.classMethod);
+  const courseCode = course.code || course.subjectCode || course.courseCode || course.courseNo;
+  const detailItems = [
+    course.grade ? `${course.grade}학년` : '전학년',
+    course.type,
+    `${course.credits}학점`,
+    courseCode
+  ].filter(Boolean);
+  const handleSummaryClick = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches) {
+      return;
+    }
+    onToggleExpanded();
+  };
 
   return (
-    <li className="course-list-row">
+    <li className={`course-list-row ${isExpanded ? 'bg-blue-50/45' : ''}`}>
       <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          data-testid="course-row-summary"
+          onClick={handleSummaryClick}
+          aria-expanded={isExpanded}
+          className="w-full min-w-0 flex-1 text-left focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:cursor-default"
+        >
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className={`course-type-badge ${course.color} ${course.textColor}`}>
               {course.type}
             </span>
-            <h3 className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
+            <span className="min-w-0 truncate text-[15px] font-semibold text-slate-900" title={course.name}>
               {course.name}
-            </h3>
+            </span>
             <span className="meta-chip flex-shrink-0">{course.credits}학점</span>
             <WishlistCountChip count={wishlistCount} className="sm:hidden" />
           </div>
@@ -440,9 +470,9 @@ const CourseRow = ({
               <span className="truncate">{formatScheduleLabel(course)}</span>
             </span>
           </div>
-        </div>
+        </button>
 
-        <div className="sm:ml-3 sm:flex-shrink-0">
+        <div className="hidden sm:ml-3 sm:block sm:flex-shrink-0">
           <div className="grid grid-cols-[2.5rem_1fr_1fr] items-center gap-1 sm:flex sm:justify-end sm:gap-1.5">
             {wishlistCount > 0 && (
               <div className="col-span-3 flex justify-end sm:col-span-1">
@@ -451,7 +481,7 @@ const CourseRow = ({
             )}
             <a
               data-tour="course-review"
-              href={`https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`}
+              href={courseReviewUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${course.name} 강의평 보기`}
@@ -480,6 +510,56 @@ const CourseRow = ({
             </button>
           </div>
         </div>
+
+        {isExpanded && (
+          <div
+            data-testid="course-row-actions"
+            className="rounded-2xl bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200 sm:hidden"
+          >
+            <div className="flex flex-wrap gap-x-2 gap-y-1 text-[13px] font-medium text-slate-600">
+              {detailItems.map(item => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+            {(classMethodLabel || course.note || course.description) && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {classMethodLabel && <span className="font-semibold text-blue-600">{classMethodLabel}</span>}
+                {classMethodLabel && (course.note || course.description) ? ' · ' : ''}
+                {course.note || course.description}
+              </p>
+            )}
+            <div className="mt-3 grid grid-cols-[1.35fr_1fr_1fr] gap-2">
+              <button
+                data-tour="course-add"
+                type="button"
+                onClick={() => onAddToTimetable(course)}
+                disabled={actionsDisabled}
+                className="btn-primary h-10 rounded-full px-3 text-xs"
+              >
+                <Plus size={13} /> 시간표에 추가
+              </button>
+              <a
+                data-tour="course-review"
+                href={courseReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${course.name} 강의평 보기`}
+                className="btn-secondary h-10 rounded-full px-3 text-xs"
+              >
+                <MessageSquare size={13} /> 강의평
+              </a>
+              <button
+                data-tour="course-wishlist"
+                type="button"
+                onClick={() => onAddToWishlist(course)}
+                disabled={actionsDisabled}
+                className="btn-secondary h-10 rounded-full px-3 text-xs"
+              >
+                <ShoppingCart size={13} /> 담기
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </li>
   );
@@ -1637,10 +1717,11 @@ const AccountModal = ({ user, onClose, onLogout, onWithdraw, onUpdateProfile, is
 
 // 메인 애플리케이션 컴포넌트
 function AppContent() {
-  const { user, isLoggedIn, isLoading: authLoading, logout, withdraw, updateProfile, createDevSession } = useAuth();
+  const { user, isLoggedIn, isLoading: authLoading, logout, withdraw, updateProfile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+  const [expandedCourseId, setExpandedCourseId] = useState(null);
 
   // 페이지 상태 관리
   const [currentView, setCurrentView] = useState('timetable'); // 'login' | 'portal' | 'timetable'
@@ -1679,7 +1760,6 @@ function AppContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showNewUserTutorial, setShowNewUserTutorial] = useState(false);
-  const [isCreatingDevSession, setIsCreatingDevSession] = useState(false);
   const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -1696,7 +1776,6 @@ function AppContent() {
   // 희망 공강 요일 설정
   const [freeDays, setFreeDays] = useState([]);
   const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
-  const canCreateDevSession = import.meta.env.DEV && !isLoggedIn;
   const showWishlistCountPreview = import.meta.env.DEV;
 
   const showToast = useCallback((message, type = 'success') => {
@@ -1920,6 +1999,10 @@ function AppContent() {
   useEffect(() => {
     executeSearch();
   }, [filters]); // searchTerm 제거, filters만 자동 검색
+
+  useEffect(() => {
+    setExpandedCourseId(null);
+  }, [currentPage, filters, searchTerm]);
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
@@ -2289,24 +2372,6 @@ function AppContent() {
 
   const handleLogin = () => {
     setShowAuthModal(true);
-  };
-
-  const handleCreateDevSession = async () => {
-    if (isCreatingDevSession) return;
-
-    setIsCreatingDevSession(true);
-    try {
-      const payload = await createDevSession({
-        semester: CURRENT_SEMESTER,
-        seedWishlist: true,
-      });
-      const seededCount = payload?.seededWishlistCount || payload?.wishlistCount || 0;
-      showToast(`디자인 QA 세션을 열었어요. 위시리스트 ${seededCount}개를 준비했습니다.`);
-    } catch (error) {
-      showToast(`디자인 QA 세션 생성 실패: ${error.message}`, 'warning');
-    } finally {
-      setIsCreatingDevSession(false);
-    }
   };
 
   const clearPersonalState = () => {
@@ -2900,38 +2965,6 @@ function AppContent() {
         className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
         <>
-        {canCreateDevSession && (
-          <section className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 ring-1 ring-blue-200 sm:h-8 sm:w-8">
-                <Settings size={14} />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold sm:text-sm">디자인 QA 세션</p>
-                <p className="hidden truncate text-xs text-blue-700 sm:block">테스트 사용자 · 샘플 위시리스트</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCreateDevSession}
-              disabled={isCreatingDevSession}
-              className="btn-primary h-9 flex-shrink-0 bg-blue-700 px-3 text-xs hover:bg-blue-600 sm:h-10 sm:px-4 sm:text-sm"
-            >
-              {isCreatingDevSession ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span className="hidden sm:inline">준비 중</span>
-                </>
-              ) : (
-                <>
-                  <span className="sm:hidden">테스트</span>
-                  <span className="hidden sm:inline">테스트 세션 시작</span>
-                </>
-              )}
-            </button>
-          </section>
-        )}
-
         <section aria-label="모바일 시간표 미리보기" className="mb-3 md:hidden">
           <div className="max-h-[32vh] min-h-[13rem] overflow-y-auto overscroll-contain rounded-2xl">
             <h2 className="sr-only">내 시간표</h2>
@@ -3166,6 +3199,8 @@ function AppContent() {
                       onAddToWishlist={handleAddToWishlist}
                       actionsDisabled={showWishlistModal}
                       showWishlistCountPreview={showWishlistCountPreview}
+                      isExpanded={expandedCourseId === course.id}
+                      onToggleExpanded={() => setExpandedCourseId(prev => prev === course.id ? null : course.id)}
                     />
                   ))}
                 </ul>

@@ -166,14 +166,20 @@ export const formatCourse = (subject) => {
 
     return {
         id: subject.id,
+        code: subject.subjectCode || subject.subject_code || subject.courseCode || subject.course_code || subject.courseNo || subject.course_no || subject.code || null,
         name: subject.subjectName || subject.name,
         credits: subject.credits,
         professor: subject.professor,
         department: subject.department,
+        grade: subject.grade,
         type,
         time: timeString,
         schedules: subject.schedules,
         classMethod: subject.classMethod,
+        location: subject.location || subject.classroom || subject.room || null,
+        note: subject.note || subject.remarks || subject.remark || null,
+        description: subject.description,
+        isNight: subject.isNight,
         timetableAddCount:
             subject.timetableAddCount ??
             subject.timetable_add_count ??
