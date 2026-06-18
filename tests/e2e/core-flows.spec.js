@@ -41,25 +41,26 @@ test('opens compact mobile filter sheet', async ({ page, isMobile }) => {
   test.skip(!isMobile, '모바일 전용 필터 시트 검증');
 
   await page.goto('/');
-  await page.getByRole('button', { name: '필터', exact: true }).click();
+  await page.getByRole('button', { name: /상세/ }).click();
 
   await expect(page.getByRole('heading', { name: '상세 필터' })).toBeVisible();
   await expect(page.getByRole('button', { name: '상세 필터 닫기' })).toBeVisible();
   await expect(page.getByRole('button', { name: '적용하고 닫기' })).toBeVisible();
 });
 
-test('switches mobile workspace to the timetable tab', async ({ page, isMobile }) => {
-  test.skip(!isMobile, '모바일 전용 작업 전환 검증');
+test('shows a scrollable mobile timetable preview and filter rail', async ({ page, isMobile }) => {
+  test.skip(!isMobile, '모바일 전용 상단 시간표와 필터 레일 검증');
 
   await page.goto('/');
 
-  const workspaceNav = page.getByRole('navigation', { name: '모바일 작업 전환' });
-  await expect(workspaceNav).toBeVisible();
-
-  const timetableTab = workspaceNav.getByRole('button', { name: /내 시간표/ });
-  await timetableTab.click();
-
-  await expect(timetableTab).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByLabel('모바일 시간표 미리보기')).toBeVisible();
   await expect(page.getByRole('heading', { name: '내 시간표' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: '과목명 검색' })).toBeHidden();
+
+  const filterRail = page.getByLabel('모바일 필터');
+  await expect(filterRail).toBeVisible();
+  await expect(filterRail.getByRole('button', { name: /학과/ })).toBeVisible();
+  await expect(filterRail.getByRole('button', { name: /검색어/ })).toBeVisible();
+
+  const hasHorizontalOverflow = await filterRail.evaluate(element => element.scrollWidth > element.clientWidth);
+  expect(hasHorizontalOverflow).toBe(true);
 });

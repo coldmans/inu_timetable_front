@@ -521,75 +521,123 @@ const EmptyResults = ({ onReset }) => (
   </div>
 );
 
-const MobileWorkspaceNav = ({
-  activeTab,
-  onChange,
-  timetableCount,
-  timetableCredits,
-  wishlistCount
+const getCompactFilterLabel = (filterKey, value) => {
+  if (filterKey === 'department') {
+    if (value === '전체') return '전체';
+    const selection = getDepartmentFilterSelection(value);
+    return selection.type === 'group' ? selection.group?.label || value : selection.department || value;
+  }
+
+  return value === '전체' ? '전체' : value;
+};
+
+const MobileFilterScroller = ({
+  filters,
+  searchTerm,
+  activeFilterCount,
+  onOpenFilters,
+  onReset,
+  onFocusSearch
 }) => {
-  const tabs = [
+  const timeLabel = filters.startTime !== '전체' || filters.endTime !== '전체'
+    ? `${filters.startTime === '전체' ? '시작' : `${filters.startTime}교시`} - ${filters.endTime === '전체' ? '종료' : `${filters.endTime}교시`}`
+    : '전체';
+  const chips = [
     {
-      id: 'search',
-      label: '과목 찾기',
-      icon: Search,
-      meta: wishlistCount > 0 ? `${wishlistCount}개 담김` : '검색'
+      key: 'department',
+      label: '학과',
+      value: getCompactFilterLabel('department', filters.department),
+      active: filters.department !== '전체',
+      onClick: onOpenFilters
     },
     {
-      id: 'timetable',
-      label: '내 시간표',
-      icon: CalendarDays,
-      meta: timetableCount > 0 ? `${timetableCount}과목 · ${timetableCredits}학점` : '비어 있음',
-      count: timetableCount
+      key: 'search',
+      label: '검색어',
+      value: searchTerm.trim() || '없음',
+      active: Boolean(searchTerm.trim()),
+      onClick: onFocusSearch
+    },
+    {
+      key: 'subjectType',
+      label: '구분',
+      value: getCompactFilterLabel('subjectType', filters.subjectType),
+      active: filters.subjectType !== '전체',
+      onClick: onOpenFilters
+    },
+    {
+      key: 'grade',
+      label: '학년',
+      value: getCompactFilterLabel('grade', filters.grade),
+      active: filters.grade !== '전체',
+      onClick: onOpenFilters
+    },
+    {
+      key: 'credits',
+      label: '학점',
+      value: getCompactFilterLabel('credits', filters.credits),
+      active: filters.credits !== '전체',
+      onClick: onOpenFilters
+    },
+    {
+      key: 'dayOfWeek',
+      label: '요일',
+      value: getCompactFilterLabel('dayOfWeek', filters.dayOfWeek),
+      active: filters.dayOfWeek !== '전체',
+      onClick: onOpenFilters
+    },
+    {
+      key: 'time',
+      label: '시간',
+      value: timeLabel,
+      active: filters.startTime !== '전체' || filters.endTime !== '전체',
+      onClick: onOpenFilters
     }
   ];
 
   return (
-    <nav
-      data-tour="mobile-workspace-tabs"
-      aria-label="모바일 작업 전환"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur md:hidden"
-    >
-      <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onChange(tab.id)}
-              aria-current={isActive ? 'page' : undefined}
-              className={`flex min-h-[3.25rem] items-center gap-2 rounded-xl px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : 'bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-200'
-              }`}
-            >
-              <span className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg ${
-                isActive ? 'bg-white/15 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200'
-              }`}>
-                <Icon size={17} />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold">{tab.label}</span>
-                <span className={`block truncate text-[11px] ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
-                  {tab.meta}
-                </span>
-              </span>
-              {tab.count > 0 && (
-                <span className={`ml-auto grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[11px] font-bold tabular-nums ${
-                  isActive ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+    <div className="-mx-3 mt-2.5 md:hidden">
+      <div
+        aria-label="모바일 필터"
+        className="flex gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {chips.map(chip => (
+          <button
+            key={chip.key}
+            type="button"
+            onClick={chip.onClick}
+            className={`inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+              chip.active
+                ? 'bg-blue-50 font-semibold text-blue-700 ring-blue-200'
+                : 'bg-slate-100/80 font-medium text-slate-600 ring-slate-200'
+            }`}
+          >
+            <span className="text-slate-400">{chip.label}</span>
+            <span className="max-w-[8.75rem] truncate">{chip.value}</span>
+          </button>
+        ))}
+        {(activeFilterCount > 0 || searchTerm) && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
+          >
+            <X size={14} /> 초기화
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onOpenFilters}
+          className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+        >
+          <Filter size={14} /> 상세
+          {activeFilterCount > 0 && (
+            <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-blue-600 px-1 text-[11px] font-bold text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
       </div>
-    </nav>
+    </div>
   );
 };
 
@@ -1611,11 +1659,11 @@ function AppContent() {
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
   const [selectedCourseForDetail, setSelectedCourseForDetail] = useState(null);
   const [showTimetableListModal, setShowTimetableListModal] = useState(false);
-  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState('search');
 
   const timetableRef = useRef(null);
   const timetableExportRef = useRef(null);
   const resultsListRef = useRef(null);
+  const searchInputRef = useRef(null);
   const courseRequestSeqRef = useRef(0);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
   const [isExportingImage, setIsExportingImage] = useState(false);
@@ -1648,7 +1696,6 @@ function AppContent() {
   // 희망 공강 요일 설정
   const [freeDays, setFreeDays] = useState([]);
   const wishlistCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
-  const timetableCredits = timetable.reduce((acc, course) => acc + Number(course.credits || 0), 0);
   const canCreateDevSession = import.meta.env.DEV && !isLoggedIn;
   const showWishlistCountPreview = import.meta.env.DEV;
 
@@ -2702,7 +2749,6 @@ function AppContent() {
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
   const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters;
-  const shouldHideMobileWorkspaceNav = hasBlockingOverlay || showAuthModal || showCourseDetailModal || showTimetableListModal || showCombinationResults;
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
@@ -2851,48 +2897,94 @@ function AppContent() {
       <div
         aria-hidden={hasBlockingOverlay}
         inert={hasBlockingOverlay ? '' : undefined}
-        className="mx-auto max-w-7xl px-4 pb-28 pt-4 md:px-8 md:py-6"
+        className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
         <>
         {canCreateDevSession && (
-          <section className="mb-3 flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-blue-900 sm:flex-row sm:items-center sm:justify-between">
+          <section className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 ring-1 ring-blue-200">
-                <Settings size={15} />
+              <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-white text-blue-600 ring-1 ring-blue-200 sm:h-8 sm:w-8">
+                <Settings size={14} />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">디자인 QA 세션</p>
-                <p className="truncate text-xs text-blue-700">테스트 사용자 · 샘플 위시리스트</p>
+                <p className="truncate text-xs font-semibold sm:text-sm">디자인 QA 세션</p>
+                <p className="hidden truncate text-xs text-blue-700 sm:block">테스트 사용자 · 샘플 위시리스트</p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleCreateDevSession}
               disabled={isCreatingDevSession}
-              className="btn-primary h-10 w-full bg-blue-700 px-4 text-sm hover:bg-blue-600 sm:w-auto"
+              className="btn-primary h-9 flex-shrink-0 bg-blue-700 px-3 text-xs hover:bg-blue-600 sm:h-10 sm:px-4 sm:text-sm"
             >
               {isCreatingDevSession ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  준비 중
+                  <span className="hidden sm:inline">준비 중</span>
                 </>
               ) : (
-                '테스트 세션 시작'
+                <>
+                  <span className="sm:hidden">테스트</span>
+                  <span className="hidden sm:inline">테스트 세션 시작</span>
+                </>
               )}
             </button>
           </section>
         )}
 
+        <section aria-label="모바일 시간표 미리보기" className="mb-3 md:hidden">
+          <div className="max-h-[32vh] min-h-[13rem] overflow-y-auto overscroll-contain rounded-2xl">
+            <h2 className="sr-only">내 시간표</h2>
+            <TimetableGrid
+              courses={timetable}
+              onExportImage={handleExportTimetableImage}
+              onRemoveCourse={handleRemoveFromTimetable}
+              onAddToWishlist={handleMoveToWishlistFromTimetable}
+              onViewCourseDetails={handleViewCourseDetails}
+              onClearAll={handleClearAllTimetable}
+              onShowTimetableList={handleShowTimetableList}
+              timetableRef={timetableRef}
+              isExportingImage={isExportingImage}
+              showTitle={false}
+              isMobile
+            />
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setWishlistModalMode('list');
+                setShowWishlistModal(true);
+              }}
+              className="btn-secondary h-10 rounded-full text-[13px]"
+            >
+              <ShoppingCart size={14} /> 담은 과목 {wishlist.length}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWishlistModalMode('setup');
+                setShowWishlistModal(true);
+              }}
+              disabled={wishlist.length === 0 || isGenerating}
+              className="btn-primary h-10 rounded-full text-[13px]"
+            >
+              <Star size={14} /> 조합 만들기
+            </button>
+          </div>
+        </section>
+
         {/* 검색 바 */}
         <section
           data-tour="course-search"
           aria-label="과목 검색"
-          className={`card p-3 md:p-4 ${mobileWorkspaceTab === 'search' ? '' : 'hidden md:block'}`}
+          className="card p-3 md:p-4"
         >
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
+                ref={searchInputRef}
                 type="text"
                 aria-label="과목명 검색"
                 placeholder="과목명을 검색해 보세요"
@@ -2912,56 +3004,14 @@ function AppContent() {
             </button>
           </div>
 
-          <div className="mt-2.5 grid grid-cols-2 gap-1.5 md:hidden">
-            <DepartmentFilterButton
-              value={filters.department}
-              majorShortcuts={userMajorShortcuts}
-              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-            />
-            <FilterSelect
-              label="이수구분 필터"
-              value={filters.subjectType}
-              active={filters.subjectType !== '전체'}
-              onChange={(e) => setFilters(prev => ({ ...prev, subjectType: e.target.value }))}
-            >
-              {courseTypes.map(type => (
-                <option key={type} value={type}>{type === '전체' ? '구분' : type}</option>
-              ))}
-            </FilterSelect>
-            <FilterSelect
-              label="요일 필터"
-              value={filters.dayOfWeek}
-              active={filters.dayOfWeek !== '전체'}
-              onChange={(e) => {
-                const nextDayOfWeek = e.target.value;
-                setFilters(prev => ({
-                  ...prev,
-                  dayOfWeek: nextDayOfWeek,
-                  startTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
-                  endTime: nextDayOfWeek === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
-                }));
-              }}
-            >
-              {filterDaysOfWeek.map(day => (
-                <option key={day} value={day}>
-                  {day === '전체' ? '요일' : day}
-                </option>
-              ))}
-            </FilterSelect>
-            <button
-              type="button"
-              onClick={() => setShowFilters(true)}
-              className={`field select-trigger ${activeFilterCount > 0 ? 'select-trigger-active' : 'text-slate-600'}`}
-              aria-haspopup="dialog"
-              aria-expanded={showFilters}
-            >
-              <span className="flex min-w-0 items-center gap-1.5 truncate">
-                <Filter size={13} className="flex-shrink-0" />
-                필터{activeFilterCount > 0 ? ` ${activeFilterCount}` : ''}
-              </span>
-              <ChevronDown size={14} className="ml-2 flex-shrink-0 text-slate-400" />
-            </button>
-          </div>
+          <MobileFilterScroller
+            filters={filters}
+            searchTerm={searchTerm}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={() => setShowFilters(true)}
+            onReset={handleResetFilters}
+            onFocusSearch={() => searchInputRef.current?.focus()}
+          />
 
           <div className="mt-2.5 hidden grid-cols-2 gap-1.5 md:grid md:grid-cols-4 lg:grid-cols-7">
             <DepartmentFilterButton
@@ -3058,61 +3108,8 @@ function AppContent() {
 
         {/* Main Content Area */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:gap-6">
-          <section
-            aria-label="모바일 내 시간표"
-            className={`${mobileWorkspaceTab === 'timetable' ? 'block' : 'hidden'} md:hidden`}
-          >
-            <TimetableGrid
-              courses={timetable}
-              onExportImage={handleExportTimetableImage}
-              onRemoveCourse={handleRemoveFromTimetable}
-              onAddToWishlist={handleMoveToWishlistFromTimetable}
-              onViewCourseDetails={handleViewCourseDetails}
-              onClearAll={handleClearAllTimetable}
-              onShowTimetableList={handleShowTimetableList}
-              timetableRef={timetableRef}
-              isExportingImage={isExportingImage}
-              isMobile
-            />
-            <div className="mt-3 rounded-2xl bg-white p-3 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200">
-              {wishlist.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWishlistModalMode('list');
-                      setShowWishlistModal(true);
-                    }}
-                    className="btn-secondary h-11 w-full rounded-xl text-[13px]"
-                  >
-                    <ShoppingCart size={14} /> 담은 과목 {wishlist.length}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWishlistModalMode('setup');
-                      setShowWishlistModal(true);
-                    }}
-                    disabled={isGenerating}
-                    className="btn-primary h-11 w-full rounded-xl text-[13px]"
-                  >
-                    <Star size={14} /> 조합 만들기
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setMobileWorkspaceTab('search')}
-                  className="btn-secondary h-11 w-full rounded-xl text-[13px]"
-                >
-                  <Search size={14} /> 과목 찾으러 가기
-                </button>
-              )}
-            </div>
-          </section>
-
           {/* Left: Course List */}
-          <main className={`${mobileWorkspaceTab === 'search' ? 'block' : 'hidden'} md:block`}>
+          <main>
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
                 <div className="flex min-w-0 items-center gap-2">
@@ -3190,7 +3187,7 @@ function AppContent() {
           </main>
 
           {/* Right: Timetable & Wishlist */}
-          <aside className={`${mobileWorkspaceTab === 'search' ? 'block' : 'hidden'} md:block`}>
+          <aside className="hidden md:block">
             <div className="space-y-4 lg:sticky lg:top-[4.5rem]">
               {/* Desktop: Mini Timetable */}
               <div className="hidden lg:block">
@@ -3369,15 +3366,6 @@ function AppContent() {
           </div>
         </div>
       </footer>
-      {!shouldHideMobileWorkspaceNav && (
-        <MobileWorkspaceNav
-          activeTab={mobileWorkspaceTab}
-          onChange={setMobileWorkspaceTab}
-          timetableCount={timetable.length}
-          timetableCredits={timetableCredits}
-          wishlistCount={wishlist.length}
-        />
-      )}
     </div>
   );
 }
