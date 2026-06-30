@@ -78,8 +78,7 @@ const TimetableGrid = ({
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [showMenu, setShowMenu] = useState(false);
 
-    const timeColumnWidth = '36px';
-    const dayColumnWidth = isMobile ? '80px' : `calc((100% - ${timeColumnWidth}) / ${daysOfWeek.length})`;
+    const timeColumnWidth = isMobile ? '30px' : '36px';
 
     const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
 
@@ -100,7 +99,7 @@ const TimetableGrid = ({
         setSelectedCourse(null);
     };
 
-    const { grid, unscheduledCourses } = useMemo(() => {
+    const { grid, unscheduledCourses, visibleDays, visibleSlots } = useMemo(() => {
         const newGrid = {};
         daysOfWeek.forEach(day => {
             newGrid[day] = {};
@@ -154,11 +153,44 @@ const TimetableGrid = ({
                 unscheduled.push(course);
             }
         });
-        return { grid: newGrid, unscheduledCourses: unscheduled };
-    }, [courses]);
+
+        // 실제 과목이 매핑된 요일/슬롯을 직접 스캔해 표시 범위를 정한다.
+        // (시작/끝 교시를 추정하지 않으므로, 트림할 때 과목 칸이 사라지는 일이 없다.)
+        const usedDays = new Set();
+        let maxSlotIdx = -1;
+        daysOfWeek.forEach(day => {
+            timeSlots.forEach((slot, slotIdx) => {
+                if (newGrid[day][slot]) {
+                    usedDays.add(day);
+                    if (slotIdx > maxSlotIdx) maxSlotIdx = slotIdx;
+                }
+            });
+        });
+
+        // 모바일: 토요일·야간만 조건부로 숨긴다.
+        // 주간(1~9교시)은 항상 표시하고, 야간(야1~)은 야간 과목이 있을 때만 그 범위까지 확장한다.
+        let vDays = daysOfWeek;
+        let vSlots = timeSlots;
+        if (isMobile) {
+            const weekdays = ['월', '화', '수', '목', '금'];
+            vDays = usedDays.has('토') ? [...weekdays, '토'] : weekdays;
+
+            const WEEKDAY_END_IDX = 17; // 9교시의 마지막 슬롯(주간 끝)
+            let endIdx = WEEKDAY_END_IDX;
+            if (maxSlotIdx > WEEKDAY_END_IDX) {
+                // 야간 과목이 있으면 그 교시 끝까지 확장
+                endIdx = maxSlotIdx + (maxSlotIdx % 2 === 0 ? 1 : 0);
+            }
+            vSlots = timeSlots.slice(0, endIdx + 1);
+        }
+
+        return { grid: newGrid, unscheduledCourses: unscheduled, visibleDays: vDays, visibleSlots: vSlots };
+    }, [courses, isMobile]);
+
+    const dayColumnWidth = `calc((100% - ${timeColumnWidth}) / ${visibleDays.length})`;
 
     return (
-        <div ref={timetableRef} className={`card p-4 mini-timetable ${isMobile ? 'overflow-x-auto overflow-y-visible' : ''}`}>
+        <div ref={timetableRef} className={`card mini-timetable ${isMobile ? 'overflow-hidden p-2' : 'p-4'}`}>
             {showTitle && (
                 <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -211,37 +243,39 @@ const TimetableGrid = ({
                 </p>
             )}
 
-            <div className={isMobile ? 'min-w-[500px]' : 'w-full'}>
+            <div className="w-full">
                 <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
                     <table className="w-full table-fixed border-collapse text-xs text-slate-700">
                         <colgroup>
                             <col style={{ width: timeColumnWidth }} />
-                            {daysOfWeek.map(day => (
+                            {visibleDays.map(day => (
                                 <col key={day} style={{ width: dayColumnWidth }} />
                             ))}
                         </colgroup>
                         <thead>
                             <tr>
                                 <th className="border border-slate-100 bg-slate-50/80 p-1"></th>
-                                {daysOfWeek.map(day => (
-                                    <th key={day} className="border border-slate-100 bg-slate-50/80 py-1.5 text-center text-[11px] font-semibold text-slate-500">
+                                {visibleDays.map(day => (
+                                    <th key={day} className={`border border-slate-100 bg-slate-50/80 text-center font-semibold text-slate-500 ${isMobile ? 'py-1 text-[10px]' : 'py-1.5 text-[11px]'}`}>
                                         {day}
                                     </th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {timeSlots.map((slot, index) => (
+                            {visibleSlots.map((slot) => {
+                                const index = timeSlots.indexOf(slot);
+                                return (
                                 <tr key={slot} style={{ height: '24px' }}>
                                     {slot.endsWith('-1') && (
                                         <td
                                             rowSpan={2}
-                                            className={`border border-slate-100 p-1 text-center text-[10px] font-medium tabular-nums ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
+                                            className={`border border-slate-100 text-center font-medium tabular-nums ${isMobile ? 'p-0.5 text-[9px]' : 'p-1 text-[10px]'} ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
                                         >
                                             {displayTimeSlots[Math.floor(index / 2)]}
                                         </td>
                                     )}
-                                    {daysOfWeek.map(day => (
+                                    {visibleDays.map(day => (
                                         <TimeSlotCell
                                             key={`${day}-${slot}`}
                                             day={day}
@@ -252,7 +286,8 @@ const TimetableGrid = ({
                                         />
                                     ))}
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
