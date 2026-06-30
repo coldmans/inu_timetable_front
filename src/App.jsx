@@ -528,35 +528,37 @@ const CourseRow = ({
                 {course.note || course.description}
               </p>
             )}
-            <div className="mt-3 grid grid-cols-[1.35fr_1fr_1fr] gap-2">
+            <div className="mt-3 flex items-center gap-3">
               <button
                 data-tour="course-add"
                 type="button"
                 onClick={() => onAddToTimetable(course)}
                 disabled={actionsDisabled}
-                className="btn-primary h-10 rounded-full px-3 text-xs"
+                className="btn-primary h-10 flex-1 rounded-full px-3 text-xs"
               >
                 <Plus size={13} /> 시간표에 추가
               </button>
-              <a
-                data-tour="course-review"
-                href={courseReviewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${course.name} 강의평 보기`}
-                className="btn-secondary h-10 rounded-full px-3 text-xs"
-              >
-                <MessageSquare size={13} /> 강의평
-              </a>
-              <button
-                data-tour="course-wishlist"
-                type="button"
-                onClick={() => onAddToWishlist(course)}
-                disabled={actionsDisabled}
-                className="btn-secondary h-10 rounded-full px-3 text-xs"
-              >
-                <ShoppingCart size={13} /> 담기
-              </button>
+              <div className="flex flex-shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
+                <a
+                  data-tour="course-review"
+                  href={courseReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${course.name} 강의평 보기`}
+                  className="inline-flex h-10 items-center gap-1 rounded-full px-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <MessageSquare size={13} /> 강의평
+                </a>
+                <button
+                  data-tour="course-wishlist"
+                  type="button"
+                  onClick={() => onAddToWishlist(course)}
+                  disabled={actionsDisabled}
+                  className="inline-flex h-10 items-center gap-1 rounded-full px-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+                >
+                  <ShoppingCart size={13} /> 담기
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -617,7 +619,8 @@ const MobileFilterScroller = ({
   activeFilterCount,
   onOpenFilters,
   onReset,
-  onFocusSearch
+  onFocusSearch,
+  onSelectField
 }) => {
   const timeLabel = filters.startTime !== '전체' || filters.endTime !== '전체'
     ? `${filters.startTime === '전체' ? '시작' : `${filters.startTime}교시`} - ${filters.endTime === '전체' ? '종료' : `${filters.endTime}교시`}`
@@ -628,7 +631,7 @@ const MobileFilterScroller = ({
       label: '학과',
       value: getCompactFilterLabel('department', filters.department),
       active: filters.department !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('department')
     },
     {
       key: 'search',
@@ -642,35 +645,35 @@ const MobileFilterScroller = ({
       label: '구분',
       value: getCompactFilterLabel('subjectType', filters.subjectType),
       active: filters.subjectType !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('subjectType')
     },
     {
       key: 'grade',
       label: '학년',
       value: getCompactFilterLabel('grade', filters.grade),
       active: filters.grade !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('grade')
     },
     {
       key: 'credits',
       label: '학점',
       value: getCompactFilterLabel('credits', filters.credits),
       active: filters.credits !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('credits')
     },
     {
       key: 'dayOfWeek',
       label: '요일',
       value: getCompactFilterLabel('dayOfWeek', filters.dayOfWeek),
       active: filters.dayOfWeek !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('dayOfWeek')
     },
     {
       key: 'time',
       label: '시간',
       value: timeLabel,
       active: filters.startTime !== '전체' || filters.endTime !== '전체',
-      onClick: onOpenFilters
+      onClick: () => onSelectField('time')
     }
   ];
 
@@ -678,40 +681,40 @@ const MobileFilterScroller = ({
     <div className="-mx-3 mt-2.5 md:hidden">
       <div
         aria-label="모바일 필터"
-        className="flex gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-3 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {chips.map(chip => (
           <button
             key={chip.key}
             type="button"
             onClick={chip.onClick}
-            className={`inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+            className={`inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full px-2.5 text-xs ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
               chip.active
                 ? 'bg-blue-50 font-semibold text-blue-700 ring-blue-200'
                 : 'bg-slate-100/80 font-medium text-slate-600 ring-slate-200'
             }`}
           >
             <span className="text-slate-400">{chip.label}</span>
-            <span className="max-w-[8.75rem] truncate">{chip.value}</span>
+            <span className="max-w-[7.5rem] truncate">{chip.value}</span>
           </button>
         ))}
         {(activeFilterCount > 0 || searchTerm) && (
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-3 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
+            className="inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full bg-slate-900 px-2.5 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
           >
-            <X size={14} /> 초기화
+            <X size={12} /> 초기화
           </button>
         )}
         <button
           type="button"
           onClick={onOpenFilters}
-          className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          className="inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
-          <Filter size={14} /> 상세
+          <Filter size={12} /> 상세
           {activeFilterCount > 0 && (
-            <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-blue-600 px-1 text-[11px] font-bold text-white">
+            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
               {activeFilterCount}
             </span>
           )}
@@ -1066,8 +1069,8 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
   );
 };
 
-const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [] }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [query, setQuery] = useState('');
   const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
   const selection = getDepartmentFilterSelection(value);
@@ -1432,6 +1435,136 @@ const MobileFilterSheet = ({
   );
 };
 
+// 모바일 필터 칩을 누르면 해당 필터만 바로 선택할 수 있는 단일 필터 시트.
+const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
+  useEffect(() => {
+    if (!field) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [field, onClose]);
+
+  if (!field) {
+    return null;
+  }
+
+  const titleMap = {
+    department: '학과',
+    subjectType: '이수구분',
+    grade: '학년',
+    credits: '학점',
+    dayOfWeek: '요일',
+    time: '시간'
+  };
+
+  const applySimple = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    onClose();
+  };
+
+  const applyDay = (value) => {
+    setFilters(prev => ({
+      ...prev,
+      dayOfWeek: value,
+      startTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
+      endTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
+    }));
+    onClose();
+  };
+
+  const renderOptions = (key, options, onPick) => (
+    <div className="grid grid-cols-2 gap-2">
+      {options.map(opt => {
+        const selected = String(filters[key]) === String(opt);
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onPick(opt)}
+            className={`h-11 rounded-xl px-3 text-sm transition-colors ${
+              selected
+                ? 'bg-blue-50 font-semibold text-blue-700 ring-1 ring-inset ring-blue-200'
+                : 'bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            {opt === '전체' ? '전체' : opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
+      <div className="modal-panel flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <h2 className="text-base font-bold text-slate-900">{titleMap[field]}</h2>
+          <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="닫기">
+            <X size={17} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {field === 'department' && (
+            <DepartmentFilterButton
+              value={filters.department}
+              majorShortcuts={majorShortcuts}
+              defaultOpen
+              onChange={(event) => {
+                setFilters(prev => ({ ...prev, department: event.target.value }));
+                onClose();
+              }}
+            />
+          )}
+          {field === 'subjectType' && renderOptions('subjectType', courseTypes, (value) => applySimple('subjectType', value))}
+          {field === 'grade' && renderOptions('grade', grades, (value) => applySimple('grade', value))}
+          {field === 'credits' && renderOptions('credits', creditOptions, (value) => applySimple('credits', value))}
+          {field === 'dayOfWeek' && renderOptions('dayOfWeek', filterDaysOfWeek, applyDay)}
+          {field === 'time' && (
+            <div className="grid grid-cols-2 gap-2">
+              <FilterSelect
+                label="시작 교시 필터"
+                value={filters.startTime}
+                active={filters.startTime !== '전체'}
+                disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
+                onChange={(event) => setFilters(prev => ({ ...prev, startTime: event.target.value }))}
+              >
+                {timeOptions.map(time => (
+                  <option key={time} value={time}>{time === '전체' ? '시작' : `${time}교시`}</option>
+                ))}
+              </FilterSelect>
+              <FilterSelect
+                label="종료 교시 필터"
+                value={filters.endTime}
+                active={filters.endTime !== '전체'}
+                disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
+                onChange={(event) => setFilters(prev => ({ ...prev, endTime: event.target.value }))}
+              >
+                {timeOptions.map(time => (
+                  <option key={time} value={time}>{time === '전체' ? '종료' : `${time}교시`}</option>
+                ))}
+              </FilterSelect>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const accountMajorTabs = [
   { type: 'PRIMARY', label: '전공', required: true },
   { type: 'DOUBLE', label: '복수전공', required: false },
@@ -1733,6 +1866,8 @@ function AppContent() {
   const [courses, setCourses] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [showWishlistModal, setShowWishlistModal] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false); // 모바일: 첫 화면은 시간표만, + 누르면 검색/과목 리스트 표시
+  const [mobileFilterField, setMobileFilterField] = useState(null); // 모바일: 단일 필터 시트로 열 필드(null이면 닫힘)
   const [timetable, setTimetable] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -2909,6 +3044,14 @@ function AppContent() {
         majorShortcuts={userMajorShortcuts}
       />
 
+      <MobileSingleFilterSheet
+        field={mobileFilterField}
+        filters={filters}
+        setFilters={setFilters}
+        onClose={() => setMobileFilterField(null)}
+        majorShortcuts={userMajorShortcuts}
+      />
+
       <header
         aria-hidden={hasBlockingOverlay}
         inert={hasBlockingOverlay ? '' : undefined}
@@ -2965,9 +3108,45 @@ function AppContent() {
         className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
         <>
-        <section aria-label="모바일 시간표 미리보기" className="mb-3 md:hidden">
-          <div className="max-h-[32vh] min-h-[13rem] overflow-y-auto overscroll-contain rounded-2xl">
-            <h2 className="sr-only">내 시간표</h2>
+        <section aria-label="모바일 시간표" className="mb-3 md:hidden">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="flex-shrink-0 text-sm font-bold text-slate-900">내 시간표</h2>
+            <div className="flex flex-shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setWishlistModalMode('list');
+                  setShowWishlistModal(true);
+                }}
+                aria-label={`담은 과목 ${wishlist.length}개`}
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <ShoppingCart size={13} /> 담은 {wishlist.length}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setWishlistModalMode('setup');
+                  setShowWishlistModal(true);
+                }}
+                disabled={wishlist.length === 0 || isGenerating}
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+              >
+                <Star size={13} /> 조합
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMobileSearch(value => !value)}
+                aria-label={showMobileSearch ? '과목 검색 닫기' : '과목 검색 열기'}
+                aria-expanded={showMobileSearch}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+              >
+                {showMobileSearch ? <X size={16} /> : <Plus size={16} />}
+              </button>
+            </div>
+          </div>
+          <div className={`rounded-2xl ${showMobileSearch ? 'max-h-[32vh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
+            <h2 className="sr-only">내 시간표 표</h2>
             <TimetableGrid
               courses={timetable}
               onExportImage={handleExportTimetableImage}
@@ -2982,36 +3161,13 @@ function AppContent() {
               isMobile
             />
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setWishlistModalMode('list');
-                setShowWishlistModal(true);
-              }}
-              className="btn-secondary h-10 rounded-full text-[13px]"
-            >
-              <ShoppingCart size={14} /> 담은 과목 {wishlist.length}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setWishlistModalMode('setup');
-                setShowWishlistModal(true);
-              }}
-              disabled={wishlist.length === 0 || isGenerating}
-              className="btn-primary h-10 rounded-full text-[13px]"
-            >
-              <Star size={14} /> 조합 만들기
-            </button>
-          </div>
         </section>
 
         {/* 검색 바 */}
         <section
           data-tour="course-search"
           aria-label="과목 검색"
-          className="card p-3 md:p-4"
+          className={`card p-3 md:p-4 ${showMobileSearch ? '' : 'hidden'} md:block`}
         >
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -3044,6 +3200,7 @@ function AppContent() {
             onOpenFilters={() => setShowFilters(true)}
             onReset={handleResetFilters}
             onFocusSearch={() => searchInputRef.current?.focus()}
+            onSelectField={setMobileFilterField}
           />
 
           <div className="mt-2.5 hidden grid-cols-2 gap-1.5 md:grid md:grid-cols-4 lg:grid-cols-7">
@@ -3140,7 +3297,7 @@ function AppContent() {
         </section>
 
         {/* Main Content Area */}
-        <div className="mt-4 grid grid-cols-1 gap-4 md:mt-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:gap-6">
+        <div className={`mt-4 grid-cols-1 gap-4 md:mt-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:gap-6 ${showMobileSearch ? 'grid' : 'hidden'} md:grid`}>
           {/* Left: Course List */}
           <main>
             <div className="card overflow-hidden">
