@@ -1892,6 +1892,7 @@ function AppContent() {
   const [mobileFilterField, setMobileFilterField] = useState(null); // 모바일: 단일 필터 시트로 열 필드(null이면 닫힘)
   const [timetable, setTimetable] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // 무한 스크롤 추가 로드(누적) 전용 — 첫 로드/재검색과 분리
 
   // 모달 상태
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
@@ -1901,6 +1902,7 @@ function AppContent() {
   const timetableRef = useRef(null);
   const timetableExportRef = useRef(null);
   const resultsListRef = useRef(null);
+  const loadMoreRef = useRef(null);
   const searchInputRef = useRef(null);
   const courseRequestSeqRef = useRef(0);
   const lastClickRefs = useRef({}); // { [courseId]: timestamp }
@@ -1959,13 +1961,18 @@ function AppContent() {
 
 
 
-  const loadCourses = async (page = 0) => {
+  const loadCourses = async (page = 0, append = false) => {
     const requestSeq = courseRequestSeqRef.current + 1;
     courseRequestSeqRef.current = requestSeq;
     const isLatestRequest = () => requestSeq === courseRequestSeqRef.current;
 
     try {
-      setIsLoading(true);
+      // append(무한 스크롤 다음 페이지)일 때는 전체 리스트를 스켈레톤으로 교체하지 않도록 별도 플래그를 쓴다.
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
       const gradeFilter = filters.grade === '전체' ? undefined :
         parseInt(filters.grade.replace('학년', ''));
@@ -1995,7 +2002,7 @@ function AppContent() {
         // 백엔드에서 페이징 응답이 온 경우
         console.log(`✅ 페이징 응답: ${response.content.length}개 항목, 총 ${response.totalElements}개 중 ${response.number + 1}/${response.totalPages} 페이지`);
         const formattedCourses = response.content.map((subject, index) => formatCourse(subject, index));
-        setCourses(formattedCourses);
+        setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(response.totalPages || 0);
         setTotalElements(response.totalElements || 0);
         setCurrentPage(response.number || 0);
@@ -2003,7 +2010,7 @@ function AppContent() {
         // 기존 배열 응답 (백엔드 미수정 시 호환성)
         console.log(`배열 응답: ${response.length}개 항목 (페이징 미적용)`);
         const formattedCourses = response.map((subject, index) => formatCourse(subject, index));
-        setCourses(formattedCourses);
+        setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(1);
         setTotalElements(formattedCourses.length);
         setCurrentPage(0);
@@ -2043,13 +2050,14 @@ function AppContent() {
       const paginatedMockData = mockData.slice(startIndex, endIndex);
 
       const formattedCourses = paginatedMockData.map((subject, index) => formatCourse(subject, index));
-      setCourses(formattedCourses);
+      setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
       setTotalPages(Math.ceil(mockData.length / pageSize));
       setTotalElements(mockData.length);
       setCurrentPage(page);
     } finally {
       if (isLatestRequest()) {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     }
   };
@@ -2111,6 +2119,9 @@ function AppContent() {
   const executeSearch = () => {
     setCurrentPage(0); // 검색 시 첫 페이지로 리셋
     loadCourses(0);
+    // 재검색/필터 변경(리스트 교체)마다 스크롤을 위로 리셋 — 무한스크롤로 내려간 위치와 어긋나지 않게.
+    resultsListRef.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
   };
 
   const defaultFilters = { department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' };
@@ -2158,8 +2169,9 @@ function AppContent() {
   }, [filters]); // searchTerm 제거, filters만 자동 검색
 
   useEffect(() => {
+    // 무한 스크롤 append(currentPage 증가) 시엔 펼친 과목이 닫히지 않도록 filters/searchTerm 변경 때만 리셋.
     setExpandedCourseId(null);
-  }, [currentPage, filters, searchTerm]);
+  }, [filters, searchTerm]);
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
@@ -2172,6 +2184,20 @@ function AppContent() {
     resultsListRef.current?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // 모바일 무한 스크롤: 리스트 끝의 sentinel 이 보이면 다음 페이지를 누적 로드한다.
+  // (sentinel 은 md:hidden 이라 데스크톱에서는 관찰되지 않고 페이지네이션이 유지된다.)
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !isLoading && !isLoadingMore && currentPage + 1 < totalPages) {
+        loadCourses(currentPage + 1, true);
+      }
+    }, { rootMargin: '120px' });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [currentPage, totalPages, isLoading, isLoadingMore]);
 
   const downloadCanvasAsPng = async (canvas, fileName) => {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -3135,7 +3161,7 @@ function AppContent() {
         className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
       >
         <>
-        <section aria-label="모바일 시간표" className="mb-3 md:hidden">
+        <section aria-label="모바일 시간표" className="sticky top-14 z-20 -mx-4 mb-3 bg-slate-50/95 px-4 pt-2 backdrop-blur md:hidden">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="flex-shrink-0 text-sm font-bold text-slate-900">내 시간표</h2>
             <div className="flex flex-shrink-0 items-center gap-1.5">
@@ -3336,7 +3362,7 @@ function AppContent() {
                   </span>
                 </div>
                 {hasResultPagination && (
-                  <div className="flex flex-shrink-0 items-center gap-0.5">
+                  <div className="hidden flex-shrink-0 items-center gap-0.5 md:flex">
                     <button
                       type="button"
                       onClick={() => handlePageChange(currentPage - 1)}
@@ -3390,8 +3416,15 @@ function AppContent() {
                 </ul>
               )}
 
+              {/* 모바일 무한 스크롤 sentinel (데스크톱은 md:hidden 이라 페이지네이션 사용) */}
+              {currentPage + 1 < totalPages && (
+                <div ref={loadMoreRef} className="flex items-center justify-center py-3 md:hidden">
+                  {isLoadingMore && <span className="text-xs font-medium text-slate-400">과목 더 불러오는 중…</span>}
+                </div>
+              )}
+
               {!isLoading && filteredCourses.length > 0 && (
-                <div className="border-t border-slate-100">
+                <div className="hidden border-t border-slate-100 md:block">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
