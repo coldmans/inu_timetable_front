@@ -1098,6 +1098,17 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       .filter(group => !normalizedQuery || group.groupMatches || group.departments.length > 0)
   ), [normalizedQuery]);
 
+  // body 스크롤 락은 isOpen 에만 의존시킨다. onClose/selectedGroup 변경으로 effect 가
+  // 재실행되면 previousOverflow 에 'hidden' 이 저장되어, 닫은 뒤 스크롤이 영구 잠기는 버그가 있었다.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -1109,9 +1120,6 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       });
     }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
@@ -1122,7 +1130,6 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, selectedGroup, onClose]);
@@ -1168,13 +1175,13 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[70] flex items-stretch justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <div
             role="dialog"
             data-testid="department-filter-modal"
             aria-modal="true"
             aria-labelledby="department-filter-title"
-            className="modal-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-h-[82dvh] sm:max-w-xl sm:rounded-2xl"
+            className="modal-panel flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:h-auto sm:max-h-[82dvh] sm:max-w-xl sm:rounded-2xl"
           >
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <button
@@ -1450,22 +1457,25 @@ const MobileFilterSheet = ({
 
 // 모바일 필터 칩을 누르면 해당 필터만 바로 선택할 수 있는 단일 필터 시트.
 const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
+  // body 스크롤 락은 field 에만 의존(학과는 DepartmentFilterButton 이 관리하므로 제외).
   useEffect(() => {
-    if (!field) return undefined;
-
+    if (!field || field === 'department') return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [field]);
 
+  useEffect(() => {
+    if (!field) return undefined;
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         onClose();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [field, onClose]);
