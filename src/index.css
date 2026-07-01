@@ -59,7 +59,8 @@
   }
 
   .field {
-    @apply h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 transition-colors placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20;
+    /* 모바일은 16px(text-base)로 두어 iOS 입력 포커스 시 자동 확대를 막는다(핀치줌은 허용). 데스크톱은 14px. */
+    @apply h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 transition-colors placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm;
   }
 
   .card {

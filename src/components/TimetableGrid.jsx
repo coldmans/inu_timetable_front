@@ -16,15 +16,19 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
             return (
                 <td
                     rowSpan={course.span || 1}
-                    className="relative cursor-pointer border border-slate-100 bg-white p-0"
-                    onClick={(e) => onCourseClick(e, course)}
+                    className="relative border border-slate-100 bg-white p-0"
                 >
-                    <div className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 transition-[filter] hover:brightness-95 ${backgroundColor} ${textColor}`}>
-                        <div className="w-full break-words text-[11px] font-semibold leading-tight">{course.name}</div>
+                    <button
+                        type="button"
+                        onClick={(e) => onCourseClick(e, course)}
+                        aria-label={`${course.name}${course.professor ? ', ' + course.professor : ''} · 옵션 열기`}
+                        className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 text-left transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${backgroundColor} ${textColor}`}
+                    >
+                        <span className="w-full break-words text-[11px] font-semibold leading-tight">{course.name}</span>
                         {course.professor && (
-                            <div className="mt-0.5 w-full truncate text-[10px] leading-none opacity-75">{course.professor}</div>
+                            <span className="mt-0.5 w-full truncate text-[10px] leading-none opacity-75">{course.professor}</span>
                         )}
-                    </div>
+                    </button>
                 </td>
             );
         }
@@ -86,11 +90,17 @@ const TimetableGrid = ({
         event.preventDefault();
         event.stopPropagation();
 
+        // 키보드(Enter/Space)로 열면 clientX/Y가 0이므로 요소 위치로 메뉴 좌표를 보정한다.
+        let x = event.clientX;
+        let y = event.clientY;
+        if (!x && !y && event.currentTarget?.getBoundingClientRect) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            x = rect.left + rect.width / 2;
+            y = rect.bottom;
+        }
+
         setSelectedCourse(course);
-        setMenuPosition({
-            x: event.clientX,
-            y: event.clientY
-        });
+        setMenuPosition({ x, y });
         setShowMenu(true);
     };
 
@@ -266,11 +276,11 @@ const TimetableGrid = ({
                             {visibleSlots.map((slot) => {
                                 const index = timeSlots.indexOf(slot);
                                 return (
-                                <tr key={slot} style={{ height: '24px' }}>
+                                <tr key={slot} style={{ height: isMobile ? '28px' : '24px' }}>
                                     {slot.endsWith('-1') && (
                                         <td
                                             rowSpan={2}
-                                            className={`border border-slate-100 text-center font-medium tabular-nums ${isMobile ? 'p-0.5 text-[9px]' : 'p-1 text-[10px]'} ${slot.startsWith('야') ? 'bg-slate-50 text-blue-500' : 'bg-slate-50/80 text-slate-400'}`}
+                                            className={`border border-slate-100 text-center font-semibold tabular-nums ${isMobile ? 'p-0.5 text-[10px]' : 'p-1 text-[11px]'} ${slot.startsWith('야') ? 'bg-slate-50 text-blue-700' : 'bg-slate-50/80 text-slate-600'}`}
                                         >
                                             {displayTimeSlots[Math.floor(index / 2)]}
                                         </td>
@@ -293,7 +303,7 @@ const TimetableGrid = ({
                 </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-end gap-3 text-[11px] text-slate-400">
+            <div className="mt-3 flex items-center justify-end gap-3 text-[11px] text-slate-500">
                 <div className="flex items-center gap-1">
                     <span className="inline-block h-2 w-3 rounded-sm bg-white ring-1 ring-slate-200"></span>
                     <span>주간</span>

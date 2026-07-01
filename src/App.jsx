@@ -11,7 +11,7 @@ import TimetableListModal from './components/TimetableListModal';
 import TimetableExportView from './components/TimetableExportView';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
-import html2canvas from 'html2canvas';
+// html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
 import TimetableGrid from './components/TimetableGrid';
 import {
   CURRENT_SEMESTER,
@@ -694,7 +694,7 @@ const MobileFilterScroller = ({
                 : 'bg-slate-100/80 font-medium text-slate-600 ring-slate-200'
             }`}
           >
-            <span className="text-slate-400">{chip.label}</span>
+            <span className={chip.active ? 'text-blue-600/80' : 'text-slate-500'}>{chip.label}</span>
             <span className="max-w-[7.5rem] truncate">{chip.value}</span>
           </button>
         ))}
@@ -1069,8 +1069,49 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
   );
 };
 
+// 모달/바텀시트 접근성 훅: 열릴 때 패널로 초점 이동(검색 input 자동 포커스로 키보드가 즉시 뜨는 것 방지),
+// Tab 순환 트랩, 닫힐 때 직전 초점(트리거)으로 복귀.
+function useFocusTrap(active, panelRef) {
+  useEffect(() => {
+    if (!active) return undefined;
+    const panel = panelRef.current;
+    if (!panel) return undefined;
+    const previouslyFocused = document.activeElement;
+    panel.focus();
+    const getFocusables = () => Array.from(
+      panel.querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => el.offsetParent !== null);
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Tab') return;
+      const items = getFocusables();
+      if (items.length === 0) { event.preventDefault(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const activeEl = document.activeElement;
+      if (event.shiftKey && (activeEl === first || activeEl === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && activeEl === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    panel.addEventListener('keydown', handleKeyDown);
+    return () => {
+      panel.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        previouslyFocused.focus();
+      }
+    };
+  }, [active, panelRef]);
+}
+
 const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen, panelRef);
   const [query, setQuery] = useState('');
   const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
   const selection = getDepartmentFilterSelection(value);
@@ -1177,11 +1218,13 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-stretch justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <div
+            ref={panelRef}
+            tabIndex={-1}
             role="dialog"
             data-testid="department-filter-modal"
             aria-modal="true"
             aria-labelledby="department-filter-title"
-            className="modal-panel flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:h-auto sm:max-h-[82dvh] sm:max-w-xl sm:rounded-2xl"
+            className="modal-panel flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:h-auto sm:max-h-[82dvh] sm:max-w-xl sm:rounded-2xl"
           >
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <button
@@ -1315,6 +1358,8 @@ const MobileFilterSheet = ({
   onReset,
   majorShortcuts
 }) => {
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen, panelRef);
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -1359,7 +1404,7 @@ const MobileFilterSheet = ({
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-filter-title">
-      <div className="modal-panel flex max-h-[86vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10">
+      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[86vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <div className="min-w-0">
             <h2 id="mobile-filter-title" className="text-base font-bold text-slate-900">상세 필터</h2>
@@ -1457,6 +1502,8 @@ const MobileFilterSheet = ({
 
 // 모바일 필터 칩을 누르면 해당 필터만 바로 선택할 수 있는 단일 필터 시트.
 const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
+  const panelRef = useRef(null);
+  useFocusTrap(!!field && field !== 'department', panelRef);
   // body 스크롤 락은 field 에만 의존(학과는 DepartmentFilterButton 이 관리하므로 제외).
   useEffect(() => {
     if (!field || field === 'department') return undefined;
@@ -1549,7 +1596,7 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
-      <div className="modal-panel flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10">
+      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <h2 className="text-base font-bold text-slate-900">{titleMap[field]}</h2>
           <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="닫기">
@@ -2220,6 +2267,7 @@ function AppContent() {
       }
 
       const exportNode = timetableExportRef.current;
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(exportNode, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -2977,7 +3025,7 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters;
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null;
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
