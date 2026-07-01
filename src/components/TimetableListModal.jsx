@@ -1,6 +1,8 @@
-import React, { useId, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutList, Grid } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
+import useFocusTrap from '../hooks/useFocusTrap';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 // 시간 표시를 위한 헬퍼 함수
 const formatTimeDisplay = (course) => {
@@ -53,19 +55,27 @@ const TimetableListModal = ({
 }) => {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
   const titleId = useId();
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen, panelRef);
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 
   const totalCredits = courses.reduce((total, course) => total + (course.credits || 0), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       {/* Mobile: Full screen / Desktop: Centered card */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl focus:outline-none"
       >
         <div className="sticky top-0 z-10 flex flex-col border-b border-slate-200 bg-white">
           <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">

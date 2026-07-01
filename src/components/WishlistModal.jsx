@@ -1,5 +1,7 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { X, Clock, Star, Trash2, Eye, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
+import useFocusTrap from '../hooks/useFocusTrap';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수 (기존 유지)
 const formatTimeDisplay = (course) => {
@@ -43,6 +45,9 @@ const WishlistModal = ({
 }) => {
   const [step, setStep] = useState(initialStep);
   const titleId = useId();
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen, panelRef);
+  useModalDismiss(isOpen, onClose);
   const totalCredits = wishlist.reduce((acc, c) => acc + c.credits, 0);
   const daysOfWeek = ['월', '화', '수', '목', '금'];
 
@@ -72,13 +77,18 @@ const WishlistModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       {/* Mobile: Full screen from bottom / Desktop: Centered card */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-lg md:max-w-2xl lg:max-w-4xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl focus:outline-none"
       >
 
         {/* === Header Shared Area === */}

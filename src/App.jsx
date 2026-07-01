@@ -10,6 +10,8 @@ import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
 import TimetableExportView from './components/TimetableExportView';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
+import useFocusTrap from './hooks/useFocusTrap';
+import useModalDismiss from './hooks/useModalDismiss';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 // html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
@@ -839,20 +841,16 @@ const upcomingDeveloperNotes = [
 ];
 
 const DeveloperNotesModal = ({ onClose }) => {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const panelRef = useRef(null);
+  useFocusTrap(true, panelRef);
+  useModalDismiss(true, onClose);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="developer-notes-title">
-      <div className="modal-panel max-h-[88vh] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-w-xl sm:rounded-2xl">
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="developer-notes-title" className="modal-panel max-h-[88vh] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-xl sm:rounded-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-xs font-semibold text-blue-600">서비스 개선 기록</p>
@@ -1070,45 +1068,6 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
     </div>
   );
 };
-
-// 모달/바텀시트 접근성 훅: 열릴 때 패널로 초점 이동(검색 input 자동 포커스로 키보드가 즉시 뜨는 것 방지),
-// Tab 순환 트랩, 닫힐 때 직전 초점(트리거)으로 복귀.
-function useFocusTrap(active, panelRef) {
-  useEffect(() => {
-    if (!active) return undefined;
-    const panel = panelRef.current;
-    if (!panel) return undefined;
-    const previouslyFocused = document.activeElement;
-    panel.focus();
-    const getFocusables = () => Array.from(
-      panel.querySelectorAll(
-        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((el) => el.offsetParent !== null);
-    const handleKeyDown = (event) => {
-      if (event.key !== 'Tab') return;
-      const items = getFocusables();
-      if (items.length === 0) { event.preventDefault(); return; }
-      const first = items[0];
-      const last = items[items.length - 1];
-      const activeEl = document.activeElement;
-      if (event.shiftKey && (activeEl === first || activeEl === panel)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && activeEl === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    panel.addEventListener('keydown', handleKeyDown);
-    return () => {
-      panel.removeEventListener('keydown', handleKeyDown);
-      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
-        previouslyFocused.focus();
-      }
-    };
-  }, [active, panelRef]);
-}
 
 const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -1670,6 +1629,9 @@ const AccountModal = ({ user, onClose, onLogout, onWithdraw, onUpdateProfile, is
   const [profileMajorGroups, setProfileMajorGroups] = useState(() => buildAccountMajorGroupSelections(buildAccountMajorSelections(user)));
   const [profileError, setProfileError] = useState('');
   const isBusy = isWithdrawing || isUpdatingProfile;
+  const panelRef = useRef(null);
+  useFocusTrap(true, panelRef);
+  useModalDismiss(true, onClose);
 
   useEffect(() => {
     const nextMajors = buildAccountMajorSelections(user);
@@ -1754,8 +1716,11 @@ const AccountModal = ({ user, onClose, onLogout, onWithdraw, onUpdateProfile, is
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
-      <div className="modal-panel max-h-[calc(100vh-24px)] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-w-md sm:rounded-2xl">
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="account-modal-title" className="modal-panel max-h-[calc(100vh-24px)] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-md sm:rounded-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-xs font-semibold text-blue-600">내 계정</p>

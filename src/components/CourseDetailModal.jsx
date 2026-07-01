@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
+import useFocusTrap from '../hooks/useFocusTrap';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (course) => {
@@ -49,6 +51,10 @@ const InfoRow = ({ icon: Icon, label, value, valueClass = 'text-slate-900' }) =>
 );
 
 const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen && !!course, panelRef);
+  useModalDismiss(isOpen && !!course, onClose);
+
   if (!isOpen || !course) return null;
 
   const classMethodLabel =
@@ -57,12 +63,17 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
     course.classMethod === 'HYBRID' ? '혼합' : course.classMethod;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="course-detail-title"
-        className="modal-panel flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
+        className="modal-panel flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
       >
         {/* 헤더 */}
         <div className="border-b border-slate-100 px-5 py-4 sm:px-6">

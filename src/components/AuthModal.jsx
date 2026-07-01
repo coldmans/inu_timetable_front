@@ -2,6 +2,8 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { X, LogIn, UserPlus, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { departmentGroups } from '../utils/timetableUtils';
+import useFocusTrap from '../hooks/useFocusTrap';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 const majorTabs = [
   { type: 'PRIMARY', label: '전공', required: true },
@@ -202,6 +204,10 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   const [majorGroupSelections, setMajorGroupSelections] = useState(defaultMajorGroupSelections);
   const [isLoading, setIsLoading] = useState(false);
 
+  const panelRef = useRef(null);
+  useFocusTrap(isOpen, panelRef);
+  useModalDismiss(isOpen, onClose);
+
   const { login, register } = useAuth();
 
   const handleInputChange = (e) => {
@@ -287,12 +293,17 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
-        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto rounded-2xl bg-white shadow-xl ring-1 ring-slate-200"
+        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
       >
         <div className="flex items-start justify-between px-6 pt-6">
           <div>

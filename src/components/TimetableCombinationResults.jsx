@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useId } from 'react';
+import React, { useState, useMemo, useId, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check, MessageSquare } from 'lucide-react';
 
+import useFocusTrap from '../hooks/useFocusTrap';
+import useModalDismiss from '../hooks/useModalDismiss';
 import {
   parseTime,
   getCourseTypeBadgeClass,
@@ -84,6 +86,11 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
   const combinations = results?.combinations || [];
   const statistics = results?.statistics || [];
   const hasResults = combinations.length > 0;
+
+  const panelRef = useRef(null);
+  useFocusTrap(hasResults, panelRef);
+  useModalDismiss(hasResults, onClose);
+
   const safeIndex = hasResults ? Math.min(currentCombination, combinations.length - 1) : 0;
   const combination = combinations[safeIndex] || [];
   const stats = statistics[safeIndex];
@@ -191,14 +198,19 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       {/* Mobile: Full screen / Desktop: Centered card */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-busy={isApplying}
-        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl"
+        className="modal-panel flex w-full h-[100svh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl lg:max-w-6xl flex-col overflow-hidden bg-white sm:rounded-2xl sm:ring-1 sm:ring-slate-200 shadow-2xl focus:outline-none"
       >
 
         {/* Header */}
