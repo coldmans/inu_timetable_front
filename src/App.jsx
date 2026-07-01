@@ -2194,7 +2194,8 @@ function AppContent() {
       if (entries[0].isIntersecting && !isLoading && !isLoadingMore && currentPage + 1 < totalPages) {
         loadCourses(currentPage + 1, true);
       }
-    }, { rootMargin: '120px' });
+      // 빠르게 스크롤해도 콘텐츠 끝(빈 영역)을 넘겨보기 전에 미리 다음 페이지를 당겨온다.
+    }, { rootMargin: '600px' });
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [currentPage, totalPages, isLoading, isLoadingMore]);
@@ -3418,8 +3419,18 @@ function AppContent() {
 
               {/* 모바일 무한 스크롤 sentinel (데스크톱은 md:hidden 이라 페이지네이션 사용) */}
               {currentPage + 1 < totalPages && (
-                <div ref={loadMoreRef} className="flex items-center justify-center py-3 md:hidden">
-                  {isLoadingMore && <span className="text-xs font-medium text-slate-400">과목 더 불러오는 중…</span>}
+                <div ref={loadMoreRef} className="md:hidden">
+                  {isLoadingMore ? (
+                    // 로딩 중엔 빈 공간 대신 스켈레톤을 보여 빠르게 스크롤해도 흰 화면이 보이지 않게 한다.
+                    <ul className="course-list" aria-label="과목 더 불러오는 중">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <CourseRowSkeleton key={i} />
+                      ))}
+                    </ul>
+                  ) : (
+                    // 관찰용 sentinel 영역(다음 페이지 트리거). 실제 로딩 표시는 위 스켈레톤이 담당.
+                    <div className="py-6" aria-hidden="true" />
+                  )}
                 </div>
               )}
 
