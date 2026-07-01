@@ -516,15 +516,16 @@ const CourseRow = ({
             data-testid="course-row-actions"
             className="rounded-2xl bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200 sm:hidden"
           >
-            <div className="flex flex-wrap gap-x-2 gap-y-1 text-[13px] font-medium text-slate-600">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-slate-600">
               {detailItems.map(item => (
                 <span key={item}>{item}</span>
               ))}
+              {classMethodLabel && (
+                <span className="font-semibold text-blue-600">{classMethodLabel}</span>
+              )}
             </div>
-            {(classMethodLabel || course.note || course.description) && (
+            {(course.note || course.description) && (
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                {classMethodLabel && <span className="font-semibold text-blue-600">{classMethodLabel}</span>}
-                {classMethodLabel && (course.note || course.description) ? ' · ' : ''}
                 {course.note || course.description}
               </p>
             )}
@@ -1108,10 +1109,32 @@ function useFocusTrap(active, panelRef) {
   }, [active, panelRef]);
 }
 
+// 여러 오버레이(시트·모달)가 중첩/재실행되어도 body 스크롤 락이 오염되지 않도록 전역 카운터로 관리한다.
+// 마지막 오버레이가 닫힐 때만 원래 overflow 로 복원 → "닫은 뒤 스크롤 잠김" 버그 원천 차단.
+let bodyScrollLockCount = 0;
+let bodyScrollLockPrevOverflow = '';
+function useBodyScrollLock(active) {
+  useEffect(() => {
+    if (!active) return undefined;
+    if (bodyScrollLockCount === 0) {
+      bodyScrollLockPrevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    bodyScrollLockCount += 1;
+    return () => {
+      bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
+      if (bodyScrollLockCount === 0) {
+        document.body.style.overflow = bodyScrollLockPrevOverflow;
+      }
+    };
+  }, [active]);
+}
+
 const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const panelRef = useRef(null);
   useFocusTrap(isOpen, panelRef);
+  useBodyScrollLock(isOpen);
   const [query, setQuery] = useState('');
   const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
   const selection = getDepartmentFilterSelection(value);
@@ -1138,17 +1161,6 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       })
       .filter(group => !normalizedQuery || group.groupMatches || group.departments.length > 0)
   ), [normalizedQuery]);
-
-  // body 스크롤 락은 isOpen 에만 의존시킨다. onClose/selectedGroup 변경으로 effect 가
-  // 재실행되면 previousOverflow 에 'hidden' 이 저장되어, 닫은 뒤 스크롤이 영구 잠기는 버그가 있었다.
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -1360,11 +1372,9 @@ const MobileFilterSheet = ({
 }) => {
   const panelRef = useRef(null);
   useFocusTrap(isOpen, panelRef);
+  useBodyScrollLock(isOpen);
   useEffect(() => {
     if (!isOpen) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -1375,7 +1385,6 @@ const MobileFilterSheet = ({
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -1504,15 +1513,7 @@ const MobileFilterSheet = ({
 const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
   const panelRef = useRef(null);
   useFocusTrap(!!field && field !== 'department', panelRef);
-  // body 스크롤 락은 field 에만 의존(학과는 DepartmentFilterButton 이 관리하므로 제외).
-  useEffect(() => {
-    if (!field || field === 'department') return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [field]);
+  useBodyScrollLock(!!field && field !== 'department');
 
   useEffect(() => {
     if (!field) return undefined;
