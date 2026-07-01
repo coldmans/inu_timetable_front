@@ -53,18 +53,7 @@ const WishlistModal = ({
     }
   }, [isOpen, initialStep]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isOpen]);
+  // body 스크롤 락은 App 의 hasBlockingOverlay + useBodyScrollLock 이 일괄 관리한다(중복 제거).
 
   const handleToggleFreeDay = (day) => {
     if (freeDays.includes(day)) {

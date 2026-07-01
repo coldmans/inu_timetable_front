@@ -79,12 +79,14 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
   const [currentCombination, setCurrentCombination] = useState(0);
   const titleId = useId();
 
-  if (!results || !results.combinations || results.combinations.length === 0) {
-    return null;
-  }
-
-  const combination = results.combinations[currentCombination];
-  const stats = results.statistics[currentCombination];
+  // 훅(useMemo 등)은 조기 return 위에서 무조건 호출해야 한다(Rules of Hooks).
+  // combinations 가 0개↔1개 이상으로 바뀔 때 훅 개수가 달라져 크래시하던 문제를 방어한다.
+  const combinations = results?.combinations || [];
+  const statistics = results?.statistics || [];
+  const hasResults = combinations.length > 0;
+  const safeIndex = hasResults ? Math.min(currentCombination, combinations.length - 1) : 0;
+  const combination = combinations[safeIndex] || [];
+  const stats = statistics[safeIndex];
 
   const { grid, daysOfWeek, unscheduledCourses } = useMemo(() => {
     const activeDays = ['월', '화', '수', '목', '금'];
@@ -183,6 +185,10 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
       return `${day} ${formatPeriod(start)}~${formatPeriod(end)}교시`;
     }).join(', ');
   };
+
+  if (!hasResults) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4 backdrop-blur-sm">

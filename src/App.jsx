@@ -9,6 +9,7 @@ import CourseDetailModal from './components/CourseDetailModal';
 import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
 import TimetableExportView from './components/TimetableExportView';
+import useBodyScrollLock from './hooks/useBodyScrollLock';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 // html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
@@ -1107,27 +1108,6 @@ function useFocusTrap(active, panelRef) {
       }
     };
   }, [active, panelRef]);
-}
-
-// 여러 오버레이(시트·모달)가 중첩/재실행되어도 body 스크롤 락이 오염되지 않도록 전역 카운터로 관리한다.
-// 마지막 오버레이가 닫힐 때만 원래 overflow 로 복원 → "닫은 뒤 스크롤 잠김" 버그 원천 차단.
-let bodyScrollLockCount = 0;
-let bodyScrollLockPrevOverflow = '';
-function useBodyScrollLock(active) {
-  useEffect(() => {
-    if (!active) return undefined;
-    if (bodyScrollLockCount === 0) {
-      bodyScrollLockPrevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-    }
-    bodyScrollLockCount += 1;
-    return () => {
-      bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
-      if (bodyScrollLockCount === 0) {
-        document.body.style.overflow = bodyScrollLockPrevOverflow;
-      }
-    };
-  }, [active]);
 }
 
 const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
@@ -3026,7 +3006,11 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null;
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null
+    || showAuthModal || showCombinationResults || showCourseDetailModal || showTimetableListModal;
+  // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
+  // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
+  useBodyScrollLock(hasBlockingOverlay);
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
