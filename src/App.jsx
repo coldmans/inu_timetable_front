@@ -1069,7 +1069,7 @@ const FilterSelect = ({ value, onChange, active, label, disabled = false, option
   );
 };
 
-const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false }) => {
+const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [query, setQuery] = useState('');
   const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
@@ -1115,6 +1115,7 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
+        onClose?.();
       }
     };
 
@@ -1124,12 +1125,17 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, selectedGroup]);
+  }, [isOpen, selectedGroup, onClose]);
+
+  const requestClose = () => {
+    setIsOpen(false);
+    setQuery('');
+    onClose?.();
+  };
 
   const handleSelect = (nextValue) => {
     onChange({ target: { value: nextValue } });
-    setIsOpen(false);
-    setQuery('');
+    requestClose();
   };
 
   const toggleGroup = (groupId) => {
@@ -1146,18 +1152,20 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
 
   return (
     <>
-      <button
-        type="button"
-        data-testid="department-filter-trigger"
-        aria-label="학과/전공 필터"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen(true)}
-        className={`field select-trigger ${active ? 'select-trigger-active' : 'text-slate-600'}`}
-      >
-        <span className="truncate">{selection.label}</span>
-        <ChevronDown size={14} className={`ml-2 flex-shrink-0 ${active ? 'text-blue-500' : 'text-slate-400'}`} />
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          data-testid="department-filter-trigger"
+          aria-label="학과/전공 필터"
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen(true)}
+          className={`field select-trigger ${active ? 'select-trigger-active' : 'text-slate-600'}`}
+        >
+          <span className="truncate">{selection.label}</span>
+          <ChevronDown size={14} className={`ml-2 flex-shrink-0 ${active ? 'text-blue-500' : 'text-slate-400'}`} />
+        </button>
+      )}
 
       {isOpen && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -1166,13 +1174,19 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
             data-testid="department-filter-modal"
             aria-modal="true"
             aria-labelledby="department-filter-title"
-            className="modal-panel flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-h-[82vh] sm:max-w-xl sm:rounded-2xl"
+            className="modal-panel flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 sm:max-h-[82dvh] sm:max-w-xl sm:rounded-2xl"
           >
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
-              <div>
-                <h2 id="department-filter-title" className="text-lg font-bold tracking-tight text-slate-900">학과/전공</h2>
-              </div>
-              <button type="button" onClick={() => setIsOpen(false)} className="icon-btn h-9 w-9" aria-label="학과/전공 창 닫기">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={requestClose}
+                className="-ml-1.5 inline-flex h-9 items-center gap-1 rounded-lg pl-1 pr-2 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                aria-label="학과/전공 창 닫기"
+              >
+                <ChevronLeft size={18} /> 뒤로
+              </button>
+              <h2 id="department-filter-title" className="text-base font-bold tracking-tight text-slate-900">학과/전공</h2>
+              <button type="button" onClick={requestClose} className="icon-btn h-9 w-9" aria-label="학과/전공 창 닫기">
                 <X size={17} />
               </button>
             </div>
@@ -1186,7 +1200,6 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="학과/전공 검색"
                   className="field h-10 pl-9"
-                  autoFocus
                 />
               </div>
               <button
@@ -1507,6 +1520,23 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
     </div>
   );
 
+  // 학과는 자체 검색/그룹 UI(DepartmentFilterButton)를 단독으로 연다(바텀시트 이중 중첩 방지).
+  if (field === 'department') {
+    return (
+      <DepartmentFilterButton
+        value={filters.department}
+        majorShortcuts={majorShortcuts}
+        defaultOpen
+        hideTrigger
+        onClose={onClose}
+        onChange={(event) => {
+          setFilters(prev => ({ ...prev, department: event.target.value }));
+          onClose();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
       <div className="modal-panel flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10">
@@ -1518,17 +1548,6 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {field === 'department' && (
-            <DepartmentFilterButton
-              value={filters.department}
-              majorShortcuts={majorShortcuts}
-              defaultOpen
-              onChange={(event) => {
-                setFilters(prev => ({ ...prev, department: event.target.value }));
-                onClose();
-              }}
-            />
-          )}
           {field === 'subjectType' && renderOptions('subjectType', courseTypes, (value) => applySimple('subjectType', value))}
           {field === 'grade' && renderOptions('grade', grades, (value) => applySimple('grade', value))}
           {field === 'credits' && renderOptions('credits', creditOptions, (value) => applySimple('credits', value))}
