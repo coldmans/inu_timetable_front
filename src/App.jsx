@@ -12,6 +12,7 @@ import TimetableExportView from './components/TimetableExportView';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
 import useFocusTrap from './hooks/useFocusTrap';
 import useModalDismiss from './hooks/useModalDismiss';
+import { trackEvent } from './services/analytics';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 // html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
@@ -2117,6 +2118,7 @@ function AppContent() {
 
   // 검색 실행 함수
   const executeSearch = () => {
+    if (searchTerm && searchTerm.trim()) trackEvent('SEARCH', searchTerm.trim());
     setCurrentPage(0); // 검색 시 첫 페이지로 리셋
     loadCourses(0);
     // 재검색/필터 변경(리스트 교체)마다 스크롤을 위로 리셋 — 무한스크롤로 내려간 위치와 어긋나지 않게.
@@ -2265,6 +2267,7 @@ function AppContent() {
 
 
   const handleAddToTimetable = async (courseToAdd) => {
+    trackEvent('TIMETABLE_ADD', courseToAdd?.name);
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -2316,6 +2319,7 @@ function AppContent() {
   };
 
   const handleAddToWishlist = async (courseToAdd, isRequired = false) => {
+    trackEvent('WISHLIST_ADD', courseToAdd?.name);
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -2383,6 +2387,7 @@ function AppContent() {
   };
 
   const handleRunGenerator = async () => {
+    trackEvent('COMBINATION_GENERATE');
     if (!isLoggedIn || wishlist.length === 0) {
       showToast('로그인 후 위시리스트에 과목을 추가해주세요!', 'warning');
       return;
@@ -2682,6 +2687,7 @@ function AppContent() {
 
   // 과목 상세 정보 보기
   const handleViewCourseDetails = (course) => {
+    trackEvent('COURSE_DETAIL_VIEW', course?.name);
     setSelectedCourseForDetail(course);
     setShowCourseDetailModal(true);
   };
