@@ -86,13 +86,30 @@ npm install
 npm run dev
 ```
 
-The Vite dev server runs with the backend API expected at `http://localhost:8080/api` or through the configured proxy/deployment path.
+The Vite dev server proxies `/api/*` and `/admin/api/*` to `http://localhost:8080` by default, which matches the local Mac mini Docker backend proxy. Use `VITE_DEV_BACKEND_ORIGIN` when the backend is on another local address.
+
+```bash
+VITE_DEV_BACKEND_ORIGIN=http://localhost:8080 npm run dev
+```
+
+## Mac Mini Backend Migration
+
+Vercel deployments keep frontend requests on same-origin `/api` paths and rewrite them to the Mac mini backend through `BACKEND_ORIGIN`.
+
+```bash
+BACKEND_ORIGIN=https://<Mac mini Cloudflare API domain>
+```
+
+Set `BACKEND_ORIGIN` in the Vercel project for Production, Preview, and Development. Do not include a trailing slash.
+
+The same origin is also used by the Sites deployment worker when publishing through OpenAI Sites.
 
 ## Scripts
 
 ```bash
 npm run dev
 npm run build
+npm run build:sites
 npm run preview
 npm run lint
 npm run test:e2e
