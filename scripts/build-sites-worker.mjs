@@ -18,7 +18,11 @@ function shouldServeAppShell(request, response) {
   }
 
   const accept = request.headers.get('accept') || '';
-  return accept.includes('text/html');
+  const url = new URL(request.url);
+  const lastSegment = url.pathname.split('/').pop() || '';
+  const looksLikeStaticFile = lastSegment.includes('.');
+
+  return accept.includes('text/html') || !looksLikeStaticFile;
 }
 
 async function proxyApiRequest(request, env) {
@@ -37,6 +41,7 @@ async function proxyApiRequest(request, env) {
   const incomingUrl = new URL(request.url);
   const targetUrl = new URL(incomingUrl.pathname + incomingUrl.search, backendOrigin);
   const headers = new Headers(request.headers);
+  headers.delete('host');
   headers.delete('origin');
   headers.delete('referer');
 
