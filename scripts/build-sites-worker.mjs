@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const workerSource = String.raw`
 const API_PATHS = ['/api', '/admin/api'];
@@ -78,3 +79,17 @@ export default {
 
 await mkdir('dist/server', { recursive: true });
 await writeFile('dist/server/index.js', workerSource + '\n');
+
+await rm('dist/client', { recursive: true, force: true });
+await mkdir('dist/client', { recursive: true });
+
+const entries = await readdir('dist', { withFileTypes: true });
+for (const entry of entries) {
+  if (entry.name === 'client' || entry.name === 'server' || entry.name === '.openai') {
+    continue;
+  }
+
+  await cp(join('dist', entry.name), join('dist/client', entry.name), {
+    recursive: entry.isDirectory(),
+  });
+}
