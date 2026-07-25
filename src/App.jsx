@@ -41,6 +41,13 @@ const debugLog = (...args) => {
   }
 };
 
+// 관리자 화면은 개발 모드 전용(보안: ee05703 에서 공개 앱 숨김 처리).
+// 프로덕션 빌드에서는 import.meta.env.DEV 가 false 로 치환되어 아래 동적 import 가
+// 데드코드로 제거되므로, admin 코드는 공개 번들에 포함되지 않는다.
+const AdminSubjectManager = import.meta.env.DEV
+  ? React.lazy(() => import('./components/AdminSubjectManager'))
+  : null;
+
 
 // Helpers and Constants moved to utils/timetableUtils.js
 
@@ -3101,7 +3108,35 @@ function AppContent() {
   useBodyScrollLock(hasBlockingOverlay && !isAdminSubjectsPage && currentView === 'timetable');
 
   if (isAdminSubjectsPage) {
-    return <HiddenPage />;
+    // 프로덕션에서는 기존 보안 결정(ee05703)대로 404 위장 화면을 유지한다.
+    if (!import.meta.env.DEV || !AdminSubjectManager) {
+      return <HiddenPage />;
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Toast {...toast} onDismiss={() => setToast(prev => ({ ...prev, show: false }))} />
+        <div className="max-w-7xl mx-auto px-3 py-4 md:px-8 md:py-10">
+          <header className="mb-4 md:mb-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-xl md:text-4xl font-bold tracking-tight text-slate-900">과목 관리</h1>
+                <p className="mt-1 text-sm md:text-base text-slate-500">관리자 전용 과목 데이터 관리 페이지입니다(개발 모드에서만 열립니다).</p>
+              </div>
+              <a
+                href="/"
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+              >
+                과목 검색으로 돌아가기
+              </a>
+            </div>
+          </header>
+          <React.Suspense fallback={<p className="py-10 text-center text-sm text-slate-500">관리 도구를 불러오는 중...</p>}>
+            <AdminSubjectManager showToast={showToast} />
+          </React.Suspense>
+        </div>
+      </div>
+    );
   }
 
   if (currentView === 'login') {
