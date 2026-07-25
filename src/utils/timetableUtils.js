@@ -98,7 +98,6 @@ export const parseTimeString = (timeString) => {
             const start = Math.min(...periods);
             let end = Math.max(...periods);
 
-            const isRange = timePart.includes('-') || timePart.includes('~') || timePart.includes('/');
             const isPeriodBased = !timePart.includes(':');
 
             if (isPeriodBased) {

@@ -64,7 +64,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
@@ -73,7 +73,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="course-detail-title"
-        className="modal-panel flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
+        className="modal-panel flex max-h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
       >
         {/* 헤더 */}
         <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
@@ -96,7 +96,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
         </div>
 
         {/* 내용 */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6">
           <div className="rounded-xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
             <div className="flex items-start gap-2.5">
               <Clock size={16} className="mt-0.5 flex-shrink-0 text-blue-500" />

@@ -113,7 +113,7 @@ const TimetableListModal = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
           {courses.length === 0 ? (
             <div className="rounded-xl sm:rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-10 sm:py-12 text-center">
               <p className="text-base sm:text-lg font-medium text-slate-600">아직 추가된 과목이 없어요</p>

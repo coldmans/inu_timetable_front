@@ -7,7 +7,6 @@ import {
   parseTime,
   getCourseTypeBadgeClass,
   getCourseTypeColorScheme,
-  daysOfWeek as utilDaysOfWeek,
   timeSlots,
   displayTimeSlots
 } from '../utils/timetableUtils';
@@ -83,8 +82,8 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
 
   // 훅(useMemo 등)은 조기 return 위에서 무조건 호출해야 한다(Rules of Hooks).
   // combinations 가 0개↔1개 이상으로 바뀔 때 훅 개수가 달라져 크래시하던 문제를 방어한다.
-  const combinations = results?.combinations || [];
-  const statistics = results?.statistics || [];
+  const combinations = useMemo(() => results?.combinations || [], [results]);
+  const statistics = useMemo(() => results?.statistics || [], [results]);
   const hasResults = combinations.length > 0;
 
   const panelRef = useRef(null);
@@ -92,8 +91,14 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
   useModalDismiss(hasResults, onClose);
 
   const safeIndex = hasResults ? Math.min(currentCombination, combinations.length - 1) : 0;
-  const combination = combinations[safeIndex] || [];
-  const stats = statistics[safeIndex];
+  // 아래 grid useMemo 의존성이 매 렌더마다 흔들리지 않도록 참조를 고정한다.
+  const combination = useMemo(() => combinations[safeIndex] || [], [combinations, safeIndex]);
+  // 백엔드가 combinations 보다 짧은 statistics 를 보내도 흰 화면이 되지 않도록 기본값을 채운다.
+  const stats = statistics[safeIndex] || {
+    totalCredits: combination.reduce((acc, course) => acc + (course.credits || 0), 0),
+    subjectCount: combination.length,
+    subjectTypeDistribution: {},
+  };
 
   const { grid, daysOfWeek, unscheduledCourses } = useMemo(() => {
     const activeDays = ['월', '화', '수', '목', '금'];
@@ -232,7 +237,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-3 py-4 sm:px-6 sm:py-6">
+        <div className="flex-1 overflow-auto overscroll-contain px-3 py-4 sm:px-6 sm:py-6">
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
             {/* Timetable Grid */}
             <div className="lg:col-span-2">
@@ -390,7 +395,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
                   <div className="pt-1">
                     <div className="mb-1.5 text-xs font-medium text-slate-700">이수구분별</div>
                     <div className="space-y-0.5">
-                      {Object.entries(stats.subjectTypeDistribution).map(([type, count]) => (
+                      {Object.entries(stats.subjectTypeDistribution || {}).map(([type, count]) => (
                         <div key={type} className="flex justify-between text-xs">
                           <span>{type}</span>
                           <span className="font-medium text-slate-700">{count}개</span>

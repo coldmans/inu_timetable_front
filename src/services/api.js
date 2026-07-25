@@ -3,7 +3,6 @@ const DEFAULT_SEMESTER = '2026-1';
 
 // API 응답 처리 헬퍼
 export const handleResponse = async (response) => {
-  console.log(`API 응답: ${response.status} ${response.statusText} - ${response.url}`);
 
   const responseText = await response.text();
   const parseBody = () => {
@@ -21,10 +20,8 @@ export const handleResponse = async (response) => {
 
     if (errorBody && typeof errorBody === 'object') {
       errorMessage = errorBody.error || errorBody.message || errorMessage;
-      console.error('API 에러 상세:', errorBody);
     } else if (typeof errorBody === 'string' && errorBody.trim()) {
       errorMessage = errorBody;
-      console.error('API 에러 상세:', errorBody);
     }
 
     const apiError = new Error(errorMessage);
@@ -152,8 +149,6 @@ export const subjectAPI = {
     });
 
     const finalURL = `${BASE_URL}/subjects/filter?${params}`;
-    console.log(`API 요청: ${finalURL}`);
-    console.log(`📄 페이지: ${page}, 크기: ${size}`);
 
     const response = await fetch(finalURL);
     return handleResponse(response);

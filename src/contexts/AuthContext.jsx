@@ -48,25 +48,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (credentials) => {
-    try {
-      const userData = await authAPI.login(credentials);
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
-    } catch (error) {
-      throw error;
-    }
+    const userData = await authAPI.login(credentials);
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    return userData;
   };
 
   const register = async (userData) => {
-    try {
-      const newUser = await authAPI.register(userData);
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      return newUser;
-    } catch (error) {
-      throw error;
-    }
+    const newUser = await authAPI.register(userData);
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    return newUser;
   };
 
   const createDevSession = async (options = {}) => {

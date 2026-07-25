@@ -303,7 +303,7 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
-        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
+        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
       >
         <div className="flex items-start justify-between px-6 pt-6">
           <div>

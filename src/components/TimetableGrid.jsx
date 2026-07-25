@@ -22,9 +22,10 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
                         type="button"
                         onClick={(e) => onCourseClick(e, course)}
                         aria-label={`${course.name}${course.professor ? ', ' + course.professor : ''} · 옵션 열기`}
+                        title={course.name}
                         className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 text-left transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${backgroundColor} ${textColor}`}
                     >
-                        <span className="w-full break-words text-[11px] font-semibold leading-tight">{course.name}</span>
+                        <span className="line-clamp-3 w-full break-keep text-[11px] font-semibold leading-tight">{course.name}</span>
                         {course.professor && (
                             <span className="mt-0.5 w-full truncate text-[10px] leading-none opacity-75">{course.professor}</span>
                         )}
