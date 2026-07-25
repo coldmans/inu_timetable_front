@@ -162,11 +162,17 @@ function AppContent() {
 
   // 모바일 시간표(내부 스크롤)에서 방금 추가한 과목의 시간대가 보이도록 스크롤한다.
   const scrollMobileTimetableToCourse = useCallback((courseName) => {
-    requestAnimationFrame(() => {
+    // 낙관적 setTimetable 직후에는 셀이 아직 커밋되지 않았을 수 있어 몇 프레임 재시도한다.
+    const attempt = (remainingTries) => {
       const container = mobileTimetableViewportRef.current;
-      if (!container || container.scrollHeight <= container.clientHeight) return;
-      const cell = container.querySelector(`[title="${CSS.escape(courseName)}"]`);
-      if (!cell) return;
+      const cell = container?.querySelector(`[title="${CSS.escape(courseName)}"]`);
+      if (!container || !cell) {
+        if (remainingTries > 0) {
+          setTimeout(() => attempt(remainingTries - 1), 40);
+        }
+        return;
+      }
+      if (container.scrollHeight <= container.clientHeight) return;
       const containerRect = container.getBoundingClientRect();
       const cellRect = cell.getBoundingClientRect();
       container.scrollTo({
@@ -174,7 +180,8 @@ function AppContent() {
           - container.clientHeight / 2 + cellRect.height / 2,
         behavior: 'smooth',
       });
-    });
+    };
+    setTimeout(() => attempt(8), 30);
   }, []);
 
   const prepareTutorialTargets = useCallback(() => {

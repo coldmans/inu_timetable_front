@@ -9,7 +9,7 @@ const openMobileCourseSearch = async (page, isMobile) => {
   if (!isMobile) return;
 
   await page.getByRole('button', { name: '과목 검색 열기' }).click();
-  await expect(page.getByRole('region', { name: '과목 검색', exact: true })).toBeVisible();
+  await expect(page.getByLabel('모바일 필터')).toBeVisible();
 };
 
 test('dev 세션으로 로그인해 시간표 추가부터 조합 적용까지 수행한다', async ({ page, isMobile }) => {
@@ -41,7 +41,7 @@ test('dev 세션으로 로그인해 시간표 추가부터 조합 적용까지 �
   expect(chipLabel).not.toBe('담은 과목 0개');
 
   // 3) 조합 생성 → 결과 확인 → 적용
-  await page.getByRole('button', { name: '조합' }).click();
+  await page.getByRole('button', { name: '조합', exact: true }).click();
   await page.getByRole('button', { name: /조합 만들기 시작/ }).click();
 
   const resultsDialog = page.getByRole('dialog', { name: /시간표/ });
