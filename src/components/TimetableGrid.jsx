@@ -25,10 +25,8 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
                         title={course.name}
                         className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 text-left transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${backgroundColor} ${textColor}`}
                     >
-                        <span className="line-clamp-3 w-full break-keep text-[11px] font-semibold leading-tight">{course.name}</span>
-                        {course.professor && (
-                            <span className="mt-0.5 w-full truncate text-[10px] leading-none opacity-75">{course.professor}</span>
-                        )}
+                        {/* 한글 과목명은 공백이 없어 break-keep 으로는 줄바꿈이 안 된다 — 글자 단위로 꺾어 세로로 채운다. */}
+                        <span className="w-full break-all text-[11px] font-semibold leading-tight">{course.name}</span>
                     </button>
                 </td>
             );
