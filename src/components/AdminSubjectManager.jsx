@@ -42,6 +42,7 @@ const dayMapping = {
 };
 
 const createEmptySubjectForm = () => ({
+  semester: CURRENT_SEMESTER,
   subjectName: '',
   credits: '3',
   professor: '',
@@ -66,6 +67,7 @@ const normalizeDayOfWeek = (dayOfWeek) => {
 };
 
 const toSubjectForm = (subject) => ({
+  semester: subject?.semester || CURRENT_SEMESTER,
   subjectName: subject?.subjectName || '',
   credits: String(subject?.credits ?? 3),
   professor: subject?.professor || '',
@@ -104,6 +106,7 @@ const parseGradeFilter = (grade) => {
 };
 
 const buildFilterParams = (filters) => ({
+  semester: filters.semester,
   subjectName: filters.subjectName.trim(),
   professor: filters.professor.trim(),
   department: filters.department,
@@ -114,6 +117,7 @@ const buildFilterParams = (filters) => ({
 const isBlank = (value) => value === undefined || value === null || String(value).trim() === '';
 
 const validateSubjectForm = (formData) => {
+  if (!SEMESTER_PATTERN.test(String(formData.semester).trim())) return '학기는 YYYY-1 또는 YYYY-2 형식으로 입력해주세요.';
   if (isBlank(formData.subjectName)) return '과목명을 입력해주세요.';
   if (isBlank(formData.professor)) return '교수명을 입력해주세요.';
   if (isBlank(formData.department)) return '학과를 입력해주세요.';
@@ -155,6 +159,7 @@ const validateSubjectForm = (formData) => {
 };
 
 const toSubjectPayload = (formData) => ({
+  semester: String(formData.semester).trim(),
   subjectName: formData.subjectName.trim(),
   credits: Number(formData.credits),
   professor: formData.professor.trim(),
@@ -343,8 +348,10 @@ const AdminSubjectManager = ({ showToast }) => {
     professor: '',
     department: '전체',
     grade: '전체',
-    subjectType: '전체'
+    subjectType: '전체',
+    semester: '전체'
   });
+  const [semesterOptions, setSemesterOptions] = useState(['전체', CURRENT_SEMESTER]);
   const [subjects, setSubjects] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [detailLoadingId, setDetailLoadingId] = useState(null);
@@ -430,6 +437,23 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const isAdminAuthenticated = adminSession.authenticated;
+
+  useEffect(() => {
+    if (!isAdminAuthenticated) return undefined;
+    let isMounted = true;
+    adminSubjectAPI.getSemesters()
+      .then(semesters => {
+        if (!isMounted || !Array.isArray(semesters)) return;
+        const unique = [...new Set(['전체', ...semesters, CURRENT_SEMESTER])];
+        setSemesterOptions(unique);
+      })
+      .catch(() => {
+        // 구버전 백엔드 등으로 실패하면 기본 옵션(전체/현재 학기)만 유지한다.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdminAuthenticated]);
 
   const requireAdminAuth = () => (
     isAdminAuthenticated ? '' : '관리자 로그인이 필요합니다.'
@@ -862,6 +886,18 @@ const AdminSubjectManager = ({ showToast }) => {
               />
             </label>
             <label className="space-y-1">
+              <span className="text-xs font-semibold text-slate-500">학기</span>
+              <select
+                value={filters.semester}
+                onChange={(event) => setFilters(prev => ({ ...prev, semester: event.target.value }))}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {semesterOptions.map(semester => (
+                  <option key={semester} value={semester}>{semester}</option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
               <span className="text-xs font-semibold text-slate-500">학과</span>
               <select
                 value={filters.department}
@@ -1157,6 +1193,7 @@ const AdminSubjectManager = ({ showToast }) => {
             <thead>
               <tr className="border-y border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                 <th className="px-3 py-3">ID</th>
+                <th className="px-3 py-3">학기</th>
                 <th className="px-3 py-3">과목명</th>
                 <th className="px-3 py-3">교수</th>
                 <th className="px-3 py-3">학과</th>
@@ -1172,6 +1209,11 @@ const AdminSubjectManager = ({ showToast }) => {
               {subjects.map(subject => (
                 <tr key={subject.id} className="border-b border-slate-100 text-slate-700 hover:bg-slate-50">
                   <td className="px-3 py-3 text-xs text-slate-400">{subject.id}</td>
+                  <td className="px-3 py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${subject.semester === CURRENT_SEMESTER ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {subject.semester || '-'}
+                    </span>
+                  </td>
                   <td className="px-3 py-3">
                     <p className="font-semibold text-slate-900">{subject.subjectName}</p>
                     {subject.isNight && (
@@ -1216,7 +1258,7 @@ const AdminSubjectManager = ({ showToast }) => {
               ))}
               {!isLoading && subjects.length === 0 && (
                 <tr>
-                  <td colSpan="10" className="px-3 py-12 text-center text-sm text-slate-400">
+                  <td colSpan="11" className="px-3 py-12 text-center text-sm text-slate-400">
                     조건에 맞는 과목이 없습니다.
                   </td>
                 </tr>
@@ -1273,6 +1315,16 @@ const AdminSubjectManager = ({ showToast }) => {
                 )}
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="text-sm font-semibold text-slate-700">학기</span>
+                    <input
+                      type="text"
+                      value={subjectForm.semester}
+                      onChange={(event) => updateFormField('semester', event.target.value)}
+                      placeholder="예: 2026-1"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </label>
                   <label className="space-y-1">
                     <span className="text-sm font-semibold text-slate-700">과목명</span>
                     <input
