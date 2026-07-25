@@ -1,4 +1,14 @@
-export const CURRENT_SEMESTER = '2026-1';
+// 현재 학기. 앱 부팅 시 서버 설정(GET /api/settings/current-semester)으로 갱신된다.
+// ESM live binding 이므로 setCurrentSemester 이후 import 측에서도 최신 값을 읽는다.
+export let CURRENT_SEMESTER = '2026-1';
+
+export const SEMESTER_PATTERN = /^\d{4}-[12]$/;
+
+export const setCurrentSemester = (semester) => {
+  if (typeof semester === 'string' && SEMESTER_PATTERN.test(semester)) {
+    CURRENT_SEMESTER = semester;
+  }
+};
 
 export const convertToPeriod = (timeValue) => {
     const PERIOD_START_HOUR_OFFSET = 8;
