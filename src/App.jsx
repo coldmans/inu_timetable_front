@@ -147,6 +147,19 @@ function AppContent() {
     setTutorialRunId(0);
   }, []);
 
+  // iOS WebKit 은 방금 스크롤 가능해진 요소를 첫 터치 전까지 제스처 대상으로
+  // 등록하지 않는 경우가 있어, 검색이 열리면 1px 스크롤 킥으로 강제 등록한다.
+  useEffect(() => {
+    if (!showMobileSearch) return;
+    requestAnimationFrame(() => {
+      const container = mobileTimetableViewportRef.current;
+      if (!container || container.scrollHeight <= container.clientHeight) return;
+      const original = container.scrollTop;
+      container.scrollTop = original + 1;
+      container.scrollTop = original;
+    });
+  }, [showMobileSearch]);
+
   // 모바일 시간표(내부 스크롤)에서 방금 추가한 과목의 시간대가 보이도록 스크롤한다.
   const scrollMobileTimetableToCourse = useCallback((courseName) => {
     requestAnimationFrame(() => {
@@ -1484,7 +1497,7 @@ function AppContent() {
         className="mx-auto max-w-7xl px-4 py-4 [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] md:px-8 md:py-6 md:[padding-left:max(2rem,env(safe-area-inset-left))] md:[padding-right:max(2rem,env(safe-area-inset-right))]"
       >
         <>
-        <section aria-label="모바일 시간표" className={`sticky ${showMobileSearch ? 'top-0' : 'top-14'} z-20 -mx-4 mb-3 bg-slate-50/95 px-4 pt-2 pb-1 backdrop-blur md:hidden`}>
+        <section aria-label="모바일 시간표" className={`sticky ${showMobileSearch ? 'top-0' : 'top-14'} z-20 -mx-4 mb-3 bg-slate-50 px-4 pt-2 pb-1 md:hidden`}>
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="flex-shrink-0 text-sm font-bold text-slate-900">내 시간표</h2>
             <div className="flex flex-shrink-0 items-center gap-1.5">
@@ -1535,7 +1548,7 @@ function AppContent() {
           </div>
           {/* overflow 를 hidden↔auto 로 동적 전환하면 iOS Safari 가 첫 터치 전까지
               스크롤 대상으로 인식하지 못하므로, 항상 auto 로 두고 높이만 토글한다. */}
-          <div ref={mobileTimetableViewportRef} className={`rounded-2xl overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] ${showMobileSearch ? 'max-h-[34svh]' : ''}`}>
+          <div ref={mobileTimetableViewportRef} className={`rounded-2xl overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch] ${showMobileSearch ? 'max-h-[34svh]' : ''}`}>
             <h2 className="sr-only">내 시간표 표</h2>
             <TimetableGrid
               courses={timetable}
