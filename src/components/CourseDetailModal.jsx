@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';

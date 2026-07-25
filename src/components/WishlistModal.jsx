@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X, Clock, Star, Trash2, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';

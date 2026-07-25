@@ -1,4 +1,4 @@
-import React, { useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutList, Grid } from 'lucide-react';
 import TimetableGrid from './TimetableGrid';
 import useFocusTrap from '../hooks/useFocusTrap';

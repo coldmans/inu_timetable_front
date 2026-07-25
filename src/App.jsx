@@ -35,6 +35,12 @@ import {
   creditOptions
 } from './utils/timetableUtils';
 
+const debugLog = (...args) => {
+  if (import.meta.env.DEV) {
+    console.debug(...args);
+  }
+};
+
 
 // Helpers and Constants moved to utils/timetableUtils.js
 
@@ -630,6 +636,19 @@ const EmptyResults = ({ onReset }) => (
     <p className="mt-1 text-sm text-slate-500">검색어를 바꾸거나 필터를 초기화해 보세요.</p>
     <button type="button" onClick={onReset} className="btn-secondary mt-5">
       <RotateCcw size={14} /> 필터 초기화
+    </button>
+  </div>
+);
+
+const ErrorResults = ({ onRetry }) => (
+  <div role="alert" className="flex flex-col items-center px-6 py-16 text-center">
+    <div className="grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-500">
+      <AlertTriangle size={22} />
+    </div>
+    <p className="mt-4 text-[15px] font-semibold text-slate-900">과목 정보를 불러오지 못했어요</p>
+    <p className="mt-1 text-sm text-slate-500">잠시 후 다시 시도해 주세요.</p>
+    <button type="button" onClick={onRetry} className="btn-secondary mt-5">
+      <RotateCcw size={14} /> 다시 시도
     </button>
   </div>
 );
@@ -1933,6 +1952,7 @@ function AppContent() {
   const [timetable, setTimetable] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false); // 무한 스크롤 추가 로드(누적) 전용 — 첫 로드/재검색과 분리
+  const [courseLoadError, setCourseLoadError] = useState(false);
 
   // 모달 상태
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
@@ -2006,7 +2026,9 @@ function AppContent() {
 
   // 사용자 데이터 로드 - 인증 로딩 완료 후 실행
   useEffect(() => {
+    debugLog('useEffect 실행 - authLoading:', authLoading, 'user:', user);
     if (!authLoading && user) {
+      debugLog('✅ 조건 만족, loadUserData 호출');
       loadUserData();
     }
     // loadUserData 는 렌더마다 새로 만들어지는 함수라 deps 에 넣으면 무한 재실행된다.
@@ -2026,6 +2048,7 @@ function AppContent() {
         setIsLoadingMore(true);
       } else {
         setIsLoading(true);
+        setCourseLoadError(false);
       }
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
       const gradeFilter = filters.grade === '전체' ? undefined :
@@ -2050,9 +2073,11 @@ function AppContent() {
       }
 
       // 페이징 응답 처리
+      debugLog('📥 API 응답 데이터:', response);
 
       if (response.content) {
         // 백엔드에서 페이징 응답이 온 경우
+        debugLog(`✅ 페이징 응답: ${response.content.length}개 항목, 총 ${response.totalElements}개 중 ${response.number + 1}/${response.totalPages} 페이지`);
         const formattedCourses = response.content.map((subject, index) => formatCourse(subject, index));
         setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(response.totalPages || 0);
@@ -2060,6 +2085,7 @@ function AppContent() {
         setCurrentPage(response.number || 0);
       } else {
         // 기존 배열 응답 (백엔드 미수정 시 호환성)
+        debugLog(`배열 응답: ${response.length}개 항목 (페이징 미적용)`);
         const formattedCourses = response.map((subject, index) => formatCourse(subject, index));
         setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(1);
@@ -2071,6 +2097,19 @@ function AppContent() {
         return;
       }
 
+      if (!import.meta.env.DEV) {
+        if (!append) {
+          setCourses([]);
+          setTotalPages(0);
+          setTotalElements(0);
+          setCurrentPage(0);
+          setCourseLoadError(true);
+        }
+        showToast('과목 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+        return;
+      }
+
+      debugLog('서버 연결 실패, 개발용 Mock 데이터 사용:', error.message);
       // Fallback to comprehensive mock data if server is not available
       const mockData = [
         { id: 1, subjectName: '운영체제', credits: 3, professor: '김교수', department: '컴퓨터공학부', subjectType: '전심', schedules: [{ dayOfWeek: '월', startTime: 7.0, endTime: 8.5 }, { dayOfWeek: '수', startTime: 5.0, endTime: 6.5 }] },
@@ -2114,15 +2153,20 @@ function AppContent() {
 
   const loadUserData = async () => {
     if (!user) {
+      debugLog('🚫 loadUserData: user가 없어서 리턴');
       return;
     }
 
+    debugLog('🔄 loadUserData 시작, user:', user.id);
 
     try {
       // 위시리스트 로드
+      debugLog('📋 위시리스트 API 호출 중...');
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
+      debugLog('✅ 위시리스트 데이터 받음:', wishlistData);
 
       const formattedWishlist = wishlistData.map((item) => {
+        debugLog('위시리스트 아이템:', item);
 
         // 새로운 API 응답: 아이템 자체가 모든 과목 정보를 포함
         return {
@@ -2146,6 +2190,7 @@ function AppContent() {
           ...getCourseTypeColorScheme(item.subjectType)
         };
       });
+      debugLog('📋 포맷된 위시리스트:', formattedWishlist);
       setWishlist(formattedWishlist);
 
       // 개인 시간표 로드
@@ -2154,8 +2199,9 @@ function AppContent() {
         formatCourse(item.subject, index)
       );
       setTimetable(formattedTimetable);
-    } catch {
-      // 백그라운드 동기화 실패는 무시한다(다음 데이터 로드에서 다시 시도됨).
+    } catch (error) {
+      debugLog('사용자 데이터 로드 실패:', error.message);
+      showToast('저장한 시간표를 불러오지 못했습니다.', 'error');
     }
   };
 
@@ -2339,6 +2385,7 @@ function AppContent() {
     const now = Date.now();
     const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
     if (now - lastClick < 500) {
+      debugLog(`[Throttle] 중복 시간표 추가 요청 방지: ${courseToAdd.name}`);
       return;
     }
     lastClickRefs.current[courseToAdd.id] = now;
@@ -2390,6 +2437,7 @@ function AppContent() {
     const now = Date.now();
     const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
     if (now - lastClick < 500) {
+      debugLog(`[Throttle] 중복 위시리스트 요청 방지: ${courseToAdd.name}`);
       return;
     }
     lastClickRefs.current[courseToAdd.id] = now;
@@ -2486,6 +2534,12 @@ function AppContent() {
       showToast(`${response.totalCount}개의 시간표 조합을 찾았습니다!`);
     } catch (error) {
       setIsGenerating(false);
+      if (!import.meta.env.DEV) {
+        showToast(error.message || '시간표 조합을 만들지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+        return;
+      }
+
+      debugLog('시간표 조합 생성 실패, 개발용 Mock 데이터 사용:', error.message);
 
       // 필수 과목이 있으면 Mock 데이터에도 반영
       const requiredCoursesInMock = requiredCourses.slice(0, 2); // 최대 2개만 사용
@@ -2573,6 +2627,7 @@ function AppContent() {
 
     setIsApplyingCombination(true);
     try {
+      debugLog('🔄 조합 선택:', selectedCombination);
 
       // 기존 시간표 클리어(서로 독립인 삭제라 병렬로 처리해 모바일 회선에서 대기를 줄인다)
       await Promise.all(timetable.map(course => timetableAPI.remove(user.id, course.id)));
@@ -2589,10 +2644,13 @@ function AppContent() {
 
       // 로컬 상태 업데이트
       const formattedCombination = selectedCombination.map((subject, index) => {
+        debugLog('📝 포맷팅 중인 과목:', subject);
         const formatted = formatCourse(subject, index);
+        debugLog('✅ 포맷된 결과:', formatted);
         return formatted;
       });
 
+      debugLog('Selected timetable combination:', formattedCombination);
       setTimetable(formattedCombination);
 
       setShowCombinationResults(false);
@@ -2678,6 +2736,7 @@ function AppContent() {
 
     try {
       await timetableAPI.remove(user.id, courseToRemove.id);
+      debugLog('✅ 시간표 제거 성공:', courseToRemove.name);
 
       // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
       setTimeout(async () => {
@@ -2687,6 +2746,7 @@ function AppContent() {
             formatCourse(item.subject, index)
           );
           setTimetable(formattedTimetable);
+          debugLog('🔄 시간표 동기화 완료');
         } catch (syncError) {
           console.warn('시간표 동기화 실패:', syncError.message);
         }
@@ -2721,6 +2781,7 @@ function AppContent() {
       );
 
       await Promise.all(deletePromises);
+      debugLog('✅ 시간표 전체 삭제 성공');
 
     } catch (error) {
       console.error('❌ 시간표 전체 삭제 실패:', error);
@@ -3245,9 +3306,11 @@ function AppContent() {
                 onClick={() => setShowMobileSearch(value => !value)}
                 aria-label={showMobileSearch ? '과목 검색 닫기' : '과목 검색 열기'}
                 aria-expanded={showMobileSearch}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                className={`inline-flex h-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                  showMobileSearch ? 'w-10' : 'gap-1 px-3 text-xs font-semibold'
+                }`}
               >
-                {showMobileSearch ? <X size={16} /> : <Plus size={16} />}
+                {showMobileSearch ? <X size={16} /> : <><Search size={14} /> 과목 찾기</>}
               </button>
             </div>
           </div>
@@ -3292,6 +3355,7 @@ function AppContent() {
             <button
               onClick={executeSearch}
               disabled={isLoading}
+              aria-label="검색"
               className="btn-primary h-10 px-4 md:h-11 md:px-5"
             >
               <Search size={15} className="sm:hidden" />
@@ -3447,6 +3511,8 @@ function AppContent() {
                     <CourseRowSkeleton key={index} />
                   ))}
                 </ul>
+              ) : courseLoadError ? (
+                <ErrorResults onRetry={() => loadCourses(0)} />
               ) : filteredCourses.length === 0 ? (
                 <EmptyResults onReset={handleResetFilters} />
               ) : (

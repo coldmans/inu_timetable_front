@@ -1,8 +1,15 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const DEFAULT_SEMESTER = '2026-1';
 
+const debugLog = (...args) => {
+  if (import.meta.env.DEV) {
+    console.debug(...args);
+  }
+};
+
 // API 응답 처리 헬퍼
 export const handleResponse = async (response) => {
+  debugLog(`API 응답: ${response.status} ${response.statusText} - ${response.url}`);
 
   const responseText = await response.text();
   const parseBody = () => {
@@ -20,8 +27,10 @@ export const handleResponse = async (response) => {
 
     if (errorBody && typeof errorBody === 'object') {
       errorMessage = errorBody.error || errorBody.message || errorMessage;
+      debugLog('API 에러 상세:', errorBody);
     } else if (typeof errorBody === 'string' && errorBody.trim()) {
       errorMessage = errorBody;
+      debugLog('API 에러 상세:', errorBody);
     }
 
     const apiError = new Error(errorMessage);
@@ -149,6 +158,8 @@ export const subjectAPI = {
     });
 
     const finalURL = `${BASE_URL}/subjects/filter?${params}`;
+    debugLog(`API 요청: ${finalURL}`);
+    debugLog(`페이지: ${page}, 크기: ${size}`);
 
     const response = await fetch(finalURL);
     return handleResponse(response);
