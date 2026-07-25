@@ -88,6 +88,18 @@ npm run dev
 
 The Vite dev server runs with the backend API expected at `http://localhost:8080/api` or through the configured proxy/deployment path.
 
+## Deployment
+
+Vercel keeps browser requests on the frontend origin and rewrites `/api/*` and
+`/admin/api/*` to the backend. Configure the Vercel project environment:
+
+```text
+BACKEND_ORIGIN=https://inu-timetable-backend-282216427513.asia-northeast3.run.app
+```
+
+For local development, `VITE_BACKEND_ORIGIN` can override the default
+`http://localhost:8080` proxy target.
+
 ## Scripts
 
 ```bash
