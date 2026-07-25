@@ -62,6 +62,14 @@ export const adminSubjectAPI = {
     });
     return handleResponse(response);
   },
+
+  // 등록된 학기 목록(최신순). 관리자 인증 필요.
+  getSemesters: async () => {
+    const response = await fetch(`${ADMIN_BASE_URL}/subjects/semesters`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
 };
 
 export const adminSettingsAPI = {
