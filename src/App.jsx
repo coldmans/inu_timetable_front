@@ -463,10 +463,9 @@ const CourseRow = React.memo(({
   const classMethodLabel = getClassMethodLabel(course.classMethod);
   const courseCode = course.code || course.subjectCode || course.courseCode || course.courseNo;
   const scheduleLabel = useMemo(() => formatScheduleLabel(course), [course]);
+  // 펼침 영역에는 접힌 행에 없는 정보만 보여준다(구분·학점은 요약 행과 중복이라 제외).
   const detailItems = [
     course.grade ? `${course.grade}학년` : '전학년',
-    course.type,
-    `${course.credits}학점`,
     courseCode
   ].filter(Boolean);
   const handleSummaryClick = () => {
@@ -553,54 +552,51 @@ const CourseRow = React.memo(({
         </div>
 
         {isExpanded && (
-          <div
-            data-testid="course-row-actions"
-            className="rounded-2xl bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200 sm:hidden"
-          >
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium text-slate-600">
-              {detailItems.map(item => (
-                <span key={item}>{item}</span>
-              ))}
-              {classMethodLabel && (
-                <span className="font-semibold text-blue-600">{classMethodLabel}</span>
-              )}
-            </div>
+          <div data-testid="course-row-actions" className="sm:hidden">
+            {(detailItems.length > 0 || classMethodLabel) && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
+                {detailItems.map(item => (
+                  <span key={item}>{item}</span>
+                ))}
+                {classMethodLabel && (
+                  <span className="font-medium text-blue-600">{classMethodLabel}</span>
+                )}
+              </div>
+            )}
             {(course.note || course.description) && (
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="mt-1 text-xs leading-5 text-slate-500">
                 {course.note || course.description}
               </p>
             )}
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-1.5">
               <button
                 data-tour="course-add"
                 type="button"
                 onClick={() => onAddToTimetable(course)}
                 disabled={actionsDisabled}
-                className="btn-primary h-10 flex-1 rounded-full px-3 text-xs"
+                className="btn-primary h-9 px-3 text-xs"
               >
                 <Plus size={13} /> 시간표에 추가
               </button>
-              <div className="flex flex-shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
-                <a
-                  data-tour="course-review"
-                  href={courseReviewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${course.name} 강의평 보기`}
-                  className="inline-flex h-10 items-center gap-1 rounded-full px-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                >
-                  <MessageSquare size={13} /> 강의평
-                </a>
-                <button
-                  data-tour="course-wishlist"
-                  type="button"
-                  onClick={() => onAddToWishlist(course)}
-                  disabled={actionsDisabled}
-                  className="inline-flex h-10 items-center gap-1 rounded-full px-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
-                >
-                  <ShoppingCart size={13} /> 담기
-                </button>
-              </div>
+              <a
+                data-tour="course-review"
+                href={courseReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${course.name} 강의평 보기`}
+                className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <MessageSquare size={13} /> 강의평
+              </a>
+              <button
+                data-tour="course-wishlist"
+                type="button"
+                onClick={() => onAddToWishlist(course)}
+                disabled={actionsDisabled}
+                className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+              >
+                <ShoppingCart size={13} /> 담기
+              </button>
             </div>
           </div>
         )}
