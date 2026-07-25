@@ -2064,6 +2064,7 @@ function AppContent() {
       const departmentFilterParams = getDepartmentFilterParams(filters.department);
 
       const response = await subjectAPI.filter({
+        semester: CURRENT_SEMESTER,
         subjectName: searchTerm,
         ...departmentFilterParams,
         subjectType: filters.subjectType,

@@ -64,6 +64,18 @@ export const adminSubjectAPI = {
   },
 };
 
+export const adminSettingsAPI = {
+  // 현재 학기 전환. 성공 시 { semester } 반환.
+  updateCurrentSemester: async (semester) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/settings/current-semester`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ semester }),
+    });
+    return handleResponse(response);
+  },
+};
+
 export const adminAuthAPI = {
   login: async ({ username, password }) => {
     const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/auth/login`, {

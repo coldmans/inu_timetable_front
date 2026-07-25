@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
+  CalendarClock,
   CheckCircle2,
   FileSpreadsheet,
   KeyRound,
@@ -14,9 +15,9 @@ import {
   X
 } from 'lucide-react';
 import Pagination from './Pagination';
-import { subjectAPI } from '../services/api';
-import { adminAuthAPI, adminSubjectAPI } from '../services/adminApi';
-import { departments, grades } from '../utils/timetableUtils';
+import { settingsAPI, subjectAPI } from '../services/api';
+import { adminAuthAPI, adminSettingsAPI, adminSubjectAPI } from '../services/adminApi';
+import { CURRENT_SEMESTER, SEMESTER_PATTERN, departments, grades, setCurrentSemester } from '../utils/timetableUtils';
 
 const ADMIN_USERNAME_STORAGE_KEY = 'inu_admin_username';
 
@@ -228,6 +229,99 @@ const formatImportPreviewItem = (item) => {
 const getPreviewList = (preview, key) => (
   Array.isArray(preview?.[key]) ? preview[key] : []
 );
+
+
+// 서비스 전체의 "현재 학기"를 전환하는 카드. 학생 위시리스트/시간표는 학기 키로
+// 분리 저장되므로 전환 시 자동으로 새 학기 빈 상태에서 시작하고, 지난 학기 데이터는 보존된다.
+const SemesterSwitchCard = ({ showToast }) => {
+  const [currentSemester, setCurrentSemesterState] = useState(CURRENT_SEMESTER);
+  const [nextSemester, setNextSemester] = useState('');
+  const [isSwitching, setIsSwitching] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    settingsAPI.getCurrentSemester()
+      .then(data => {
+        if (isMounted && data?.semester) {
+          setCurrentSemesterState(data.semester);
+          setCurrentSemester(data.semester);
+        }
+      })
+      .catch(() => {
+        // 백엔드가 아직 설정 API를 지원하지 않으면 번들 기본 학기를 표시한다.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSwitch = async () => {
+    const target = nextSemester.trim();
+    if (!SEMESTER_PATTERN.test(target)) {
+      showToast?.('학기 형식은 YYYY-1 또는 YYYY-2 입니다. (예: 2026-2)', 'warning');
+      return;
+    }
+    if (target === currentSemester) {
+      showToast?.('이미 현재 학기입니다.', 'warning');
+      return;
+    }
+    const confirmed = window.confirm(
+      `현재 학기를 ${currentSemester} → ${target} 로 전환할까요?\n\n` +
+      '전환 즉시 모든 사용자가 새 학기 기준으로 과목 검색·위시리스트·시간표를 보게 됩니다.\n' +
+      `${currentSemester} 학기의 학생 데이터는 삭제되지 않고 보존됩니다.`
+    );
+    if (!confirmed) return;
+
+    setIsSwitching(true);
+    try {
+      const result = await adminSettingsAPI.updateCurrentSemester(target);
+      const applied = result?.semester || target;
+      setCurrentSemesterState(applied);
+      setCurrentSemester(applied);
+      setNextSemester('');
+      showToast?.(`현재 학기가 ${applied} 로 전환되었습니다.`);
+    } catch (error) {
+      showToast?.(error.message || '학기 전환에 실패했습니다.', 'error');
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-base md:text-xl font-semibold text-slate-900">학기 전환</h2>
+          <p className="text-xs md:text-sm text-slate-500">
+            새 학기 과목 데이터를 업로드한 뒤 전환하면, 학생들은 재배포 없이 새 학기로 시작합니다.
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+          <CalendarClock size={14} />
+          현재 학기 {currentSemester}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type="text"
+          value={nextSemester}
+          onChange={(event) => setNextSemester(event.target.value)}
+          placeholder="전환할 학기 (예: 2026-2)"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:max-w-xs"
+        />
+        <button
+          type="button"
+          onClick={handleSwitch}
+          disabled={isSwitching || !nextSemester.trim()}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {isSwitching ? <Loader2 size={14} className="animate-spin" /> : <CalendarClock size={14} />}
+          학기 전환
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const AdminSubjectManager = ({ showToast }) => {
   const [adminUsername, setAdminUsername] = useState(() => {
@@ -738,6 +832,7 @@ const AdminSubjectManager = ({ showToast }) => {
 
   return (
     <section className="space-y-4 md:space-y-6">
+      <SemesterSwitchCard showToast={showToast} />
       <div className="rounded-lg md:rounded-2xl border border-slate-200 bg-white p-3 md:p-5 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
