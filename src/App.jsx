@@ -664,34 +664,37 @@ function AppContent() {
   addToWishlistImplRef.current = handleAddToWishlist;
 
   const handleRemoveFromWishlist = async (courseId) => {
+    // 낙관적 제거: 먼저 화면에서 지우고 서버 실패 시 되돌린다.
+    const previousWishlist = wishlist;
+    setWishlist(prev => prev.filter(course => course.id !== courseId));
+    showToast('위시리스트에서 제거했어요!');
     try {
       await wishlistAPI.remove(user.id, courseId);
-      setWishlist(prev => prev.filter(course => course.id !== courseId));
-      showToast('위시리스트에서 제거했어요!');
     } catch (error) {
-      showToast(error.message, 'warning');
+      setWishlist(previousWishlist);
+      showToast(`제거에 실패해 되돌렸어요: ${error.message}`, 'warning');
     }
   };
 
   const handleToggleRequired = async (courseId, currentIsRequired) => {
+    // 낙관적 토글: 먼저 반영하고 서버 실패 시 되돌린다.
+    const previousWishlist = wishlist;
+    setWishlist(prev => prev.map(course =>
+      course.id === courseId
+        ? { ...course, isRequired: !currentIsRequired }
+        : course
+    ));
+    const courseName = wishlist.find(c => c.id === courseId)?.name || '선택한 과목';
+    showToast(`'${courseName}' 과목을 ${!currentIsRequired ? '필수' : '선택'} 과목으로 변경했어요!`);
     try {
       await wishlistAPI.updateRequired({
         userId: user.id,
         subjectId: courseId,
         isRequired: !currentIsRequired
       });
-
-      setWishlist(prev => prev.map(course =>
-        course.id === courseId
-          ? { ...course, isRequired: !currentIsRequired }
-          : course
-      ));
-
-      const course = wishlist.find(c => c.id === courseId);
-      const courseName = course?.name || '선택한 과목';
-      showToast(`'${courseName}' 과목을 ${!currentIsRequired ? '필수' : '선택'} 과목으로 변경했어요!`);
     } catch (error) {
-      showToast(error.message, 'warning');
+      setWishlist(previousWishlist);
+      showToast(`변경에 실패해 되돌렸어요: ${error.message}`, 'warning');
     }
   };
 
@@ -1010,6 +1013,10 @@ function AppContent() {
       return;
     }
 
+    // 낙관적 추가: 먼저 담고 서버 실패 시 되돌린다.
+    const previousWishlist = wishlist;
+    setWishlist(prev => [...prev, { ...course, ...getCourseTypeColorScheme(course.type), isRequired: false }]);
+    showToast(`'${course.name}' 과목을 위시리스트에 담았어요!`);
     try {
       await wishlistAPI.add({
         userId: user.id,
@@ -1018,11 +1025,9 @@ function AppContent() {
         priority: 3,
         isRequired: false
       });
-
-      setWishlist([...wishlist, { ...course, ...getCourseTypeColorScheme(course.type), isRequired: false }]);
-      showToast(`'${course.name}' 과목을 위시리스트에 담았어요!`);
     } catch (error) {
-      showToast(`위시리스트 추가 실패: ${error.message}`, 'error');
+      setWishlist(previousWishlist);
+      showToast(`위시리스트 추가에 실패해 되돌렸어요: ${error.message}`, 'error');
     }
   };
 
