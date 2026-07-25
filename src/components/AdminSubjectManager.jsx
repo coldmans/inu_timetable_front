@@ -235,6 +235,13 @@ const getPreviewList = (preview, key) => (
   Array.isArray(preview?.[key]) ? preview[key] : []
 );
 
+// 백엔드가 감지한 업로드 파일 형식 라벨. 구버전 백엔드(sourceFormat 없음)면 null.
+const getSourceFormatLabel = (sourceFormat) => {
+  if (sourceFormat === 'OFFICIAL_TIMETABLE') return '공식 종합강의시간표';
+  if (sourceFormat === 'SYLLABUS') return '강의계획서 조회';
+  return null;
+};
+
 
 // 서비스 전체의 "현재 학기"를 전환하는 카드. 학생 위시리스트/시간표는 학기 키로
 // 분리 저장되므로 전환 시 자동으로 새 학기 빈 상태에서 시작하고, 지난 학기 데이터는 보존된다.
@@ -969,7 +976,7 @@ const AdminSubjectManager = ({ showToast }) => {
           <div>
             <h2 className="text-base md:text-xl font-semibold text-slate-900">공식 강의시간표 Excel 가져오기</h2>
             <p className="text-xs md:text-sm text-slate-500">
-              관리자 페이지에서만 공식 강의시간표 Excel 미리보기와 반영을 진행할 수 있습니다.
+              공식 종합강의시간표와 강의계획서 조회 Excel 을 모두 지원합니다. 미리보기에서 감지된 형식을 확인한 뒤 반영하세요.
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -1055,7 +1062,14 @@ const AdminSubjectManager = ({ showToast }) => {
           <div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">미리보기 결과</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">미리보기 결과</h3>
+                  {getSourceFormatLabel(previewResult.sourceFormat) && (
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${previewResult.sourceFormat === 'SYLLABUS' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {getSourceFormatLabel(previewResult.sourceFormat)}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500">
                   학기 {previewResult.semester || importForm.semester} · 총 {previewResult.totalRows ?? 0}행 · 변경 미리보기
                 </p>
