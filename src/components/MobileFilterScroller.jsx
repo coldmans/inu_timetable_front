@@ -20,7 +20,9 @@ const MobileFilterScroller = ({
   onOpenFilters,
   onReset,
   onOpenSearch,
-  onSelectField
+  onSelectField,
+  onClearField,
+  onClearSearch
 }) => {
   const timeBlockEntries = Object.entries(filters.timeBlocks || {});
   const timeLabel = timeBlockEntries.length > 0
@@ -37,7 +39,8 @@ const MobileFilterScroller = ({
       label: '학과',
       value: getCompactFilterLabel('department', filters.department),
       active: filters.department !== '전체',
-      onClick: () => onSelectField('department')
+      onClick: () => onSelectField('department'),
+      onClear: () => onClearField('department')
     },
     {
       key: 'search',
@@ -46,42 +49,48 @@ const MobileFilterScroller = ({
         ? (searchField === 'subjectName' ? searchTerm.trim() : `${SEARCH_FIELD_LABELS[searchField]} ${searchTerm.trim()}`)
         : '없음',
       active: Boolean(searchTerm.trim()),
-      onClick: onOpenSearch
+      onClick: onOpenSearch,
+      onClear: onClearSearch
     },
     {
       key: 'subjectType',
       label: '구분',
       value: getCompactFilterLabel('subjectType', filters.subjectType),
       active: filters.subjectType !== '전체',
-      onClick: () => onSelectField('subjectType')
+      onClick: () => onSelectField('subjectType'),
+      onClear: () => onClearField('subjectType')
     },
     {
       key: 'grade',
       label: '학년',
       value: getCompactFilterLabel('grade', filters.grade),
       active: filters.grade !== '전체',
-      onClick: () => onSelectField('grade')
+      onClick: () => onSelectField('grade'),
+      onClear: () => onClearField('grade')
     },
     {
       key: 'credits',
       label: '학점',
       value: getCompactFilterLabel('credits', filters.credits),
       active: filters.credits !== '전체',
-      onClick: () => onSelectField('credits')
+      onClick: () => onSelectField('credits'),
+      onClear: () => onClearField('credits')
     },
     {
       key: 'dayOfWeek',
       label: '요일',
       value: getCompactFilterLabel('dayOfWeek', filters.dayOfWeek),
       active: filters.dayOfWeek !== '전체',
-      onClick: () => onSelectField('dayOfWeek')
+      onClick: () => onSelectField('dayOfWeek'),
+      onClear: () => onClearField('dayOfWeek')
     },
     {
       key: 'time',
       label: '시간',
       value: timeLabel,
       active: timeBlockEntries.length > 0 || filters.startTime !== '전체' || filters.endTime !== '전체',
-      onClick: () => onSelectField('time')
+      onClick: () => onSelectField('time'),
+      onClear: () => onClearField('time')
     }
   ];
 
@@ -92,19 +101,36 @@ const MobileFilterScroller = ({
         className="flex gap-1 overflow-x-auto overscroll-x-contain px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {chips.map(chip => (
-          <button
-            key={chip.key}
-            type="button"
-            onClick={chip.onClick}
-            className={`inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
-              chip.active
-                ? 'bg-blue-50 font-semibold text-blue-700 ring-blue-200'
-                : 'bg-slate-100/80 font-medium text-slate-600 ring-slate-200'
-            }`}
-          >
-            <span className={chip.active ? 'text-blue-600/80' : 'text-slate-500'}>{chip.label}</span>
-            <span className="max-w-[7.5rem] truncate">{chip.value}</span>
-          </button>
+          chip.active ? (
+            <div key={chip.key} className="flex flex-shrink-0 items-stretch">
+              <button
+                type="button"
+                onClick={chip.onClick}
+                className="inline-flex h-8 items-center gap-1 rounded-l-full bg-blue-50 pl-2.5 pr-1.5 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+              >
+                <span className="text-blue-600/80">{chip.label}</span>
+                <span className="max-w-[7.5rem] truncate">{chip.value}</span>
+              </button>
+              <button
+                type="button"
+                onClick={chip.onClear}
+                aria-label={`${chip.label} 필터 해제`}
+                className="inline-flex h-8 items-center rounded-r-full border-l border-blue-200/70 bg-blue-50 pl-1 pr-2 text-blue-500 ring-1 ring-inset ring-blue-200 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ) : (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.onClick}
+              className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-100/80 px-2.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            >
+              <span className="text-slate-500">{chip.label}</span>
+              <span className="max-w-[7.5rem] truncate">{chip.value}</span>
+            </button>
+          )
         ))}
         {(activeFilterCount > 0 || searchTerm) && (
           <button
