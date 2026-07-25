@@ -1533,7 +1533,9 @@ function AppContent() {
               </button>
             </div>
           </div>
-          <div ref={mobileTimetableViewportRef} className={`rounded-2xl ${showMobileSearch ? 'max-h-[34svh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
+          {/* overflow 를 hidden↔auto 로 동적 전환하면 iOS Safari 가 첫 터치 전까지
+              스크롤 대상으로 인식하지 못하므로, 항상 auto 로 두고 높이만 토글한다. */}
+          <div ref={mobileTimetableViewportRef} className={`rounded-2xl overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] ${showMobileSearch ? 'max-h-[34svh]' : ''}`}>
             <h2 className="sr-only">내 시간표 표</h2>
             <TimetableGrid
               courses={timetable}
