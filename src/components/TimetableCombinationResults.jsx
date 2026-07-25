@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useId, useRef } from 'react';
+import { useState, useMemo, useId, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen, Award, X, Check, MessageSquare } from 'lucide-react';
 
 import useFocusTrap from '../hooks/useFocusTrap';
@@ -7,7 +7,6 @@ import {
   parseTime,
   getCourseTypeBadgeClass,
   getCourseTypeColorScheme,
-  daysOfWeek as utilDaysOfWeek,
   timeSlots,
   displayTimeSlots
 } from '../utils/timetableUtils';

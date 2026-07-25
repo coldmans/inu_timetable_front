@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Download, CalendarDays, Trash2 } from 'lucide-react';
 import TimetableCourseMenu from './TimetableCourseMenu';
 import { parseTime, parseTimeString, daysOfWeek, timeSlots, displayTimeSlots } from '../utils/timetableUtils';
