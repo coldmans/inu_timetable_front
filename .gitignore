@@ -130,3 +130,6 @@ blob-report/
 # MacOS
 .DS_Store
 .vercel
+
+# Claude Code 로컬 설정
+.claude/settings.local.json
