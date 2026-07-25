@@ -15,8 +15,13 @@ test('renders the public course search workspace', async ({ page, isMobile }) =>
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
 
-  await expect(page.getByRole('link', { name: 'INU 시간표' })).toBeVisible();
-  await expect(page.getByPlaceholder('과목명을 검색해 보세요')).toBeVisible();
+  if (isMobile) {
+    // 모바일은 검색 인풋 대신 검색어 칩(시트 진입)을 쓰고, 검색 중에는 헤더가 숨겨진다.
+    await expect(page.getByLabel('모바일 필터').getByRole('button', { name: /검색어/ })).toBeVisible();
+  } else {
+    await expect(page.getByRole('link', { name: 'INU 시간표' })).toBeVisible();
+    await expect(page.getByPlaceholder('과목명을 검색해 보세요')).toBeVisible();
+  }
   await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
   await expect(page.getByTestId('course-row-summary').first()).toBeVisible({ timeout: 45_000 });
 });
@@ -28,7 +33,6 @@ test('opens signup and exposes college to department selectors', async ({ page }
   await page.getByRole('button', { name: '회원가입' }).click();
 
   await expect(page.getByRole('heading', { name: '회원가입' })).toBeVisible();
-  await expect(page.getByText('선택한 전공')).toBeVisible();
   await expect(page.getByRole('button', { name: '전공', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '복수전공', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '부전공', exact: true })).toBeVisible();
@@ -64,9 +68,20 @@ test('searches courses by name', async ({ page, isMobile }) => {
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
 
-  const searchInput = page.getByRole('textbox', { name: '과목명 검색' });
-  await searchInput.fill('데이터베이스');
-  await searchInput.press('Enter');
+  if (isMobile) {
+    // 모바일은 검색어 칩 → 검색 시트에서 입력한다.
+    await page.getByLabel('모바일 필터').getByRole('button', { name: /검색어/ }).click();
+    const sheet = page.getByRole('dialog', { name: '과목 검색어 입력' });
+    await expect(sheet).toBeVisible();
+    const sheetInput = sheet.getByRole('textbox', { name: '검색어' });
+    await sheetInput.fill('데이터베이스');
+    await sheetInput.press('Enter');
+    await expect(sheet).toBeHidden();
+  } else {
+    const searchInput = page.getByRole('textbox', { name: '과목명 검색' });
+    await searchInput.fill('데이터베이스');
+    await searchInput.press('Enter');
+  }
 
   await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
   await expect(page.getByTestId('course-row-summary').filter({ hasText: '데이터베이스' }).first()).toBeVisible();

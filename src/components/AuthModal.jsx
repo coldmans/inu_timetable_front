@@ -52,11 +52,11 @@ export const AuthSelect = ({ label, value, options, onChange, active = false, di
       }
     };
 
-    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
@@ -310,9 +310,11 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
             <h2 id="auth-modal-title" className="text-lg font-bold tracking-tight text-slate-900">
               {isLogin ? '로그인' : '회원가입'}
             </h2>
-            <p className="mt-1 text-[13px] text-slate-500">
-              {isLogin ? 'INU 시간표 계정으로 계속하세요.' : '몇 초면 끝나요. 위시리스트와 시간표가 저장됩니다.'}
-            </p>
+            {isLogin && (
+              <p className="mt-1 text-[13px] text-slate-500">
+                INU 시간표 계정으로 계속하세요.
+              </p>
+            )}
           </div>
           <button onClick={onClose} aria-label="닫기" className="icon-btn -mr-1 -mt-1">
             <X size={18} />
@@ -376,20 +378,6 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="mb-1.5 block text-[13px] font-medium text-slate-700">
-                    선택한 전공
-                  </label>
-                  <div className="flex min-h-11 flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2">
-                    {majorTabs.map(tab => (
-                      majorSelections[tab.type] ? (
-                        <span key={tab.type} className="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
-                          {tab.label} · {majorSelections[tab.type]}
-                        </span>
-                      ) : null
-                    ))}
-                  </div>
-                </div>
               </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
