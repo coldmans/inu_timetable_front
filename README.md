@@ -104,6 +104,18 @@ Set `BACKEND_ORIGIN` in the Vercel project for Production, Preview, and Developm
 
 The same origin is also used by the Sites deployment worker when publishing through OpenAI Sites.
 
+## Deployment
+
+Vercel keeps browser requests on the frontend origin and rewrites `/api/*` and
+`/admin/api/*` to the backend. Configure the Vercel project environment:
+
+```text
+BACKEND_ORIGIN=https://inu-timetable-backend-282216427513.asia-northeast3.run.app
+```
+
+For local development, `VITE_BACKEND_ORIGIN` can override the default
+`http://localhost:8080` proxy target.
+
 ## Scripts
 
 ```bash

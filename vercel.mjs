@@ -1,24 +1,15 @@
-const rawBackendOrigin = process.env.BACKEND_ORIGIN;
-
-if (!rawBackendOrigin) {
-  throw new Error('BACKEND_ORIGIN is required for Vercel API rewrites.');
-}
-
-const backendOrigin = rawBackendOrigin.replace(/\/+$/, '');
+import { deploymentEnv, routes } from '@vercel/config/v1';
 
 export const config = {
   rewrites: [
-    {
-      source: '/api/:path*',
-      destination: `${backendOrigin}/api/:path*`,
-    },
-    {
-      source: '/admin/api/:path*',
-      destination: `${backendOrigin}/admin/api/:path*`,
-    },
-    {
-      source: '/(.*)',
-      destination: '/index.html',
-    },
+    routes.rewrite(
+      '/api/:path*',
+      `${deploymentEnv('BACKEND_ORIGIN')}/api/:path*`,
+    ),
+    routes.rewrite(
+      '/admin/api/:path*',
+      `${deploymentEnv('BACKEND_ORIGIN')}/admin/api/:path*`,
+    ),
+    routes.rewrite('/(.*)', '/index.html'),
   ],
 };

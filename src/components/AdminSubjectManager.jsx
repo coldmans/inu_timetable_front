@@ -19,7 +19,6 @@ import { adminAuthAPI, adminSubjectAPI } from '../services/adminApi';
 import { departments, grades } from '../utils/timetableUtils';
 
 const ADMIN_USERNAME_STORAGE_KEY = 'inu_admin_username';
-const ADMIN_CSRF_STORAGE_KEY = 'inu_admin_csrf';
 
 const ADMIN_SUBJECT_TYPES = ['전심', '전핵', '심교', '핵교', '일선', '전기', '기교', '군사학', '교직'];
 const ADMIN_SUBJECT_TYPE_FILTERS = ['전체', ...ADMIN_SUBJECT_TYPES];
@@ -239,22 +238,9 @@ const AdminSubjectManager = ({ showToast }) => {
     }
   });
   const [adminPassword, setAdminPassword] = useState('');
-  const [adminSession, setAdminSession] = useState(() => {
-    try {
-      const csrfToken = sessionStorage.getItem(ADMIN_CSRF_STORAGE_KEY) || '';
-      const username = sessionStorage.getItem(ADMIN_USERNAME_STORAGE_KEY) || '';
-      return {
-        authenticated: Boolean(csrfToken),
-        username,
-        csrfToken
-      };
-    } catch {
-      return {
-        authenticated: false,
-        username: '',
-        csrfToken: ''
-      };
-    }
+  const [adminSession, setAdminSession] = useState({
+    authenticated: false,
+    username: ''
   });
   const [isAdminAuthLoading, setIsAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState('');
@@ -299,14 +285,13 @@ const AdminSubjectManager = ({ showToast }) => {
         const response = await adminAuthAPI.me();
         if (!isMounted) return;
 
-        const csrfToken = response?.csrfToken || '';
         const username = response?.username || '';
-        if (!response?.authenticated || !csrfToken) {
-          setAdminSession({ authenticated: false, username: '', csrfToken: '' });
+        if (!response?.authenticated) {
+          setAdminSession({ authenticated: false, username: '' });
           return;
         }
 
-        setAdminSession({ authenticated: true, username, csrfToken });
+        setAdminSession({ authenticated: true, username });
         if (username) {
           setAdminUsername(username);
         }
@@ -315,18 +300,12 @@ const AdminSubjectManager = ({ showToast }) => {
           if (username) {
             sessionStorage.setItem(ADMIN_USERNAME_STORAGE_KEY, username);
           }
-          sessionStorage.setItem(ADMIN_CSRF_STORAGE_KEY, csrfToken);
         } catch {
           // 세션 저장이 막혀도 현재 탭의 로그인 상태는 유지한다.
         }
       } catch {
         if (!isMounted) return;
-        setAdminSession({ authenticated: false, username: '', csrfToken: '' });
-        try {
-          sessionStorage.removeItem(ADMIN_CSRF_STORAGE_KEY);
-        } catch {
-          // sessionStorage 접근이 막힌 환경에서는 메모리 상태만 초기화한다.
-        }
+        setAdminSession({ authenticated: false, username: '' });
       }
     };
 
@@ -354,22 +333,20 @@ const AdminSubjectManager = ({ showToast }) => {
     }
   };
 
-  const isAdminAuthenticated = Boolean(adminSession.csrfToken);
-  const adminCsrfToken = adminSession.csrfToken;
+  const isAdminAuthenticated = adminSession.authenticated;
 
   const requireAdminAuth = () => (
     isAdminAuthenticated ? '' : '관리자 로그인이 필요합니다.'
   );
 
   const persistAdminSession = (response) => {
-    const csrfToken = response?.csrfToken || '';
     const username = response?.username || adminUsername.trim();
 
-    if (!response?.authenticated || !csrfToken) {
+    if (!response?.authenticated) {
       return false;
     }
 
-    setAdminSession({ authenticated: true, username, csrfToken });
+    setAdminSession({ authenticated: true, username });
     setAdminUsername(username);
     setAdminPassword('');
     setAdminAuthError('');
@@ -378,7 +355,6 @@ const AdminSubjectManager = ({ showToast }) => {
       if (username) {
         sessionStorage.setItem(ADMIN_USERNAME_STORAGE_KEY, username);
       }
-      sessionStorage.setItem(ADMIN_CSRF_STORAGE_KEY, csrfToken);
     } catch {
       notify('관리자 세션 저장에 실패했습니다. 현재 탭에서는 계속 사용할 수 있습니다.', 'warning');
     }
@@ -387,15 +363,9 @@ const AdminSubjectManager = ({ showToast }) => {
   };
 
   const clearAdminSession = () => {
-    setAdminSession({ authenticated: false, username: '', csrfToken: '' });
+    setAdminSession({ authenticated: false, username: '' });
     setAdminPassword('');
     setAdminAuthError('');
-
-    try {
-      sessionStorage.removeItem(ADMIN_CSRF_STORAGE_KEY);
-    } catch {
-      // sessionStorage가 막힌 환경에서는 입력 상태만 초기화한다.
-    }
   };
 
   const loadSubjects = async (page = 0, nextFilters = filters) => {
@@ -608,9 +578,9 @@ const AdminSubjectManager = ({ showToast }) => {
     try {
       setIsSaving(true);
       if (mode === 'create') {
-        await adminSubjectAPI.create(payload, adminCsrfToken);
+        await adminSubjectAPI.create(payload);
       } else {
-        await adminSubjectAPI.update(editingSubject.id, payload, adminCsrfToken);
+        await adminSubjectAPI.update(editingSubject.id, payload);
       }
 
       notify(mode === 'create' ? '과목을 생성했습니다.' : '과목을 수정했습니다.');
@@ -656,7 +626,7 @@ const AdminSubjectManager = ({ showToast }) => {
 
     try {
       setIsDeleting(true);
-      await adminSubjectAPI.delete(subjectToDelete.id, adminCsrfToken);
+      await adminSubjectAPI.delete(subjectToDelete.id);
       notify('과목을 삭제했습니다.');
       setSubjectToDelete(null);
       await loadSubjects(currentPage);
@@ -708,7 +678,7 @@ const AdminSubjectManager = ({ showToast }) => {
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
-      }, adminCsrfToken);
+      });
 
       setPreviewResult(response);
       notify('가져오기 미리보기를 불러왔습니다.');
@@ -745,7 +715,7 @@ const AdminSubjectManager = ({ showToast }) => {
         semester: importForm.semester.trim(),
         file: importForm.file,
         deactivateMissing: importForm.deactivateMissing
-      }, adminCsrfToken);
+      });
 
       notify('공식 강의시간표 Excel 반영을 완료했습니다.');
       setIsImportConfirmOpen(false);
