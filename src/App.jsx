@@ -863,9 +863,15 @@ const MobileFilterScroller = ({
   onOpenSearch,
   onSelectField
 }) => {
-  const timeLabel = filters.startTime !== '전체' || filters.endTime !== '전체'
-    ? `${filters.startTime === '전체' ? '시작' : `${filters.startTime}교시`} - ${filters.endTime === '전체' ? '종료' : `${filters.endTime}교시`}`
-    : '전체';
+  const timeBlockEntries = Object.entries(filters.timeBlocks || {});
+  const timeLabel = timeBlockEntries.length > 0
+    ? (() => {
+      const parts = timeBlockEntries.map(([day, [startHour, endHour]]) => `${day} ${startHour}~${endHour}`);
+      return parts.length > 2 ? `${parts.slice(0, 2).join(' · ')} 외 ${parts.length - 2}` : parts.join(' · ');
+    })()
+    : (filters.startTime !== '전체' || filters.endTime !== '전체'
+      ? `${filters.startTime === '전체' ? '시작' : `${filters.startTime}교시`} - ${filters.endTime === '전체' ? '종료' : `${filters.endTime}교시`}`
+      : '전체');
   const chips = [
     {
       key: 'department',
@@ -915,7 +921,7 @@ const MobileFilterScroller = ({
       key: 'time',
       label: '시간',
       value: timeLabel,
-      active: filters.startTime !== '전체' || filters.endTime !== '전체',
+      active: timeBlockEntries.length > 0 || filters.startTime !== '전체' || filters.endTime !== '전체',
       onClick: () => onSelectField('time')
     }
   ];
@@ -1690,60 +1696,79 @@ const MobileFilterSheet = ({
 
 // 모바일 필터 칩을 누르면 해당 필터만 바로 선택할 수 있는 단일 필터 시트.
 const TIME_PICKER_DAYS = ['월', '화', '수', '목', '금', '토'];
-const TIME_PICKER_PERIODS = timeOptions.filter(option => Number.isInteger(option));
-const formatPickerPeriod = (period) => (period >= 10 ? `야${period - 9}` : String(period));
+// 24시 기준 표시 시간대(8시~23시). 교시 변환은 시각-8 (9시 = 1교시).
+const TIME_PICKER_HOURS = Array.from({ length: 16 }, (_, index) => 8 + index);
 
 const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
   const panelRef = useRef(null);
-  // 에타식 시간 그리드 픽커의 임시 선택값(적용 전까지 filters 를 건드리지 않는다).
-  const [draftDay, setDraftDay] = useState(null);
-  const [draftRange, setDraftRange] = useState({ start: null, end: null });
+  // 에타식 시간 그리드 픽커의 임시 선택값. { 요일: [시각,...] } — 셀 단위 자유 토글.
+  const [draftBlocks, setDraftBlocks] = useState({});
 
   useEffect(() => {
     if (field !== 'time') return;
-    setDraftDay(
-      filters.dayOfWeek !== '전체' && filters.dayOfWeek !== UNASSIGNED_TIME_FILTER
-        ? filters.dayOfWeek
-        : null
-    );
-    // 저장된 endTime 은 경계값(마지막 교시 + 1)이므로 그리드 표시용으로 되돌린다.
-    const start = filters.startTime === '전체' ? null : Math.floor(Number(filters.startTime));
-    const end = filters.endTime === '전체' ? null : Math.max(start ?? 1, Math.ceil(Number(filters.endTime)) - 1);
-    setDraftRange({ start, end });
+    // 저장된 구간([시작시, 끝시))을 셀 목록으로 펼쳐 초기화한다.
+    const initial = {};
+    Object.entries(filters.timeBlocks || {}).forEach(([day, [startHour, endHour]]) => {
+      initial[day] = TIME_PICKER_HOURS.filter(hour => hour >= startHour && hour < endHour);
+    });
+    setDraftBlocks(initial);
     // filters 는 시트가 열리는 시점 스냅샷만 필요하다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [field]);
 
-  const handleTimeCellTap = (day, period) => {
-    if (draftDay !== day || draftRange.start === null) {
-      setDraftDay(day);
-      setDraftRange({ start: period, end: period });
-      return;
-    }
-    const { start, end } = draftRange;
-    const effectiveEnd = end ?? start;
-    if (period === start && effectiveEnd === start) {
-      // 단일 칸 재탭 → 선택 해제
-      setDraftDay(null);
-      setDraftRange({ start: null, end: null });
-      return;
-    }
-    if (period > effectiveEnd) {
-      setDraftRange({ start, end: period });
-    } else if (period < start) {
-      setDraftRange({ start: period, end: effectiveEnd });
-    } else {
-      setDraftRange({ start: period, end: period });
-    }
+  const isHourSelected = (day, hour) => (draftBlocks[day] || []).includes(hour);
+
+  const toggleHourCell = (day, hour) => {
+    setDraftBlocks(prev => {
+      const current = prev[day] || [];
+      const next = current.includes(hour)
+        ? current.filter(value => value !== hour)
+        : [...current, hour].sort((a, b) => a - b);
+      const result = { ...prev, [day]: next };
+      if (next.length === 0) delete result[day];
+      return result;
+    });
+  };
+
+  const toggleWholeDay = (day) => {
+    setDraftBlocks(prev => {
+      const allSelected = (prev[day] || []).length === TIME_PICKER_HOURS.length;
+      const result = { ...prev };
+      if (allSelected) delete result[day];
+      else result[day] = [...TIME_PICKER_HOURS];
+      return result;
+    });
+  };
+
+  const toggleWholeHour = (hour) => {
+    setDraftBlocks(prev => {
+      const allSelected = TIME_PICKER_DAYS.every(day => (prev[day] || []).includes(hour));
+      const result = {};
+      TIME_PICKER_DAYS.forEach(day => {
+        const current = prev[day] || [];
+        const next = allSelected
+          ? current.filter(value => value !== hour)
+          : (current.includes(hour) ? current : [...current, hour].sort((a, b) => a - b));
+        if (next.length > 0) result[day] = next;
+      });
+      return result;
+    });
   };
 
   const applyTimeDraft = () => {
+    // 요일별로 이어진 하나의 구간(최소~최대+1시)으로 적용한다.
+    const blocks = {};
+    Object.entries(draftBlocks).forEach(([day, hours]) => {
+      if (hours.length === 0) return;
+      blocks[day] = [Math.min(...hours), Math.max(...hours) + 1];
+    });
     setFilters(prev => ({
       ...prev,
-      dayOfWeek: draftDay ?? '전체',
-      startTime: draftRange.start ?? '전체',
-      // 백엔드는 '종료 경계'(schedule.endTime <= 값) 시맨틱이라 마지막 교시 + 1 로 저장한다.
-      endTime: draftRange.start === null ? '전체' : (draftRange.end ?? draftRange.start) + 1,
+      timeBlocks: blocks,
+      // 기존 단일 요일/교시 필터와 중복 적용되지 않도록 함께 초기화한다.
+      dayOfWeek: prev.dayOfWeek === UNASSIGNED_TIME_FILTER ? prev.dayOfWeek : '전체',
+      startTime: '전체',
+      endTime: '전체',
     }));
     onClose();
   };
@@ -1787,7 +1812,8 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
       ...prev,
       dayOfWeek: value,
       startTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.startTime,
-      endTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime
+      endTime: value === UNASSIGNED_TIME_FILTER ? '전체' : prev.endTime,
+      timeBlocks: value === UNASSIGNED_TIME_FILTER ? {} : prev.timeBlocks
     }));
     onClose();
   };
@@ -1834,8 +1860,8 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
   }
 
   return (
-    <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
-      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[80svh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
+    <div className={`fixed inset-0 z-[65] flex justify-center md:hidden ${field === 'time' ? 'items-stretch bg-white' : 'items-end bg-slate-950/35 p-0 backdrop-blur-sm'}`} role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
+      <div ref={panelRef} tabIndex={-1} className={`modal-panel flex w-full flex-col overflow-hidden bg-white focus:outline-none ${field === 'time' ? 'h-[100dvh]' : 'max-h-[80svh] rounded-t-2xl shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10'}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <h2 className="text-base font-bold text-slate-900">{titleMap[field]}</h2>
           <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="닫기">
@@ -1843,7 +1869,7 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <div className={`flex-1 overscroll-contain px-4 py-4 ${field === 'time' ? 'overflow-hidden pb-2' : 'overflow-y-auto'}`}>
           {field === 'subjectType' && renderOptions('subjectType', courseTypes, (value) => applySimple('subjectType', value))}
           {field === 'grade' && renderOptions('grade', grades, (value) => applySimple('grade', value))}
           {field === 'credits' && renderOptions('credits', creditOptions, (value) => applySimple('credits', value))}
@@ -1851,64 +1877,62 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
           {field === 'time' && (
             filters.dayOfWeek === UNASSIGNED_TIME_FILTER ? (
               <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 ring-1 ring-inset ring-slate-200">
-                시간 미지정 과목만 보는 중에는 교시를 고를 수 없어요.
+                시간 미지정 과목만 보는 중에는 시간을 고를 수 없어요.
               </p>
             ) : (
-              <div>
+              <div className="flex h-full flex-col">
                 <p className="mb-2 text-xs leading-5 text-slate-500">
-                  요일 헤더로 요일을 고르고, 교시 칸을 탭해 범위를 지정하세요. 같은 칸을 다시 탭하면 해제됩니다.
+                  선택한 시간 안에 모든 수업이 들어오는 과목만 검색합니다.
+                  요일 혹은 시간을 누르면 일괄 선택할 수 있습니다.
                 </p>
-                <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
-                  <table className="w-full table-fixed border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50">
-                        <th className="w-9 py-1.5" aria-hidden="true"></th>
-                        {TIME_PICKER_DAYS.map(day => (
-                          <th key={day} className="p-0">
+                <div className="flex-1 overflow-hidden rounded-xl ring-1 ring-slate-200">
+                  <div
+                    className="grid h-full"
+                    style={{
+                      gridTemplateColumns: '2.25rem repeat(6, minmax(0, 1fr))',
+                      gridTemplateRows: `2.25rem repeat(${TIME_PICKER_HOURS.length}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    <div className="bg-slate-50" aria-hidden="true"></div>
+                    {TIME_PICKER_DAYS.map(day => (
+                      <button
+                        key={`day-${day}`}
+                        type="button"
+                        aria-label={`${day}요일 전체 선택`}
+                        onClick={() => toggleWholeDay(day)}
+                        className="border-l border-slate-100 bg-slate-50 text-[13px] font-semibold text-slate-600"
+                      >
+                        {day}
+                      </button>
+                    ))}
+                    {TIME_PICKER_HOURS.map(hour => (
+                      <React.Fragment key={`row-${hour}`}>
+                        <button
+                          type="button"
+                          aria-label={`${hour}시 전체 선택`}
+                          onClick={() => toggleWholeHour(hour)}
+                          className="border-t border-slate-100 bg-slate-50 text-[11px] tabular-nums text-slate-400"
+                        >
+                          {hour}
+                        </button>
+                        {TIME_PICKER_DAYS.map(day => {
+                          const selected = isHourSelected(day, hour);
+                          return (
                             <button
+                              key={`${day}-${hour}`}
                               type="button"
-                              aria-pressed={draftDay === day}
-                              onClick={() => setDraftDay(prev => (prev === day ? null : day))}
-                              className={`h-9 w-full text-[13px] transition-colors ${
-                                draftDay === day ? 'bg-blue-600 font-bold text-white' : 'font-semibold text-slate-600'
+                              aria-label={`${day} ${hour}시`}
+                              aria-pressed={selected}
+                              onClick={() => toggleHourCell(day, hour)}
+                              className={`border-l border-t border-slate-100 transition-colors ${
+                                selected ? 'bg-blue-500' : 'bg-white'
                               }`}
-                            >
-                              {day}
-                            </button>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {TIME_PICKER_PERIODS.map(period => (
-                        <tr key={period}>
-                          <td className="border-t border-slate-100 bg-slate-50 text-center text-[10px] tabular-nums text-slate-400">
-                            {formatPickerPeriod(period)}
-                          </td>
-                          {TIME_PICKER_DAYS.map(day => {
-                            const effectiveEnd = draftRange.end ?? draftRange.start;
-                            const selected = draftDay === day
-                              && draftRange.start !== null
-                              && period >= draftRange.start
-                              && period <= effectiveEnd;
-                            return (
-                              <td key={day} className="border-l border-t border-slate-100 p-0">
-                                <button
-                                  type="button"
-                                  aria-label={`${day} ${formatPickerPeriod(period)}교시`}
-                                  aria-pressed={selected}
-                                  onClick={() => handleTimeCellTap(day, period)}
-                                  className={`h-7 w-full transition-colors ${
-                                    selected ? 'bg-blue-500' : draftDay === day ? 'bg-blue-50/60' : 'bg-white'
-                                  }`}
-                                />
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            />
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             )
@@ -1919,9 +1943,9 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
           <div className="flex gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
             <button
               type="button"
-              onClick={() => { setDraftDay(null); setDraftRange({ start: null, end: null }); }}
+              onClick={() => setDraftBlocks({})}
               className="btn-secondary h-11 px-3 text-[13px]"
-              disabled={draftRange.start === null && draftDay === null}
+              disabled={Object.keys(draftBlocks).length === 0}
             >
               <RotateCcw size={13} /> 초기화
             </button>
@@ -2384,6 +2408,9 @@ function AppContent() {
         subjectType: filters.subjectType,
         grade: gradeFilter,
         credits: filters.credits === '전체' ? undefined : parseInt(filters.credits.replace('학점', '')),
+        timeBlocks: !isUnassignedTimeFilter && Object.keys(filters.timeBlocks || {}).length > 0
+          ? Object.entries(filters.timeBlocks).map(([day, [startHour, endHour]]) => `${day}:${startHour - 8}-${endHour - 8}`)
+          : undefined,
         dayOfWeek: filters.dayOfWeek === '전체' || isUnassignedTimeFilter ? undefined : filters.dayOfWeek,
         startTime: filters.startTime === '전체' || isUnassignedTimeFilter ? undefined : filters.startTime,
         endTime: filters.endTime === '전체' || isUnassignedTimeFilter ? undefined : filters.endTime,
@@ -2537,8 +2564,10 @@ function AppContent() {
     window.scrollTo({ top: 0 });
   };
 
-  const defaultFilters = { department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' };
-  const activeFilterCount = Object.values(filters).filter(value => value !== '전체').length;
+  const defaultFilters = { department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체', timeBlocks: {} };
+  const activeFilterCount = Object.entries(filters).filter(([key, value]) => (
+    key === 'timeBlocks' ? Object.keys(value || {}).length > 0 : value !== '전체'
+  )).length;
   const userMajorShortcuts = useMemo(() => {
     if (!user) {
       return [];

@@ -183,7 +183,7 @@ test('closes mobile filter sheet on rotate to landscape without softlock', async
 
 // 회귀 테스트: 시간(교시) 필터는 좁은 시트 안에서 드롭다운 대신
 // 그리드 버튼으로 바로 선택할 수 있어야 한다.
-test('selects periods from grid buttons in the time filter sheet', async ({ page, isMobile }) => {
+test('selects hour blocks from the fullscreen time grid', async ({ page, isMobile }) => {
   test.skip(!isMobile, '모바일 전용 시간 필터 검증');
 
   await page.goto('/');
@@ -193,12 +193,15 @@ test('selects periods from grid buttons in the time filter sheet', async ({ page
   const sheet = page.getByRole('dialog', { name: '시간 필터' });
   await expect(sheet).toBeVisible();
 
-  // 에타식 그리드: 셀 탭으로 요일+교시 범위(월 1~3교시) 선택
-  await sheet.getByRole('button', { name: '월 1교시' }).click();
-  await sheet.getByRole('button', { name: '월 3교시' }).click();
+  // 에타식 그리드: 24시 기준 셀 자유 토글 (수 12~13시 선택 후 12시 재탭 해제 → 13시만)
+  await sheet.getByRole('button', { name: '수 12시' }).click();
+  await sheet.getByRole('button', { name: '수 13시' }).click();
+  await sheet.getByRole('button', { name: '월 9시' }).click();
+  await sheet.getByRole('button', { name: '수 12시' }).click(); // 재탭 → 해당 셀만 해제
+  await expect(sheet.getByRole('button', { name: '수 13시' })).toHaveAttribute('aria-pressed', 'true');
   await sheet.getByRole('button', { name: '적용하고 닫기' }).click();
 
   await expect(sheet).toBeHidden();
-  // 레일의 시간 칩에 선택한 교시가 반영된다("시간 1교시 - 종료" 형태)
-  await expect(page.getByLabel('모바일 필터').getByRole('button', { name: /1교시/ })).toBeVisible();
+  // 레일의 시간 칩에 요일별 시간 구간이 반영된다
+  await expect(page.getByLabel('모바일 필터').getByRole('button', { name: /월 9~10/ })).toBeVisible();
 });
