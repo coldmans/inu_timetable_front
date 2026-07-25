@@ -1,5 +1,5 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
-import { X, Clock, Star, Trash2, Eye, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { X, Clock, Star, Trash2, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
 
@@ -130,7 +130,7 @@ const WishlistModal = ({
         </div>
 
         {/* === Content Area === */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
           {step === 'list' ? (
             // --- List View ---
             wishlist.length > 0 ? (

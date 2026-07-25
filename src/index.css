@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    /* 모바일 탭 시 회색 플래시 제거(포커스 링으로 피드백 대체) */
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
     letter-spacing: 0;
@@ -59,8 +64,16 @@
   }
 
   .field {
-    /* 모바일은 16px(text-base)로 두어 iOS 입력 포커스 시 자동 확대를 막는다(핀치줌은 허용). 데스크톱은 14px. */
-    @apply h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 transition-colors placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm;
+    /* 터치 기기는 16px(text-base)로 두어 iOS 입력 포커스 시 자동 확대를 막는다(핀치줌은 허용).
+       폭(sm:) 기준으로 줄이면 아이폰 가로 모드(667px~)에서 다시 14px가 되어 확대가 발생하므로
+       포인터 종류로 분기한다. */
+    @apply h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 transition-colors placeholder:text-slate-500 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20;
+  }
+
+  @media (pointer: fine) {
+    .field {
+      @apply text-sm;
+    }
   }
 
   .card {

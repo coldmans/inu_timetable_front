@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Info, Heart, MessageSquare } from 'lucide-react';
 
 const TimetableCourseMenu = ({
@@ -13,15 +14,25 @@ const TimetableCourseMenu = ({
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      // pointerdown 은 마우스·터치·펜을 모두 커버한다(iOS 사파리는 mousedown 합성이 빠질 수 있음).
+      document.addEventListener('pointerdown', handleOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('pointerdown', handleOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     }
   }, [isOpen, onClose]);
 
@@ -34,14 +45,16 @@ const TimetableCourseMenu = ({
 
   const everytimeUrl = `https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`;
 
-  return (
+  // backdrop-filter 조상이 있으면 fixed 의 기준이 뷰포트가 아니게 되어 위치가 어긋나므로
+  // 포털로 body 에 직접 렌더링한다. z-index 는 헤더(40)·모달(50)·토스트(60)보다 위.
+  return createPortal(
     <div
       ref={menuRef}
       role="menu"
-      className="modal-panel fixed z-50 min-w-[200px] rounded-xl bg-white py-1.5 shadow-lg ring-1 ring-slate-200"
+      className="modal-panel fixed z-[75] min-w-[200px] rounded-xl bg-white py-1.5 shadow-lg ring-1 ring-slate-200"
       style={{
-        left: Math.min(position.x, window.innerWidth - 216),
-        top: Math.min(position.y, window.innerHeight - 220),
+        left: Math.max(8, Math.min(position.x, window.innerWidth - 216)),
+        top: Math.max(8, Math.min(position.y, window.innerHeight - 240)),
       }}
     >
       <div className="border-b border-slate-100 px-3.5 pb-2 pt-1">
@@ -91,7 +104,8 @@ const TimetableCourseMenu = ({
           시간표에서 제거
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

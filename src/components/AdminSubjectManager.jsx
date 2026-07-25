@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -275,6 +275,8 @@ const AdminSubjectManager = ({ showToast }) => {
 
   useEffect(() => {
     loadSubjects(0);
+    // loadSubjects 는 렌더마다 새로 만들어지는 함수라 deps 에 넣으면 무한 재실행된다(마운트 1회만 실행).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

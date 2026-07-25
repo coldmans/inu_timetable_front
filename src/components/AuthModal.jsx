@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X, LogIn, UserPlus, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { departmentGroups } from '../utils/timetableUtils';
@@ -303,7 +303,7 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
-        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
+        className="modal-panel max-h-[calc(100dvh-2rem)] w-full max-w-[460px] overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 focus:outline-none"
       >
         <div className="flex items-start justify-between px-6 pt-6">
           <div>
@@ -332,6 +332,7 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
                 value={formData.username}
                 onChange={handleInputChange}
                 required
+                maxLength={50}
                 autoComplete="username"
                 className="field h-11"
                 placeholder="아이디를 입력하세요"
@@ -349,10 +350,14 @@ const AuthModal = ({ isOpen, onClose, showToast, onRegisterSuccess }) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
+                minLength={isLogin ? undefined : 8}
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
                 className="field h-11"
                 placeholder="비밀번호를 입력하세요"
               />
+              {!isLogin && (
+                <p className="mt-1.5 text-xs text-slate-500">8자 이상 입력해 주세요.</p>
+              )}
             </div>
 
             {!isLogin && (

@@ -1,17 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, useId } from 'react';
-import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, MapPin, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Download, Maximize, MessageSquare, CheckCircle2, XCircle, RotateCcw, SearchX, Trash2, UserCircle } from 'lucide-react';
+import { Search, Filter, Plus, Info, ChevronDown, ChevronLeft, ChevronRight, Clock, Star, X, ShoppingCart, CalendarDays, AlertTriangle, LogIn, LogOut, Maximize, MessageSquare, CheckCircle2, XCircle, RotateCcw, SearchX, Trash2, UserCircle } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal, { AuthSelect } from './components/AuthModal';
 import Pagination from './components/Pagination';
 import TimetableCombinationResults from './components/TimetableCombinationResults';
 import WishlistModal from './components/WishlistModal';
 import CourseDetailModal from './components/CourseDetailModal';
-import TimetableCourseMenu from './components/TimetableCourseMenu';
 import TimetableListModal from './components/TimetableListModal';
 import TimetableExportView from './components/TimetableExportView';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
+import useCloseOnDesktop from './hooks/useCloseOnDesktop';
 import useFocusTrap from './hooks/useFocusTrap';
 import useModalDismiss from './hooks/useModalDismiss';
+import { trackEvent } from './services/analytics';
 
 import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
 // html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
@@ -33,6 +34,12 @@ import {
   timeOptions,
   creditOptions
 } from './utils/timetableUtils';
+
+const debugLog = (...args) => {
+  if (import.meta.env.DEV) {
+    console.debug(...args);
+  }
+};
 
 
 // Helpers and Constants moved to utils/timetableUtils.js
@@ -151,7 +158,7 @@ const Toast = ({ message, show, type, onDismiss }) => (
   >
     {toastIcons[type] || toastIcons.info}
     <span className="text-sm font-medium text-slate-800">{message}</span>
-    <button onClick={onDismiss} aria-label="알림 닫기" className="icon-btn h-7 w-7">
+    <button onClick={onDismiss} aria-label="알림 닫기" className="icon-btn h-9 w-9">
       <X size={14} />
     </button>
   </div>
@@ -244,20 +251,35 @@ const tutorialSteps = [
   }
 ];
 
-const NewUserTutorial = ({ shouldStart, onFinish }) => {
+// data-tour 대상은 데스크톱/모바일 레이아웃에 중복 존재하고 한쪽은 display:none 이므로,
+// "존재"가 아니라 "실제로 보이는" 요소를 골라야 스포트라이트가 (0,0)에 찍히지 않는다.
+const isVisibleElement = (el) => Boolean(el && (el.offsetWidth > 0 || el.offsetHeight > 0));
+const findVisibleTourTarget = (selector) => (
+  Array.from(document.querySelectorAll(selector)).find(isVisibleElement) || null
+);
+
+const NewUserTutorial = ({ runId, onPrepare, onFinish }) => {
   useEffect(() => {
-    if (!shouldStart) return undefined;
+    if (!runId) return undefined;
 
     let timeoutId;
     let tourInstance;
     let attempts = 0;
     let cleanedUp = false;
 
+    // 모바일이면 검색 패널을 열고 첫 카드를 펼쳐 투어 대상 버튼을 화면에 노출시킨다.
+    onPrepare?.();
+
     const startTour = async () => {
       const hasCourseActionTargets = tutorialSteps
         .filter(step => step.element.includes('course-') && step.element !== '[data-tour="course-search"]')
-        .every(step => document.querySelector(step.element));
-      const availableSteps = tutorialSteps.filter(step => document.querySelector(step.element));
+        .every(step => findVisibleTourTarget(step.element));
+      const availableSteps = tutorialSteps
+        .map(step => {
+          const target = findVisibleTourTarget(step.element);
+          return target ? { ...step, element: target } : null;
+        })
+        .filter(Boolean);
 
       if (availableSteps.length === 0) {
         onFinish();
@@ -314,7 +336,7 @@ const NewUserTutorial = ({ shouldStart, onFinish }) => {
       window.clearTimeout(timeoutId);
       tourInstance?.destroy();
     };
-  }, [shouldStart, onFinish]);
+  }, [runId, onPrepare, onFinish]);
 
   return null;
 };
@@ -418,7 +440,9 @@ const getClassMethodLabel = (classMethod) => {
   return classMethod || null;
 };
 
-const CourseRow = ({
+// 검색 입력마다 목록 전체(무한 스크롤로 100행 이상)가 재렌더되지 않도록 memo 처리한다.
+// 부모는 props(핸들러 포함)의 참조가 안정적이도록 유지해야 한다.
+const CourseRow = React.memo(({
   course,
   onAddToTimetable,
   onAddToWishlist,
@@ -431,6 +455,7 @@ const CourseRow = ({
   const courseReviewUrl = `https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`;
   const classMethodLabel = getClassMethodLabel(course.classMethod);
   const courseCode = course.code || course.subjectCode || course.courseCode || course.courseNo;
+  const scheduleLabel = useMemo(() => formatScheduleLabel(course), [course]);
   const detailItems = [
     course.grade ? `${course.grade}학년` : '전학년',
     course.type,
@@ -441,7 +466,7 @@ const CourseRow = ({
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches) {
       return;
     }
-    onToggleExpanded();
+    onToggleExpanded(course.id);
   };
 
   return (
@@ -463,6 +488,12 @@ const CourseRow = ({
             </span>
             <span className="meta-chip flex-shrink-0">{course.credits}학점</span>
             <WishlistCountChip count={wishlistCount} className="sm:hidden" />
+            {/* 모바일에서 탭하면 펼쳐진다는 힌트 (데스크톱은 버튼이 항상 노출되므로 불필요) */}
+            <ChevronDown
+              size={14}
+              aria-hidden="true"
+              className={`ml-auto flex-shrink-0 text-slate-400 transition-transform sm:hidden ${isExpanded ? 'rotate-180' : ''}`}
+            />
           </div>
           <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-500">
             <span className="min-w-0 flex-shrink-[2] truncate">
@@ -470,7 +501,7 @@ const CourseRow = ({
             </span>
             <span className="meta-chip min-w-0 flex-shrink bg-white">
               <Clock size={11} className="flex-shrink-0 text-slate-400" />
-              <span className="truncate">{formatScheduleLabel(course)}</span>
+              <span className="truncate">{scheduleLabel}</span>
             </span>
           </div>
         </button>
@@ -489,7 +520,7 @@ const CourseRow = ({
               rel="noopener noreferrer"
               aria-label={`${course.name} 강의평 보기`}
               title="에브리타임 강의평"
-              className="icon-btn h-10 w-10 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 sm:h-8 sm:w-8"
+              className="icon-btn h-10 w-10 bg-slate-50/80 ring-1 ring-inset ring-slate-200/70 fine:h-8 fine:w-8"
             >
               <MessageSquare size={15} />
             </a>
@@ -498,7 +529,7 @@ const CourseRow = ({
               type="button"
               onClick={() => onAddToWishlist(course)}
               disabled={actionsDisabled}
-              className="btn-secondary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+              className="btn-secondary h-10 flex-1 px-3 text-[13px] fine:h-8 sm:flex-none"
             >
               <ShoppingCart size={13} /> 담기
             </button>
@@ -507,7 +538,7 @@ const CourseRow = ({
               type="button"
               onClick={() => onAddToTimetable(course)}
               disabled={actionsDisabled}
-              className="btn-primary h-10 flex-1 px-3 text-[13px] sm:h-8 sm:flex-none"
+              className="btn-primary h-10 flex-1 px-3 text-[13px] fine:h-8 sm:flex-none"
             >
               <Plus size={13} /> 추가
             </button>
@@ -569,7 +600,9 @@ const CourseRow = ({
       </div>
     </li>
   );
-};
+});
+
+CourseRow.displayName = 'CourseRow';
 
 const CourseRowSkeleton = () => (
   <li className="course-list-row animate-pulse">
@@ -603,6 +636,19 @@ const EmptyResults = ({ onReset }) => (
     <p className="mt-1 text-sm text-slate-500">검색어를 바꾸거나 필터를 초기화해 보세요.</p>
     <button type="button" onClick={onReset} className="btn-secondary mt-5">
       <RotateCcw size={14} /> 필터 초기화
+    </button>
+  </div>
+);
+
+const ErrorResults = ({ onRetry }) => (
+  <div role="alert" className="flex flex-col items-center px-6 py-16 text-center">
+    <div className="grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-500">
+      <AlertTriangle size={22} />
+    </div>
+    <p className="mt-4 text-[15px] font-semibold text-slate-900">과목 정보를 불러오지 못했어요</p>
+    <p className="mt-1 text-sm text-slate-500">잠시 후 다시 시도해 주세요.</p>
+    <button type="button" onClick={onRetry} className="btn-secondary mt-5">
+      <RotateCcw size={14} /> 다시 시도
     </button>
   </div>
 );
@@ -850,7 +896,7 @@ const DeveloperNotesModal = ({ onClose }) => {
       className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="developer-notes-title" className="modal-panel max-h-[88vh] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-xl sm:rounded-2xl">
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="developer-notes-title" className="modal-panel max-h-[88svh] w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-xl sm:rounded-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-xs font-semibold text-blue-600">서비스 개선 기록</p>
@@ -861,7 +907,7 @@ const DeveloperNotesModal = ({ onClose }) => {
           </button>
         </div>
 
-        <div className="max-h-[calc(88vh-4.5rem)] overflow-y-auto px-5 py-4">
+        <div className="max-h-[calc(88svh-4.5rem)] overflow-y-auto overscroll-contain px-5 py-4 pb-[max(env(safe-area-inset-bottom),16px)]">
           <ol className="space-y-4">
             {developerNoteEntries.map((entry) => (
               <li key={entry.date} className="grid grid-cols-[5.25rem_minmax(0,1fr)] gap-3">
@@ -1312,6 +1358,7 @@ const MobileFilterSheet = ({
   const panelRef = useRef(null);
   useFocusTrap(isOpen, panelRef);
   useBodyScrollLock(isOpen);
+  useCloseOnDesktop(isOpen, onClose);
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -1352,7 +1399,7 @@ const MobileFilterSheet = ({
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-filter-title">
-      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[86vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
+      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[86svh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <div className="min-w-0">
             <h2 id="mobile-filter-title" className="text-base font-bold text-slate-900">상세 필터</h2>
@@ -1363,7 +1410,7 @@ const MobileFilterSheet = ({
           </button>
         </div>
 
-        <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+        <div className="flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-4 py-3">
           <DepartmentFilterButton
             value={filters.department}
             majorShortcuts={majorShortcuts}
@@ -1453,6 +1500,7 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
   const panelRef = useRef(null);
   useFocusTrap(!!field && field !== 'department', panelRef);
   useBodyScrollLock(!!field && field !== 'department');
+  useCloseOnDesktop(!!field && field !== 'department', onClose);
 
   useEffect(() => {
     if (!field) return undefined;
@@ -1495,22 +1543,24 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
     onClose();
   };
 
-  const renderOptions = (key, options, onPick) => (
-    <div className="grid grid-cols-2 gap-2">
+  const renderOptions = (key, options, onPick, { columnsClass = 'grid-cols-2', formatLabel } = {}) => (
+    <div className={`grid ${columnsClass} gap-2`}>
       {options.map(opt => {
         const selected = String(filters[key]) === String(opt);
+        const label = formatLabel ? formatLabel(opt) : (opt === '전체' ? '전체' : opt);
         return (
           <button
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
+            aria-pressed={selected}
             className={`h-11 rounded-xl px-3 text-sm transition-colors ${
               selected
                 ? 'bg-blue-50 font-semibold text-blue-700 ring-1 ring-inset ring-blue-200'
                 : 'bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100'
             }`}
           >
-            {opt === '전체' ? '전체' : opt}
+            {label}
           </button>
         );
       })}
@@ -1536,7 +1586,7 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm md:hidden" role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
-      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[80vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
+      <div ref={panelRef} tabIndex={-1} className="modal-panel flex max-h-[80svh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <h2 className="text-base font-bold text-slate-900">{titleMap[field]}</h2>
           <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="닫기">
@@ -1544,38 +1594,45 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
           {field === 'subjectType' && renderOptions('subjectType', courseTypes, (value) => applySimple('subjectType', value))}
           {field === 'grade' && renderOptions('grade', grades, (value) => applySimple('grade', value))}
           {field === 'credits' && renderOptions('credits', creditOptions, (value) => applySimple('credits', value))}
           {field === 'dayOfWeek' && renderOptions('dayOfWeek', filterDaysOfWeek, applyDay)}
           {field === 'time' && (
-            <div className="grid grid-cols-2 gap-2">
-              <FilterSelect
-                label="시작 교시 필터"
-                value={filters.startTime}
-                active={filters.startTime !== '전체'}
-                disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
-                onChange={(event) => setFilters(prev => ({ ...prev, startTime: event.target.value }))}
-              >
-                {timeOptions.map(time => (
-                  <option key={time} value={time}>{time === '전체' ? '시작' : `${time}교시`}</option>
-                ))}
-              </FilterSelect>
-              <FilterSelect
-                label="종료 교시 필터"
-                value={filters.endTime}
-                active={filters.endTime !== '전체'}
-                disabled={filters.dayOfWeek === UNASSIGNED_TIME_FILTER}
-                onChange={(event) => setFilters(prev => ({ ...prev, endTime: event.target.value }))}
-              >
-                {timeOptions.map(time => (
-                  <option key={time} value={time}>{time === '전체' ? '종료' : `${time}교시`}</option>
-                ))}
-              </FilterSelect>
-            </div>
+            filters.dayOfWeek === UNASSIGNED_TIME_FILTER ? (
+              <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 ring-1 ring-inset ring-slate-200">
+                시간 미지정 과목만 보는 중에는 교시를 고를 수 없어요.
+              </p>
+            ) : (
+              // 좁은 시트 안에서 absolute 드롭다운은 잘려서 쓸 수 없으므로 그리드 버튼으로 바로 고른다.
+              <div className="space-y-4">
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-slate-500">시작 교시</p>
+                  {renderOptions('startTime', timeOptions, (value) => setFilters(prev => ({ ...prev, startTime: value })), {
+                    columnsClass: 'grid-cols-4',
+                    formatLabel: (opt) => (opt === '전체' ? '전체' : `${opt}교시`)
+                  })}
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-slate-500">종료 교시</p>
+                  {renderOptions('endTime', timeOptions, (value) => setFilters(prev => ({ ...prev, endTime: value })), {
+                    columnsClass: 'grid-cols-4',
+                    formatLabel: (opt) => (opt === '전체' ? '전체' : `${opt}교시`)
+                  })}
+                </div>
+              </div>
+            )
           )}
         </div>
+
+        {field === 'time' && (
+          <div className="border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+            <button type="button" onClick={onClose} className="btn-primary h-11 w-full text-[13px]">
+              적용하고 닫기
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1720,7 +1777,7 @@ const AccountModal = ({ user, onClose, onLogout, onWithdraw, onUpdateProfile, is
       className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/35 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="account-modal-title" className="modal-panel max-h-[calc(100vh-24px)] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-md sm:rounded-2xl">
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="account-modal-title" className="modal-panel max-h-[calc(100svh-24px)] w-full overflow-y-auto overscroll-contain rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10 focus:outline-none sm:max-w-md sm:rounded-2xl sm:pb-0">
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-xs font-semibold text-blue-600">내 계정</p>
@@ -1889,10 +1946,13 @@ function AppContent() {
   const [wishlist, setWishlist] = useState([]);
   const [showWishlistModal, setShowWishlistModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false); // 모바일: 첫 화면은 시간표만, + 누르면 검색/과목 리스트 표시
+  const coursesRef = useRef([]); // 투어 준비 콜백이 최신 목록을 의존성 없이 읽기 위한 참조
+  const toastTimerRef = useRef(null);
   const [mobileFilterField, setMobileFilterField] = useState(null); // 모바일: 단일 필터 시트로 열 필드(null이면 닫힘)
   const [timetable, setTimetable] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false); // 무한 스크롤 추가 로드(누적) 전용 — 첫 로드/재검색과 분리
+  const [courseLoadError, setCourseLoadError] = useState(false);
 
   // 모달 상태
   const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
@@ -1918,7 +1978,9 @@ function AppContent() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showNewUserTutorial, setShowNewUserTutorial] = useState(false);
+  // boolean 대신 실행 카운터: 투어가 비정상 종료돼 상태가 남아도 버튼을 다시 누르면
+  // runId 가 증가해 이펙트가 재실행되므로 언제든 다시 시작할 수 있다.
+  const [tutorialRunId, setTutorialRunId] = useState(0);
   const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -1938,12 +2000,24 @@ function AppContent() {
   const showWishlistCountPreview = import.meta.env.DEV;
 
   const showToast = useCallback((message, type = 'success') => {
+    // 연속 호출 시 이전 타이머가 새 토스트를 조기에 닫지 않도록 정리한다.
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
     setToast({ show: true, message, type });
-    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+    toastTimerRef.current = setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
   }, []);
 
   const closeNewUserTutorial = useCallback(() => {
-    setShowNewUserTutorial(false);
+    setTutorialRunId(0);
+  }, []);
+
+  const prepareTutorialTargets = useCallback(() => {
+    // 모바일(데스크톱 액션 버튼이 숨겨지는 폭)에서는 검색 패널을 열고 첫 과목 카드를 펼쳐
+    // 투어가 하이라이트할 버튼들이 실제 화면에 보이게 만든다.
+    if (window.matchMedia('(min-width: 640px)').matches) return;
+    setShowMobileSearch(true);
+    setExpandedCourseId(prev => prev ?? (coursesRef.current[0]?.id ?? null));
   }, []);
 
 
@@ -1952,11 +2026,13 @@ function AppContent() {
 
   // 사용자 데이터 로드 - 인증 로딩 완료 후 실행
   useEffect(() => {
-    console.log('useEffect 실행 - authLoading:', authLoading, 'user:', user);
+    debugLog('useEffect 실행 - authLoading:', authLoading, 'user:', user);
     if (!authLoading && user) {
-      console.log('✅ 조건 만족, loadUserData 호출');
+      debugLog('✅ 조건 만족, loadUserData 호출');
       loadUserData();
     }
+    // loadUserData 는 렌더마다 새로 만들어지는 함수라 deps 에 넣으면 무한 재실행된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
 
@@ -1972,6 +2048,7 @@ function AppContent() {
         setIsLoadingMore(true);
       } else {
         setIsLoading(true);
+        setCourseLoadError(false);
       }
       // 학년 필터 변환 ("1학년" -> 1, "전체" -> undefined)
       const gradeFilter = filters.grade === '전체' ? undefined :
@@ -1996,11 +2073,11 @@ function AppContent() {
       }
 
       // 페이징 응답 처리
-      console.log('📥 API 응답 데이터:', response);
+      debugLog('📥 API 응답 데이터:', response);
 
       if (response.content) {
         // 백엔드에서 페이징 응답이 온 경우
-        console.log(`✅ 페이징 응답: ${response.content.length}개 항목, 총 ${response.totalElements}개 중 ${response.number + 1}/${response.totalPages} 페이지`);
+        debugLog(`✅ 페이징 응답: ${response.content.length}개 항목, 총 ${response.totalElements}개 중 ${response.number + 1}/${response.totalPages} 페이지`);
         const formattedCourses = response.content.map((subject, index) => formatCourse(subject, index));
         setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(response.totalPages || 0);
@@ -2008,7 +2085,7 @@ function AppContent() {
         setCurrentPage(response.number || 0);
       } else {
         // 기존 배열 응답 (백엔드 미수정 시 호환성)
-        console.log(`배열 응답: ${response.length}개 항목 (페이징 미적용)`);
+        debugLog(`배열 응답: ${response.length}개 항목 (페이징 미적용)`);
         const formattedCourses = response.map((subject, index) => formatCourse(subject, index));
         setCourses(append ? prev => [...prev, ...formattedCourses] : formattedCourses);
         setTotalPages(1);
@@ -2020,7 +2097,19 @@ function AppContent() {
         return;
       }
 
-      console.log('서버 연결 실패, Mock 데이터 사용:', error.message);
+      if (!import.meta.env.DEV) {
+        if (!append) {
+          setCourses([]);
+          setTotalPages(0);
+          setTotalElements(0);
+          setCurrentPage(0);
+          setCourseLoadError(true);
+        }
+        showToast('과목 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+        return;
+      }
+
+      debugLog('서버 연결 실패, 개발용 Mock 데이터 사용:', error.message);
       // Fallback to comprehensive mock data if server is not available
       const mockData = [
         { id: 1, subjectName: '운영체제', credits: 3, professor: '김교수', department: '컴퓨터공학부', subjectType: '전심', schedules: [{ dayOfWeek: '월', startTime: 7.0, endTime: 8.5 }, { dayOfWeek: '수', startTime: 5.0, endTime: 6.5 }] },
@@ -2064,20 +2153,20 @@ function AppContent() {
 
   const loadUserData = async () => {
     if (!user) {
-      console.log('🚫 loadUserData: user가 없어서 리턴');
+      debugLog('🚫 loadUserData: user가 없어서 리턴');
       return;
     }
 
-    console.log('🔄 loadUserData 시작, user:', user.id);
+    debugLog('🔄 loadUserData 시작, user:', user.id);
 
     try {
       // 위시리스트 로드
-      console.log('📋 위시리스트 API 호출 중...');
+      debugLog('📋 위시리스트 API 호출 중...');
       const wishlistData = await wishlistAPI.getByUser(user.id, CURRENT_SEMESTER);
-      console.log('✅ 위시리스트 데이터 받음:', wishlistData);
+      debugLog('✅ 위시리스트 데이터 받음:', wishlistData);
 
       const formattedWishlist = wishlistData.map((item) => {
-        console.log('위시리스트 아이템:', item);
+        debugLog('위시리스트 아이템:', item);
 
         // 새로운 API 응답: 아이템 자체가 모든 과목 정보를 포함
         return {
@@ -2101,7 +2190,7 @@ function AppContent() {
           ...getCourseTypeColorScheme(item.subjectType)
         };
       });
-      console.log('📋 포맷된 위시리스트:', formattedWishlist);
+      debugLog('📋 포맷된 위시리스트:', formattedWishlist);
       setWishlist(formattedWishlist);
 
       // 개인 시간표 로드
@@ -2111,12 +2200,14 @@ function AppContent() {
       );
       setTimetable(formattedTimetable);
     } catch (error) {
-      console.log('사용자 데이터 로드 실패:', error.message);
+      debugLog('사용자 데이터 로드 실패:', error.message);
+      showToast('저장한 시간표를 불러오지 못했습니다.', 'error');
     }
   };
 
   // 검색 실행 함수
   const executeSearch = () => {
+    if (searchTerm && searchTerm.trim()) trackEvent('SEARCH', searchTerm.trim());
     setCurrentPage(0); // 검색 시 첫 페이지로 리셋
     loadCourses(0);
     // 재검색/필터 변경(리스트 교체)마다 스크롤을 위로 리셋 — 무한스크롤로 내려간 위치와 어긋나지 않게.
@@ -2166,6 +2257,8 @@ function AppContent() {
   // 필터 변경 시에만 자동 검색 (검색어는 수동)
   useEffect(() => {
     executeSearch();
+    // executeSearch 는 렌더마다 새로 만들어지는 함수라 deps 에 넣으면 무한 재실행된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]); // searchTerm 제거, filters만 자동 검색
 
   useEffect(() => {
@@ -2175,6 +2268,10 @@ function AppContent() {
 
   // 페이징이 적용되었으므로 클라이언트 필터링 제거 (서버에서 처리)
   const filteredCourses = courses;
+
+  useEffect(() => {
+    coursesRef.current = courses;
+  }, [courses]);
 
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
@@ -2198,6 +2295,8 @@ function AppContent() {
     }, { rootMargin: '600px' });
     observer.observe(sentinel);
     return () => observer.disconnect();
+    // loadCourses 는 렌더마다 새로 만들어지는 함수라 deps 에 넣으면 옵저버가 계속 재생성된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, totalPages, isLoading, isLoadingMore]);
 
   const downloadCanvasAsPng = async (canvas, fileName) => {
@@ -2264,7 +2363,19 @@ function AppContent() {
 
 
 
+  // React.memo 된 CourseRow 에 참조가 변하지 않는 핸들러를 넘기기 위한 우회.
+  // 원본 핸들러는 여러 state 를 클로저로 캡처해 매 렌더 새로 만들어지므로,
+  // 최신 구현은 ref 로 갱신하고 겉 함수만 useCallback 으로 고정한다.
+  const addToTimetableImplRef = useRef(null);
+  const addToWishlistImplRef = useRef(null);
+  const stableAddToTimetable = useCallback((course) => addToTimetableImplRef.current?.(course), []);
+  const stableAddToWishlist = useCallback((course) => addToWishlistImplRef.current?.(course), []);
+  const handleToggleExpandedRow = useCallback((courseId) => {
+    setExpandedCourseId(prev => (prev === courseId ? null : courseId));
+  }, []);
+
   const handleAddToTimetable = async (courseToAdd) => {
+    trackEvent('TIMETABLE_ADD', courseToAdd?.name);
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -2274,7 +2385,7 @@ function AppContent() {
     const now = Date.now();
     const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
     if (now - lastClick < 500) {
-      console.log(`[Throttle] 중복 시간표 추가 요청 방지: ${courseToAdd.name}`);
+      debugLog(`[Throttle] 중복 시간표 추가 요청 방지: ${courseToAdd.name}`);
       return;
     }
     lastClickRefs.current[courseToAdd.id] = now;
@@ -2316,6 +2427,7 @@ function AppContent() {
   };
 
   const handleAddToWishlist = async (courseToAdd, isRequired = false) => {
+    trackEvent('WISHLIST_ADD', courseToAdd?.name);
     if (!isLoggedIn) {
       setShowAuthModal(true);
       return;
@@ -2325,7 +2437,7 @@ function AppContent() {
     const now = Date.now();
     const lastClick = lastClickRefs.current[courseToAdd.id] || 0;
     if (now - lastClick < 500) {
-      console.log(`[Throttle] 중복 위시리스트 요청 방지: ${courseToAdd.name}`);
+      debugLog(`[Throttle] 중복 위시리스트 요청 방지: ${courseToAdd.name}`);
       return;
     }
     lastClickRefs.current[courseToAdd.id] = now;
@@ -2349,6 +2461,10 @@ function AppContent() {
       showToast(error.message, 'warning');
     }
   };
+
+  // 매 렌더마다 최신 구현으로 갱신한다(이벤트는 커밋 이후에 발생하므로 안전).
+  addToTimetableImplRef.current = handleAddToTimetable;
+  addToWishlistImplRef.current = handleAddToWishlist;
 
   const handleRemoveFromWishlist = async (courseId) => {
     try {
@@ -2383,6 +2499,7 @@ function AppContent() {
   };
 
   const handleRunGenerator = async () => {
+    trackEvent('COMBINATION_GENERATE');
     if (!isLoggedIn || wishlist.length === 0) {
       showToast('로그인 후 위시리스트에 과목을 추가해주세요!', 'warning');
       return;
@@ -2411,15 +2528,18 @@ function AppContent() {
         freeDays: freeDays
       });
 
-      setTimeout(() => {
-        setIsGenerating(false);
-        setCombinationResults(response);
-        setShowCombinationResults(true);
-        showToast(`${response.totalCount}개의 시간표 조합을 찾았습니다!`);
-      }, 3000);
+      setIsGenerating(false);
+      setCombinationResults(response);
+      setShowCombinationResults(true);
+      showToast(`${response.totalCount}개의 시간표 조합을 찾았습니다!`);
     } catch (error) {
       setIsGenerating(false);
-      console.log('시간표 조합 생성 실패, Mock 데이터 사용:', error.message);
+      if (!import.meta.env.DEV) {
+        showToast(error.message || '시간표 조합을 만들지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+        return;
+      }
+
+      debugLog('시간표 조합 생성 실패, 개발용 Mock 데이터 사용:', error.message);
 
       // 필수 과목이 있으면 Mock 데이터에도 반영
       const requiredCoursesInMock = requiredCourses.slice(0, 2); // 최대 2개만 사용
@@ -2489,12 +2609,10 @@ function AppContent() {
         ]
       };
 
-      setTimeout(() => {
-        setIsGenerating(false);
-        setCombinationResults(mockCombinationResults);
-        setShowCombinationResults(true);
-        showToast(`${mockCombinationResults.totalCount}개의 시간표 조합을 찾았습니다! (Mock 데이터)`);
-      }, 3000);
+      setIsGenerating(false);
+      setCombinationResults(mockCombinationResults);
+      setShowCombinationResults(true);
+      showToast(`${mockCombinationResults.totalCount}개의 시간표 조합을 찾았습니다! (Mock 데이터)`);
     }
   };
 
@@ -2509,12 +2627,10 @@ function AppContent() {
 
     setIsApplyingCombination(true);
     try {
-      console.log('🔄 조합 선택:', selectedCombination);
+      debugLog('🔄 조합 선택:', selectedCombination);
 
-      // 기존 시간표 클리어
-      for (const course of timetable) {
-        await timetableAPI.remove(user.id, course.id);
-      }
+      // 기존 시간표 클리어(서로 독립인 삭제라 병렬로 처리해 모바일 회선에서 대기를 줄인다)
+      await Promise.all(timetable.map(course => timetableAPI.remove(user.id, course.id)));
 
       // 새로운 조합 추가
       for (const subject of selectedCombination) {
@@ -2528,13 +2644,13 @@ function AppContent() {
 
       // 로컬 상태 업데이트
       const formattedCombination = selectedCombination.map((subject, index) => {
-        console.log('📝 포맷팅 중인 과목:', subject);
+        debugLog('📝 포맷팅 중인 과목:', subject);
         const formatted = formatCourse(subject, index);
-        console.log('✅ 포맷된 결과:', formatted);
+        debugLog('✅ 포맷된 결과:', formatted);
         return formatted;
       });
 
-      console.log('Selected timetable combination:', formattedCombination);
+      debugLog('Selected timetable combination:', formattedCombination);
       setTimetable(formattedCombination);
 
       setShowCombinationResults(false);
@@ -2620,7 +2736,7 @@ function AppContent() {
 
     try {
       await timetableAPI.remove(user.id, courseToRemove.id);
-      console.log('✅ 시간표 제거 성공:', courseToRemove.name);
+      debugLog('✅ 시간표 제거 성공:', courseToRemove.name);
 
       // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
       setTimeout(async () => {
@@ -2630,7 +2746,7 @@ function AppContent() {
             formatCourse(item.subject, index)
           );
           setTimetable(formattedTimetable);
-          console.log('🔄 시간표 동기화 완료');
+          debugLog('🔄 시간표 동기화 완료');
         } catch (syncError) {
           console.warn('시간표 동기화 실패:', syncError.message);
         }
@@ -2665,7 +2781,7 @@ function AppContent() {
       );
 
       await Promise.all(deletePromises);
-      console.log('✅ 시간표 전체 삭제 성공');
+      debugLog('✅ 시간표 전체 삭제 성공');
 
     } catch (error) {
       console.error('❌ 시간표 전체 삭제 실패:', error);
@@ -2682,6 +2798,7 @@ function AppContent() {
 
   // 과목 상세 정보 보기
   const handleViewCourseDetails = (course) => {
+    trackEvent('COURSE_DETAIL_VIEW', course?.name);
     setSelectedCourseForDetail(course);
     setShowCourseDetailModal(true);
   };
@@ -2971,12 +3088,17 @@ function AppContent() {
     );
   };
 
-  // 로그인 화면으로 이동
-  const goToLogin = () => {
-    setCurrentView('login');
-  };
-
   const isAdminSubjectsPage = window.location.pathname === '/admin/subjects';
+
+  const hasResultPagination = totalPages > 1;
+  const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
+  const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null
+    || showAuthModal || showCombinationResults || showCourseDetailModal || showTimetableListModal;
+  // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
+  // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
+  // 훅이므로 아래의 조기 return 들보다 반드시 먼저 호출한다(Rules of Hooks).
+  useBodyScrollLock(hasBlockingOverlay && !isAdminSubjectsPage && currentView === 'timetable');
 
   if (isAdminSubjectsPage) {
     return <HiddenPage />;
@@ -2994,15 +3116,6 @@ function AppContent() {
       />
     );
   }
-
-  const hasResultPagination = totalPages > 1;
-  const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
-  const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null
-    || showAuthModal || showCombinationResults || showCourseDetailModal || showTimetableListModal;
-  // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
-  // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
-  useBodyScrollLock(hasBlockingOverlay);
   const userDisplayName = user?.nickname || user?.username || '사용자';
 
   return (
@@ -3013,9 +3126,9 @@ function AppContent() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         showToast={showToast}
-        onRegisterSuccess={() => setShowNewUserTutorial(true)}
+        onRegisterSuccess={() => setTutorialRunId(run => run + 1)}
       />
-      <NewUserTutorial shouldStart={showNewUserTutorial} onFinish={closeNewUserTutorial} />
+      <NewUserTutorial runId={tutorialRunId} onPrepare={prepareTutorialTargets} onFinish={closeNewUserTutorial} />
       <WishlistModal
         isOpen={showWishlistModal}
         onClose={() => setShowWishlistModal(false)}
@@ -3111,7 +3224,7 @@ function AppContent() {
         inert={hasBlockingOverlay ? '' : undefined}
         className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur"
       >
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 md:px-8">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] md:px-8 md:[padding-left:max(2rem,env(safe-area-inset-left))] md:[padding-right:max(2rem,env(safe-area-inset-right))]">
           <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             <a href="/" className="flex flex-shrink-0 items-center gap-2">
               <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-blue-600 text-white shadow-sm">
@@ -3143,12 +3256,12 @@ function AppContent() {
                     {user?.major || '전공 미입력'} {user?.grade ? `${user.grade}학년` : ''}
                   </p>
                 </div>
-                <button onClick={() => setShowAccountModal(true)} className="btn-ghost h-10 px-3 text-[13px] md:h-8 md:px-2.5">
+                <button onClick={() => setShowAccountModal(true)} className="btn-ghost h-10 px-3 text-[13px] fine:h-8 md:px-2.5">
                   <UserCircle size={14} /> 계정
                 </button>
               </>
             ) : (
-              <button onClick={handleLogin} className="btn-primary h-10 px-3 text-[13px] md:h-8">
+              <button onClick={handleLogin} className="btn-primary h-10 px-3 text-[13px] fine:h-8">
                 <LogIn size={14} /> 로그인
               </button>
             )}
@@ -3159,7 +3272,7 @@ function AppContent() {
       <div
         aria-hidden={hasBlockingOverlay}
         inert={hasBlockingOverlay ? '' : undefined}
-        className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-6"
+        className="mx-auto max-w-7xl px-4 py-4 [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] md:px-8 md:py-6 md:[padding-left:max(2rem,env(safe-area-inset-left))] md:[padding-right:max(2rem,env(safe-area-inset-right))]"
       >
         <>
         <section aria-label="모바일 시간표" className="sticky top-14 z-20 -mx-4 mb-3 bg-slate-50/95 px-4 pt-2 backdrop-blur md:hidden">
@@ -3173,7 +3286,7 @@ function AppContent() {
                   setShowWishlistModal(true);
                 }}
                 aria-label={`담은 과목 ${wishlist.length}개`}
-                className="inline-flex h-8 items-center gap-1 rounded-full bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="inline-flex h-10 items-center gap-1 rounded-full bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <ShoppingCart size={13} /> 담은 {wishlist.length}
               </button>
@@ -3184,7 +3297,7 @@ function AppContent() {
                   setShowWishlistModal(true);
                 }}
                 disabled={wishlist.length === 0 || isGenerating}
-                className="inline-flex h-8 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-1 rounded-full bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
               >
                 <Star size={13} /> 조합
               </button>
@@ -3193,13 +3306,15 @@ function AppContent() {
                 onClick={() => setShowMobileSearch(value => !value)}
                 aria-label={showMobileSearch ? '과목 검색 닫기' : '과목 검색 열기'}
                 aria-expanded={showMobileSearch}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                className={`inline-flex h-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                  showMobileSearch ? 'w-10' : 'gap-1 px-3 text-xs font-semibold'
+                }`}
               >
-                {showMobileSearch ? <X size={16} /> : <Plus size={16} />}
+                {showMobileSearch ? <X size={16} /> : <><Search size={14} /> 과목 찾기</>}
               </button>
             </div>
           </div>
-          <div className={`rounded-2xl ${showMobileSearch ? 'max-h-[32vh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
+          <div className={`rounded-2xl ${showMobileSearch ? 'max-h-[34svh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
             <h2 className="sr-only">내 시간표 표</h2>
             <TimetableGrid
               courses={timetable}
@@ -3240,6 +3355,7 @@ function AppContent() {
             <button
               onClick={executeSearch}
               disabled={isLoading}
+              aria-label="검색"
               className="btn-primary h-10 px-4 md:h-11 md:px-5"
             >
               <Search size={15} className="sm:hidden" />
@@ -3395,6 +3511,8 @@ function AppContent() {
                     <CourseRowSkeleton key={index} />
                   ))}
                 </ul>
+              ) : courseLoadError ? (
+                <ErrorResults onRetry={() => loadCourses(0)} />
               ) : filteredCourses.length === 0 ? (
                 <EmptyResults onReset={handleResetFilters} />
               ) : (
@@ -3406,12 +3524,12 @@ function AppContent() {
                     <CourseRow
                       key={course.id}
                       course={course}
-                      onAddToTimetable={handleAddToTimetable}
-                      onAddToWishlist={handleAddToWishlist}
+                      onAddToTimetable={stableAddToTimetable}
+                      onAddToWishlist={stableAddToWishlist}
                       actionsDisabled={showWishlistModal}
                       showWishlistCountPreview={showWishlistCountPreview}
                       isExpanded={expandedCourseId === course.id}
-                      onToggleExpanded={() => setExpandedCourseId(prev => prev === course.id ? null : course.id)}
+                      onToggleExpanded={handleToggleExpandedRow}
                     />
                   ))}
                 </ul>
@@ -3606,15 +3724,15 @@ function AppContent() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setShowNewUserTutorial(true)}
-              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+              onClick={() => setTutorialRunId(run => run + 1)}
+              className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
               <Info size={13} /> 사용법
             </button>
             <button
               type="button"
               onClick={() => setShowDeveloperNotes(true)}
-              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+              className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
               <Info size={13} /> 개발 노트
             </button>
@@ -3622,7 +3740,7 @@ function AppContent() {
               href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-ghost h-8 px-2.5 text-xs text-slate-500"
+              className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
               <MessageSquare size={13} /> 문의하기
             </a>
