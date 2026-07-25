@@ -9,13 +9,16 @@ const openMobileCourseSearch = async (page, isMobile) => {
 };
 
 test('renders the public course search workspace', async ({ page, isMobile }) => {
+  // 워커별 첫 테스트는 CI에서 백엔드(Cloud Run) 콜드스타트를 겪을 수 있어 타임아웃을 넉넉히 잡는다.
+  test.slow();
+
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
 
   await expect(page.getByRole('link', { name: 'INU 시간표' })).toBeVisible();
   await expect(page.getByPlaceholder('과목명을 검색해 보세요')).toBeVisible();
   await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
-  await expect(page.getByTestId('course-row-summary').first()).toBeVisible();
+  await expect(page.getByTestId('course-row-summary').first()).toBeVisible({ timeout: 45_000 });
 });
 
 test('opens signup and exposes college to department selectors', async ({ page }) => {
@@ -37,9 +40,13 @@ test('opens signup and exposes college to department selectors', async ({ page }
 });
 
 test('asks anonymous users to log in before saving a course', async ({ page, isMobile }) => {
+  // 워커별 첫 테스트가 될 수 있어 백엔드 콜드스타트 여유를 둔다.
+  test.slow();
+
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
   await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
+  await expect(page.getByTestId('course-row-summary').first()).toBeVisible({ timeout: 45_000 });
 
   if (isMobile) {
     await page.getByTestId('course-row-summary').first().click();
@@ -119,11 +126,14 @@ test('shows a fitted mobile timetable preview and filter rail', async ({ page, i
 
 test('expands mobile course details before showing actions', async ({ page, isMobile }) => {
   test.skip(!isMobile, '모바일 전용 과목 상세 확장 검증');
+  // 워커별 첫 테스트가 될 수 있어 백엔드 콜드스타트 여유를 둔다.
+  test.slow();
 
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
 
   const firstCourse = page.getByTestId('course-row-summary').first();
+  await expect(firstCourse).toBeVisible({ timeout: 45_000 });
   await firstCourse.click();
 
   const actions = page.getByTestId('course-row-actions').first();
