@@ -921,17 +921,17 @@ const MobileFilterScroller = ({
   ];
 
   return (
-    <div className="-mx-3 mt-2.5 md:hidden">
+    <div className="-mx-4 mt-1 md:hidden">
       <div
         aria-label="모바일 필터"
-        className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-3 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-1 overflow-x-auto overscroll-x-contain px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {chips.map(chip => (
           <button
             key={chip.key}
             type="button"
             onClick={chip.onClick}
-            className={`inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+            className={`inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] ring-1 ring-inset transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
               chip.active
                 ? 'bg-blue-50 font-semibold text-blue-700 ring-blue-200'
                 : 'bg-slate-100/80 font-medium text-slate-600 ring-slate-200'
@@ -945,7 +945,7 @@ const MobileFilterScroller = ({
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full bg-slate-900 px-2.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
+            className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-900 px-2.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
           >
             <X size={12} /> 초기화
           </button>
@@ -953,7 +953,7 @@ const MobileFilterScroller = ({
         <button
           type="button"
           onClick={onOpenFilters}
-          className="inline-flex h-9 flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           <Filter size={12} /> 상세
           {activeFilterCount > 0 && (
@@ -1689,8 +1689,64 @@ const MobileFilterSheet = ({
 };
 
 // 모바일 필터 칩을 누르면 해당 필터만 바로 선택할 수 있는 단일 필터 시트.
+const TIME_PICKER_DAYS = ['월', '화', '수', '목', '금', '토'];
+const TIME_PICKER_PERIODS = timeOptions.filter(option => Number.isInteger(option));
+const formatPickerPeriod = (period) => (period >= 10 ? `야${period - 9}` : String(period));
+
 const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
   const panelRef = useRef(null);
+  // 에타식 시간 그리드 픽커의 임시 선택값(적용 전까지 filters 를 건드리지 않는다).
+  const [draftDay, setDraftDay] = useState(null);
+  const [draftRange, setDraftRange] = useState({ start: null, end: null });
+
+  useEffect(() => {
+    if (field !== 'time') return;
+    setDraftDay(
+      filters.dayOfWeek !== '전체' && filters.dayOfWeek !== UNASSIGNED_TIME_FILTER
+        ? filters.dayOfWeek
+        : null
+    );
+    // 저장된 endTime 은 경계값(마지막 교시 + 1)이므로 그리드 표시용으로 되돌린다.
+    const start = filters.startTime === '전체' ? null : Math.floor(Number(filters.startTime));
+    const end = filters.endTime === '전체' ? null : Math.max(start ?? 1, Math.ceil(Number(filters.endTime)) - 1);
+    setDraftRange({ start, end });
+    // filters 는 시트가 열리는 시점 스냅샷만 필요하다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [field]);
+
+  const handleTimeCellTap = (day, period) => {
+    if (draftDay !== day || draftRange.start === null) {
+      setDraftDay(day);
+      setDraftRange({ start: period, end: period });
+      return;
+    }
+    const { start, end } = draftRange;
+    const effectiveEnd = end ?? start;
+    if (period === start && effectiveEnd === start) {
+      // 단일 칸 재탭 → 선택 해제
+      setDraftDay(null);
+      setDraftRange({ start: null, end: null });
+      return;
+    }
+    if (period > effectiveEnd) {
+      setDraftRange({ start, end: period });
+    } else if (period < start) {
+      setDraftRange({ start: period, end: effectiveEnd });
+    } else {
+      setDraftRange({ start: period, end: period });
+    }
+  };
+
+  const applyTimeDraft = () => {
+    setFilters(prev => ({
+      ...prev,
+      dayOfWeek: draftDay ?? '전체',
+      startTime: draftRange.start ?? '전체',
+      // 백엔드는 '종료 경계'(schedule.endTime <= 값) 시맨틱이라 마지막 교시 + 1 로 저장한다.
+      endTime: draftRange.start === null ? '전체' : (draftRange.end ?? draftRange.start) + 1,
+    }));
+    onClose();
+  };
   useFocusTrap(!!field && field !== 'department', panelRef);
   useBodyScrollLock(!!field && field !== 'department');
   useCloseOnDesktop(!!field && field !== 'department', onClose);
@@ -1798,21 +1854,61 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
                 시간 미지정 과목만 보는 중에는 교시를 고를 수 없어요.
               </p>
             ) : (
-              // 좁은 시트 안에서 absolute 드롭다운은 잘려서 쓸 수 없으므로 그리드 버튼으로 바로 고른다.
-              <div className="space-y-4">
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-slate-500">시작 교시</p>
-                  {renderOptions('startTime', timeOptions, (value) => setFilters(prev => ({ ...prev, startTime: value })), {
-                    columnsClass: 'grid-cols-4',
-                    formatLabel: (opt) => (opt === '전체' ? '전체' : `${opt}교시`)
-                  })}
-                </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-slate-500">종료 교시</p>
-                  {renderOptions('endTime', timeOptions, (value) => setFilters(prev => ({ ...prev, endTime: value })), {
-                    columnsClass: 'grid-cols-4',
-                    formatLabel: (opt) => (opt === '전체' ? '전체' : `${opt}교시`)
-                  })}
+              <div>
+                <p className="mb-2 text-xs leading-5 text-slate-500">
+                  요일 헤더로 요일을 고르고, 교시 칸을 탭해 범위를 지정하세요. 같은 칸을 다시 탭하면 해제됩니다.
+                </p>
+                <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
+                  <table className="w-full table-fixed border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        <th className="w-9 py-1.5" aria-hidden="true"></th>
+                        {TIME_PICKER_DAYS.map(day => (
+                          <th key={day} className="p-0">
+                            <button
+                              type="button"
+                              aria-pressed={draftDay === day}
+                              onClick={() => setDraftDay(prev => (prev === day ? null : day))}
+                              className={`h-9 w-full text-[13px] transition-colors ${
+                                draftDay === day ? 'bg-blue-600 font-bold text-white' : 'font-semibold text-slate-600'
+                              }`}
+                            >
+                              {day}
+                            </button>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {TIME_PICKER_PERIODS.map(period => (
+                        <tr key={period}>
+                          <td className="border-t border-slate-100 bg-slate-50 text-center text-[10px] tabular-nums text-slate-400">
+                            {formatPickerPeriod(period)}
+                          </td>
+                          {TIME_PICKER_DAYS.map(day => {
+                            const effectiveEnd = draftRange.end ?? draftRange.start;
+                            const selected = draftDay === day
+                              && draftRange.start !== null
+                              && period >= draftRange.start
+                              && period <= effectiveEnd;
+                            return (
+                              <td key={day} className="border-l border-t border-slate-100 p-0">
+                                <button
+                                  type="button"
+                                  aria-label={`${day} ${formatPickerPeriod(period)}교시`}
+                                  aria-pressed={selected}
+                                  onClick={() => handleTimeCellTap(day, period)}
+                                  className={`h-7 w-full transition-colors ${
+                                    selected ? 'bg-blue-500' : draftDay === day ? 'bg-blue-50/60' : 'bg-white'
+                                  }`}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )
@@ -1820,8 +1916,16 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
         </div>
 
         {field === 'time' && (
-          <div className="border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
-            <button type="button" onClick={onClose} className="btn-primary h-11 w-full text-[13px]">
+          <div className="flex gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+            <button
+              type="button"
+              onClick={() => { setDraftDay(null); setDraftRange({ start: null, end: null }); }}
+              className="btn-secondary h-11 px-3 text-[13px]"
+              disabled={draftRange.start === null && draftDay === null}
+            >
+              <RotateCcw size={13} /> 초기화
+            </button>
+            <button type="button" onClick={applyTimeDraft} className="btn-primary h-11 flex-1 text-[13px]">
               적용하고 닫기
             </button>
           </div>
@@ -2142,6 +2246,7 @@ function AppContent() {
   const [searchField, setSearchField] = useState('subjectName'); // 검색 대상: subjectName | professor | courseCode
   const [showSearchSheet, setShowSearchSheet] = useState(false); // 모바일 검색어 입력 시트
   const coursesRef = useRef([]); // 투어 준비 콜백이 최신 목록을 의존성 없이 읽기 위한 참조
+  const mobileTimetableViewportRef = useRef(null); // 모바일 시간표 내부 스크롤 컨테이너
   const toastTimerRef = useRef(null);
   const [mobileFilterField, setMobileFilterField] = useState(null); // 모바일: 단일 필터 시트로 열 필드(null이면 닫힘)
   const [timetable, setTimetable] = useState([]);
@@ -2205,6 +2310,23 @@ function AppContent() {
 
   const closeNewUserTutorial = useCallback(() => {
     setTutorialRunId(0);
+  }, []);
+
+  // 모바일 시간표(내부 스크롤)에서 방금 추가한 과목의 시간대가 보이도록 스크롤한다.
+  const scrollMobileTimetableToCourse = useCallback((courseName) => {
+    requestAnimationFrame(() => {
+      const container = mobileTimetableViewportRef.current;
+      if (!container || container.scrollHeight <= container.clientHeight) return;
+      const cell = container.querySelector(`[title="${CSS.escape(courseName)}"]`);
+      if (!cell) return;
+      const containerRect = container.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      container.scrollTo({
+        top: container.scrollTop + (cellRect.top - containerRect.top)
+          - container.clientHeight / 2 + cellRect.height / 2,
+        behavior: 'smooth',
+      });
+    });
   }, []);
 
   const prepareTutorialTargets = useCallback(() => {
@@ -2614,6 +2736,7 @@ function AppContent() {
 
     const optimisticCourse = formatCourse(courseToAdd);
     setTimetable(prev => [...prev, optimisticCourse]);
+    scrollMobileTimetableToCourse(courseToAdd.name);
     showToast(`'${courseToAdd.name}' 과목을 시간표에 추가했어요!`);
 
     try {
@@ -3521,7 +3644,7 @@ function AppContent() {
         className="mx-auto max-w-7xl px-4 py-4 [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] md:px-8 md:py-6 md:[padding-left:max(2rem,env(safe-area-inset-left))] md:[padding-right:max(2rem,env(safe-area-inset-right))]"
       >
         <>
-        <section aria-label="모바일 시간표" className={`${showMobileSearch ? '' : 'sticky top-14 z-20 backdrop-blur'} -mx-4 mb-3 bg-slate-50/95 px-4 pt-2 md:hidden`}>
+        <section aria-label="모바일 시간표" className={`sticky ${showMobileSearch ? 'top-0' : 'top-14'} z-20 -mx-4 mb-3 bg-slate-50/95 px-4 pt-2 pb-1 backdrop-blur md:hidden`}>
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="flex-shrink-0 text-sm font-bold text-slate-900">내 시간표</h2>
             <div className="flex flex-shrink-0 items-center gap-1.5">
@@ -3549,7 +3672,17 @@ function AppContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowMobileSearch(value => !value)}
+                onClick={() => {
+                  setShowMobileSearch(value => {
+                    const next = !value;
+                    if (!next) {
+                      // 긴 결과 리스트에서 깊이 스크롤한 채 닫으면 문서가 짧아져도
+                      // iOS Safari 가 스크롤 오프셋을 유지해 빈 공간에 갇힌다 → 상단으로 리셋.
+                      window.scrollTo({ top: 0 });
+                    }
+                    return next;
+                  });
+                }}
                 aria-label={showMobileSearch ? '과목 검색 닫기' : '과목 검색 열기'}
                 aria-expanded={showMobileSearch}
                 className={`inline-flex h-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
@@ -3560,7 +3693,7 @@ function AppContent() {
               </button>
             </div>
           </div>
-          <div className={`rounded-2xl ${showMobileSearch ? 'max-h-[34svh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
+          <div ref={mobileTimetableViewportRef} className={`rounded-2xl ${showMobileSearch ? 'max-h-[34svh] overflow-y-auto overscroll-contain' : 'overflow-hidden'}`}>
             <h2 className="sr-only">내 시간표 표</h2>
             <TimetableGrid
               courses={timetable}
@@ -3576,13 +3709,27 @@ function AppContent() {
               isMobile
             />
           </div>
+          {showMobileSearch && (
+            <div data-tour="course-search">
+              <MobileFilterScroller
+                filters={filters}
+                searchTerm={searchTerm}
+                searchField={searchField}
+                activeFilterCount={activeFilterCount}
+                onOpenFilters={() => setShowFilters(true)}
+                onReset={handleResetFilters}
+                onOpenSearch={() => setShowSearchSheet(true)}
+                onSelectField={setMobileFilterField}
+              />
+            </div>
+          )}
         </section>
 
         {/* 검색 바 */}
         <section
           data-tour="course-search"
           aria-label="과목 검색"
-          className={`card p-3 md:p-4 ${showMobileSearch ? 'sticky top-0 z-30' : 'hidden'} md:static md:block`}
+          className="card hidden p-3 md:block md:p-4"
         >
           <div className="hidden gap-2 md:flex">
             <div className="relative flex-1">
@@ -3606,29 +3753,6 @@ function AppContent() {
             >
               <Search size={15} className="sm:hidden" />
               <span className="hidden sm:inline">검색</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1 md:block">
-            <div className="min-w-0 flex-1">
-              <MobileFilterScroller
-                filters={filters}
-                searchTerm={searchTerm}
-                searchField={searchField}
-                activeFilterCount={activeFilterCount}
-                onOpenFilters={() => setShowFilters(true)}
-                onReset={handleResetFilters}
-                onOpenSearch={() => setShowSearchSheet(true)}
-                onSelectField={setMobileFilterField}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowMobileSearch(false)}
-              aria-label="과목 검색 닫기"
-              className="icon-btn mt-2.5 h-9 w-9 flex-shrink-0 md:hidden"
-            >
-              <X size={16} />
             </button>
           </div>
 
