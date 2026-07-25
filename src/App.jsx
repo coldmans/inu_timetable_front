@@ -427,6 +427,16 @@ function AppContent() {
     window.scrollTo({ top: 0 });
   };
 
+  // 필터 칩의 개별 해제(X). filters 변경은 자동 재검색 effect 가 처리한다.
+  const handleClearFilterField = useCallback((key) => {
+    setFilters(prev => {
+      if (key === 'time') {
+        return { ...prev, timeBlocks: {}, startTime: '전체', endTime: '전체' };
+      }
+      return { ...prev, [key]: '전체' };
+    });
+  }, []);
+
   const handleResetFilters = () => {
     setSearchTerm('');
     setSearchField('subjectName');
@@ -1575,6 +1585,8 @@ function AppContent() {
                 onReset={handleResetFilters}
                 onOpenSearch={() => setShowSearchSheet(true)}
                 onSelectField={setMobileFilterField}
+                onClearField={handleClearFilterField}
+                onClearSearch={() => handleApplyMobileSearch('', searchField)}
               />
             </div>
           )}
