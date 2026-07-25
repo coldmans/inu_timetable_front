@@ -3672,7 +3672,17 @@ function AppContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowMobileSearch(value => !value)}
+                onClick={() => {
+                  setShowMobileSearch(value => {
+                    const next = !value;
+                    if (!next) {
+                      // 긴 결과 리스트에서 깊이 스크롤한 채 닫으면 문서가 짧아져도
+                      // iOS Safari 가 스크롤 오프셋을 유지해 빈 공간에 갇힌다 → 상단으로 리셋.
+                      window.scrollTo({ top: 0 });
+                    }
+                    return next;
+                  });
+                }}
                 aria-label={showMobileSearch ? '과목 검색 닫기' : '과목 검색 열기'}
                 aria-expanded={showMobileSearch}
                 className={`inline-flex h-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
