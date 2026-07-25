@@ -5,7 +5,7 @@ const openMobileCourseSearch = async (page, isMobile) => {
   if (!isMobile) return;
 
   await page.getByRole('button', { name: '과목 검색 열기' }).click();
-  await expect(page.getByRole('region', { name: '과목 검색', exact: true })).toBeVisible();
+  await expect(page.getByLabel('모바일 필터')).toBeVisible();
 };
 
 test('renders the public course search workspace', async ({ page, isMobile }) => {
@@ -192,9 +192,10 @@ test('selects periods from grid buttons in the time filter sheet', async ({ page
 
   const sheet = page.getByRole('dialog', { name: '시간 필터' });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByText('시작 교시')).toBeVisible();
 
-  await sheet.getByRole('button', { name: '1교시', exact: true }).first().click();
+  // 에타식 그리드: 셀 탭으로 요일+교시 범위(월 1~3교시) 선택
+  await sheet.getByRole('button', { name: '월 1교시' }).click();
+  await sheet.getByRole('button', { name: '월 3교시' }).click();
   await sheet.getByRole('button', { name: '적용하고 닫기' }).click();
 
   await expect(sheet).toBeHidden();
