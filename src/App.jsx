@@ -24,7 +24,7 @@ import { portalRegisteredCourses } from './components/portalMockData';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
 import { trackEvent } from './services/analytics';
 
-import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI } from './services/api';
+import { subjectAPI, wishlistAPI, timetableAPI, combinationAPI, notificationAPI } from './services/api';
 // html2canvas는 이미지 저장 시점에 동적 import 한다(초기 번들에서 제외).
 import TimetableGrid from './components/TimetableGrid';
 import {
@@ -372,6 +372,18 @@ function AppContent() {
         formatCourse(item.subject, index)
       );
       setTimetable(formattedTimetable);
+
+      // 과목 데이터 변경으로 시간표가 자동 조정된 경우 등 미읽음 알림을 1회 안내한다.
+      try {
+        const unread = await notificationAPI.getUnread();
+        if (Array.isArray(unread) && unread.length > 0) {
+          const first = unread[0]?.message || '시간표에 변경 사항이 있어요.';
+          showToast(unread.length > 1 ? `${first} (외 ${unread.length - 1}건)` : first, 'warning');
+          await notificationAPI.markAllRead();
+        }
+      } catch {
+        // 알림 API 미지원(구버전 백엔드)·실패는 조용히 무시한다.
+      }
     } catch (error) {
       debugLog('사용자 데이터 로드 실패:', error.message);
       showToast('저장한 시간표를 불러오지 못했습니다.', 'error');
@@ -1989,7 +2001,7 @@ function AppContent() {
               onClick={() => setShowDeveloperNotes(true)}
               className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
-              <Info size={13} /> 개발 노트
+              <Info size={13} /> 업데이트 소식
             </button>
             <a
               href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
