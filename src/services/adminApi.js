@@ -1,10 +1,9 @@
-import { handleResponse } from './api';
+import { fetchWithUserCsrf, handleResponse } from './api';
 
 const ADMIN_BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || '/admin/api';
 
-const getAdminHeaders = (csrfToken) => ({
+const getAdminHeaders = () => ({
   'Content-Type': 'application/json',
-  'X-Admin-Csrf': csrfToken || '',
 });
 
 const createSubjectImportFormData = (semester, file, deactivateMissing = false) => {
@@ -23,56 +22,42 @@ export const adminSubjectAPI = {
     return handleResponse(response);
   },
 
-  create: async (subjectData, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects`, {
+  create: async (subjectData) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/subjects`, {
       method: 'POST',
-      headers: getAdminHeaders(csrfToken),
-      credentials: 'include',
+      headers: getAdminHeaders(),
       body: JSON.stringify(subjectData),
     });
     return handleResponse(response);
   },
 
-  update: async (subjectId, subjectData, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
+  update: async (subjectId, subjectData) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
       method: 'PUT',
-      headers: getAdminHeaders(csrfToken),
-      credentials: 'include',
+      headers: getAdminHeaders(),
       body: JSON.stringify(subjectData),
     });
     return handleResponse(response);
   },
 
-  delete: async (subjectId, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
+  delete: async (subjectId) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/subjects/${subjectId}`, {
       method: 'DELETE',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
     });
     return handleResponse(response);
   },
 
-  importPreview: async ({ semester, file, deactivateMissing }, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/import/preview`, {
+  importPreview: async ({ semester, file, deactivateMissing }) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/subjects/import/preview`, {
       method: 'POST',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
       body: createSubjectImportFormData(semester, file, deactivateMissing),
     });
     return handleResponse(response);
   },
 
-  importApply: async ({ semester, file, deactivateMissing }, csrfToken) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/subjects/import/apply`, {
+  importApply: async ({ semester, file, deactivateMissing }) => {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/subjects/import/apply`, {
       method: 'POST',
-      headers: {
-        'X-Admin-Csrf': csrfToken || '',
-      },
-      credentials: 'include',
       body: createSubjectImportFormData(semester, file, deactivateMissing),
     });
     return handleResponse(response);
@@ -81,12 +66,11 @@ export const adminSubjectAPI = {
 
 export const adminAuthAPI = {
   login: async ({ username, password }) => {
-    const response = await fetch(`${ADMIN_BASE_URL}/auth/login`, {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       body: JSON.stringify({ username, password }),
     });
     return handleResponse(response);
@@ -100,9 +84,8 @@ export const adminAuthAPI = {
   },
 
   logout: async () => {
-    const response = await fetch(`${ADMIN_BASE_URL}/auth/logout`, {
+    const response = await fetchWithUserCsrf(`${ADMIN_BASE_URL}/auth/logout`, {
       method: 'POST',
-      credentials: 'include',
     });
     return handleResponse(response);
   },

@@ -61,7 +61,7 @@ const resetUserCsrfToken = () => {
   clearCookie('XSRF-TOKEN');
 };
 
-const getUserCsrfToken = async () => {
+export const getUserCsrfToken = async () => {
   const cookieToken = readCookie('XSRF-TOKEN');
   if (cookieToken) {
     return cookieToken;
@@ -84,7 +84,7 @@ const getUserCsrfToken = async () => {
   return csrfTokenPromise;
 };
 
-const fetchWithUserCsrf = async (url, options = {}) => {
+export const fetchWithUserCsrf = async (url, options = {}) => {
   const csrfToken = await getUserCsrfToken();
   const requestOptions = {
     ...options,
