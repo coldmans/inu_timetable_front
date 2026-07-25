@@ -173,6 +173,26 @@ export const subjectAPI = {
   },
 };
 
+// 과목 데이터 업데이트 일지 (공개)
+export const updateLogAPI = {
+  getRecent: async (limit = 20) => {
+    const response = await fetch(`${BASE_URL}/subjects/update-logs?limit=${limit}`);
+    return handleResponse(response);
+  },
+};
+
+// 유저 알림 API (과목 변경으로 인한 시간표 자동 조정 안내 등)
+export const notificationAPI = {
+  getUnread: async () => {
+    const response = await fetchWithUserSession(`${BASE_URL}/notifications/unread`);
+    return handleResponse(response);
+  },
+  markAllRead: async () => {
+    const response = await fetchWithUserCsrf(`${BASE_URL}/notifications/read`, { method: 'POST' });
+    return handleResponse(response);
+  },
+};
+
 // 서비스 설정 API
 export const settingsAPI = {
   // 현재 학기 조회 (백엔드 미지원/장애 시 호출부에서 기본값으로 폴백)
