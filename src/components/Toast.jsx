@@ -12,10 +12,10 @@ export const Toast = ({ message, show, type, onDismiss }) => (
   <div
     role="status"
     aria-live="polite"
-    className={`fixed left-1/2 top-4 z-[60] flex w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2.5 rounded-xl bg-white py-2.5 pl-3.5 pr-2 shadow-lg ring-1 ring-slate-900/10 transition-all duration-200 ease-out ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'}`}
+    className={`toast-glass fixed left-1/2 top-4 z-[90] flex w-max max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2.5 rounded-full py-2.5 pl-4 pr-2 transition-all duration-200 ease-out ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'}`}
   >
     {toastIcons[type] || toastIcons.info}
-    <span className="text-sm font-medium text-slate-800">{message}</span>
+    <span className="text-sm font-medium text-slate-900">{message}</span>
     <button onClick={onDismiss} aria-label="알림 닫기" className="icon-btn h-9 w-9">
       <X size={14} />
     </button>
