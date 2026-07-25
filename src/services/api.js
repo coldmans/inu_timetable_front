@@ -1,5 +1,6 @@
+import { CURRENT_SEMESTER } from '../utils/timetableUtils';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const DEFAULT_SEMESTER = '2026-1';
 
 const debugLog = (...args) => {
   if (import.meta.env.DEV) {
@@ -172,6 +173,15 @@ export const subjectAPI = {
   },
 };
 
+// 서비스 설정 API
+export const settingsAPI = {
+  // 현재 학기 조회 (백엔드 미지원/장애 시 호출부에서 기본값으로 폴백)
+  getCurrentSemester: async () => {
+    const response = await fetch(`${BASE_URL}/settings/current-semester`);
+    return handleResponse(response);
+  },
+};
+
 // 인증 API
 export const authAPI = {
   // 회원가입
@@ -255,7 +265,7 @@ export const wishlistAPI = {
   },
 
   // 위시리스트 조회
-  getByUser: async (userId, semester = DEFAULT_SEMESTER) => {
+  getByUser: async (userId, semester = CURRENT_SEMESTER) => {
     const response = await fetchWithUserSession(`${BASE_URL}/wishlist/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
@@ -308,7 +318,7 @@ export const timetableAPI = {
   },
 
   // 개인 시간표 조회
-  getByUser: async (userId, semester = DEFAULT_SEMESTER) => {
+  getByUser: async (userId, semester = CURRENT_SEMESTER) => {
     const response = await fetchWithUserSession(`${BASE_URL}/timetable/user/${userId}?semester=${semester}`);
     return handleResponse(response);
   },
@@ -352,7 +362,7 @@ export const combinationAPI = {
 // 과목 통계 API
 export const statisticsAPI = {
   // 과목별 참여자 통계 조회
-  getSubjectStats: async (subjectId, semester = DEFAULT_SEMESTER) => {
+  getSubjectStats: async (subjectId, semester = CURRENT_SEMESTER) => {
     if (!subjectId) {
       throw new Error('과목 ID가 필요합니다.');
     }
