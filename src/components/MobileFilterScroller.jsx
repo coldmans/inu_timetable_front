@@ -95,10 +95,11 @@ const MobileFilterScroller = ({
   ];
 
   return (
-    <div className="-mx-4 mt-1 md:hidden">
+    <div className="-mx-4 md:hidden">
+      {/* 세로 py-2: 칩의 ::after 히트 확장 영역이 overflow 컨테이너에 잘리지 않도록 패딩 안에 수용 */}
       <div
         aria-label="모바일 필터"
-        className="flex gap-1 overflow-x-auto overscroll-x-contain px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-1 overflow-x-auto overscroll-x-contain px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {chips.map(chip => (
           chip.active ? (
@@ -106,7 +107,7 @@ const MobileFilterScroller = ({
               <button
                 type="button"
                 onClick={chip.onClick}
-                className="inline-flex h-8 items-center gap-1 rounded-l-full bg-blue-50 pl-2.5 pr-1.5 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                className="relative inline-flex h-8 items-center gap-1 rounded-l-full bg-blue-50 pl-2.5 pr-1.5 text-[11px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition-colors after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
               >
                 <span className="text-blue-600/80">{chip.label}</span>
                 <span className="max-w-[7.5rem] truncate">{chip.value}</span>
@@ -115,7 +116,7 @@ const MobileFilterScroller = ({
                 type="button"
                 onClick={chip.onClear}
                 aria-label={`${chip.label} 필터 해제`}
-                className="inline-flex h-8 items-center rounded-r-full border-l border-blue-200/70 bg-blue-50 pl-1 pr-2 text-blue-500 ring-1 ring-inset ring-blue-200 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                className="relative inline-flex h-8 items-center rounded-r-full border-l border-blue-200/70 bg-blue-50 pl-1 pr-2 text-blue-500 ring-1 ring-inset ring-blue-200 transition-colors after:absolute after:-inset-y-2 after:left-0 after:-right-1 after:content-[''] hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
               >
                 <X size={11} />
               </button>
@@ -125,7 +126,7 @@ const MobileFilterScroller = ({
               key={chip.key}
               type="button"
               onClick={chip.onClick}
-              className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-100/80 px-2.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+              className="relative inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-100/80 px-2.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             >
               <span className="text-slate-500">{chip.label}</span>
               <span className="max-w-[7.5rem] truncate">{chip.value}</span>
@@ -136,7 +137,7 @@ const MobileFilterScroller = ({
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-900 px-2.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
+            className="relative inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-slate-900 px-2.5 text-[11px] font-semibold text-white after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1"
           >
             <X size={12} /> 초기화
           </button>
@@ -144,7 +145,7 @@ const MobileFilterScroller = ({
         <button
           type="button"
           onClick={onOpenFilters}
-          className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          className="relative inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           <Filter size={12} /> 상세
           {activeFilterCount > 0 && (

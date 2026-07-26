@@ -226,7 +226,7 @@ export const CourseRow = React.memo(({
                 type="button"
                 onClick={() => onAddToTimetable(course)}
                 disabled={actionsDisabled}
-                className="btn-primary h-9 px-3 text-xs"
+                className="btn-primary h-10 px-3 text-xs fine:h-9"
               >
                 <Plus size={13} /> 시간표에 추가
               </button>
@@ -236,7 +236,7 @@ export const CourseRow = React.memo(({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${course.name} 강의평 보기`}
-                className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="inline-flex h-10 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors fine:h-9 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <MessageSquare size={13} /> 강의평
               </a>
@@ -245,7 +245,7 @@ export const CourseRow = React.memo(({
                 type="button"
                 onClick={() => onAddToWishlist(course)}
                 disabled={actionsDisabled}
-                className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors fine:h-9 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
               >
                 <ShoppingCart size={13} /> 담기
               </button>
