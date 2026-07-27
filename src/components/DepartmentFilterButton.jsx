@@ -2,20 +2,28 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useFocusTrap from '../hooks/useFocusTrap';
-import { departmentGroups, getDepartmentFilterSelection } from '../utils/timetableUtils';
+import { departmentGroups as fallbackDepartmentGroups, getDepartmentFilterSelection } from '../utils/timetableUtils';
 
-const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultOpen = false, onClose, hideTrigger = false }) => {
+const DepartmentFilterButton = ({
+  value,
+  onChange,
+  departmentGroups = fallbackDepartmentGroups,
+  majorShortcuts = [],
+  defaultOpen = false,
+  onClose,
+  hideTrigger = false
+}) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const panelRef = useRef(null);
   useFocusTrap(isOpen, panelRef);
   useBodyScrollLock(isOpen);
   const [query, setQuery] = useState('');
   const [expandedGroupIds, setExpandedGroupIds] = useState(() => new Set(['group:정보기술대학']));
-  const selection = getDepartmentFilterSelection(value);
+  const selection = getDepartmentFilterSelection(value, departmentGroups);
   const active = value !== '전체';
   const selectedGroup = useMemo(
     () => departmentGroups.find(group => group.id === value || group.departments.includes(value)),
-    [value]
+    [departmentGroups, value]
   );
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -34,7 +42,7 @@ const DepartmentFilterButton = ({ value, onChange, majorShortcuts = [], defaultO
         };
       })
       .filter(group => !normalizedQuery || group.groupMatches || group.departments.length > 0)
-  ), [normalizedQuery]);
+  ), [departmentGroups, normalizedQuery]);
 
   useEffect(() => {
     if (!isOpen) return undefined;

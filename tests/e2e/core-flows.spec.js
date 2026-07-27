@@ -26,6 +26,51 @@ test('renders the public course search workspace', async ({ page, isMobile }) =>
   await expect(page.getByTestId('course-row-summary').first()).toBeVisible({ timeout: 45_000 });
 });
 
+test('loads semester departments without losing college mappings', async ({ page, isMobile }) => {
+  test.skip(isMobile, '데스크톱 학과 필터 매핑 검증');
+  let requestedSemester = null;
+
+  await page.route('**/api/subjects/departments?*', async route => {
+    requestedSemester = new URL(route.request().url()).searchParams.get('semester');
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        '경제학과(야)',
+        'Global Trade & Service학부',
+        '소비자학과',
+        '반도체융합전공',
+        'IBE전공',
+        '지능형로봇시스템연계전공',
+        '신규연계전공',
+        '교양',
+      ]),
+    });
+  });
+
+  await page.goto('/');
+  await page.getByTestId('department-filter-trigger').click();
+  const dialog = page.getByTestId('department-filter-modal');
+
+  await dialog.getByRole('button', { name: '글로벌정경대학', exact: true }).click();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '경제학과(야)' })).toBeVisible();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: 'Global Trade & Service학부' })).toBeVisible();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '소비자학과' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: '공과대학', exact: true }).click();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '반도체융합전공' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: '동북아국제통상물류학부', exact: true }).click();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: 'IBE전공' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: '단과대구분없음', exact: true }).click();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '지능형로봇시스템연계전공' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: '기타', exact: true }).click();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '신규연계전공' })).toBeVisible();
+  await expect(dialog.getByTestId('department-option').filter({ hasText: '교양' })).toHaveCount(0);
+  expect(requestedSemester).toBe('2026-2');
+});
+
 test('opens signup and exposes college to department selectors', async ({ page }) => {
   await page.goto('/');
 
@@ -74,17 +119,17 @@ test('searches courses by name', async ({ page, isMobile }) => {
     const sheet = page.getByRole('dialog', { name: '과목 검색어 입력' });
     await expect(sheet).toBeVisible();
     const sheetInput = sheet.getByRole('textbox', { name: '검색어' });
-    await sheetInput.fill('데이터베이스');
+    await sheetInput.fill('컴퓨터네트워크');
     await sheetInput.press('Enter');
     await expect(sheet).toBeHidden();
   } else {
     const searchInput = page.getByRole('textbox', { name: '과목명 검색' });
-    await searchInput.fill('데이터베이스');
+    await searchInput.fill('컴퓨터네트워크');
     await searchInput.press('Enter');
   }
 
   await expect(page.getByRole('heading', { name: '검색 결과' })).toBeVisible();
-  await expect(page.getByTestId('course-row-summary').filter({ hasText: '데이터베이스' }).first()).toBeVisible();
+  await expect(page.getByTestId('course-row-summary').filter({ hasText: '컴퓨터네트워크' }).first()).toBeVisible();
 });
 
 test('moves to the next desktop result page', async ({ page, isMobile }) => {
