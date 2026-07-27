@@ -976,21 +976,6 @@ function AppContent() {
     try {
       await timetableAPI.remove(user.id, courseToRemove.id);
       debugLog('✅ 시간표 제거 성공:', courseToRemove.name);
-
-      // 서버에서 최신 시간표 데이터를 다시 불러와서 동기화
-      setTimeout(async () => {
-        try {
-          const timetableData = await timetableAPI.getByUser(user.id, CURRENT_SEMESTER);
-          const formattedTimetable = timetableData.map((item, index) =>
-            formatCourse(item.subject, index)
-          );
-          setTimetable(formattedTimetable);
-          debugLog('🔄 시간표 동기화 완료');
-        } catch (syncError) {
-          console.warn('시간표 동기화 실패:', syncError.message);
-        }
-      }, 1000);
-
     } catch (error) {
       console.error('❌ 시간표 제거 실패:', error);
 
