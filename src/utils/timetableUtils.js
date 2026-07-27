@@ -462,9 +462,17 @@ export const courseTypes = ['전체', '전핵', '전심', '전기', '심교', '�
 
 export const grades = ['전체', '1학년', '2학년', '3학년', '4학년'];
 
-export const UNASSIGNED_TIME_FILTER = '온라인';
+// 시간표가 없는 과목 전체(온라인 + 시간 미배정/별도 운영)를 거르는 필터.
+// API 로는 unassignedTime 불리언으로 전송되므로 이 문자열은 UI 라벨 겸 상태값이다.
+export const UNASSIGNED_TIME_FILTER = '시간 미지정';
 
 export const filterDaysOfWeek = ['전체', '월', '화', '수', '목', '금', '토', UNASSIGNED_TIME_FILTER];
+
+// 시간표 없는 과목의 표시 라벨. 강의계획서 기준 온라인(e-Learning/K-MOOC 등)과
+// 단순히 시간이 아직 없는 과목(이론 강의 미배정, RISE 별도 운영)이 섞여 있어 구분해 표기한다.
+export const getNoScheduleLabel = (classMethod) => (
+    classMethod === 'ONLINE' || classMethod === 'BLENDED' ? '온라인' : '시간 미정'
+);
 
 export const timeOptions = ['전체', 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12];
 

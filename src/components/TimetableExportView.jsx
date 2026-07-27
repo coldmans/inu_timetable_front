@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { parseTime, parseTimeString, daysOfWeek, timeSlots } from '../utils/timetableUtils';
+import { getNoScheduleLabel, parseTime, parseTimeString, daysOfWeek, timeSlots } from '../utils/timetableUtils';
 
 const EXPORT_WIDTH = 760;
 const EXPORT_HORIZONTAL_PADDING = 16;
@@ -158,7 +158,7 @@ const ExportOnlineCourseList = ({ courses }) => {
   return (
     <section className="mt-3 rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 과목</h2>
+        <h2 className="text-[12px] font-black leading-none text-slate-800">온라인 · 시간 미정 과목</h2>
         <span className="text-[10px] font-bold leading-none text-slate-500">
           총 {courses.length}개
         </span>
@@ -166,7 +166,8 @@ const ExportOnlineCourseList = ({ courses }) => {
       <div className={useCompactGrid ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
         {visibleCourses.map((course, index) => {
           const colorScheme = getCourseColorScheme(course);
-          const onlineMeta = [getOnlineCourseMeta(course), '온라인'].filter(Boolean).join(' · ');
+          const scheduleLabel = getNoScheduleLabel(course.classMethod);
+          const onlineMeta = [getOnlineCourseMeta(course), scheduleLabel].filter(Boolean).join(' · ');
           return (
             <div
               key={course.id || `${course.name}-${index}`}
@@ -198,7 +199,7 @@ const ExportOnlineCourseList = ({ courses }) => {
                     whiteSpace: 'normal',
                   }}
                 >
-                  {onlineMeta || '온라인'}
+                  {onlineMeta || scheduleLabel}
                 </div>
               </div>
             </div>
@@ -207,7 +208,7 @@ const ExportOnlineCourseList = ({ courses }) => {
       </div>
       {hiddenCount > 0 && (
         <div className="mt-2 text-center text-[9px] font-bold text-slate-500">
-          외 {hiddenCount}개 온라인 과목
+          외 {hiddenCount}개 과목
         </div>
       )}
     </section>
