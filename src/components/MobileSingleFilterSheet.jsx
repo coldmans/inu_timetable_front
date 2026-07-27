@@ -180,7 +180,8 @@ const MobileSingleFilterSheet = ({
 
   return (
     <div className={`fixed inset-0 z-[65] flex justify-center md:hidden ${field === 'time' ? 'items-stretch bg-white' : 'items-end bg-slate-950/35 p-0 backdrop-blur-sm'}`} role="dialog" aria-modal="true" aria-label={`${titleMap[field]} 필터`}>
-      <div ref={panelRef} tabIndex={-1} className={`modal-panel flex w-full flex-col overflow-hidden bg-white focus:outline-none ${field === 'time' ? 'h-[100dvh]' : 'max-h-[80svh] rounded-t-2xl shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10'}`}>
+      {/* 시간 그리드는 svh 고정: dvh 는 iOS 브라우저 바 출몰 시 행 높이가 출렁여 선택 셀이 어긋나 보인다 */}
+      <div ref={panelRef} tabIndex={-1} className={`modal-panel flex w-full flex-col overflow-hidden bg-white focus:outline-none ${field === 'time' ? 'h-[100svh]' : 'max-h-[80svh] rounded-t-2xl shadow-2xl shadow-slate-950/15 ring-1 ring-slate-900/10'}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <h2 className="text-base font-bold text-slate-900">{titleMap[field]}</h2>
           <button type="button" onClick={onClose} className="icon-btn h-10 w-10" aria-label="닫기">
@@ -226,11 +227,12 @@ const MobileSingleFilterSheet = ({
                     ))}
                     {TIME_PICKER_HOURS.map(hour => (
                       <React.Fragment key={`row-${hour}`}>
+                        {/* 숫자를 행 상단 경계선에 붙여 "12 = 12시가 시작되는 선"으로 읽히게 한다(중앙 배치는 경계 오인 유발) */}
                         <button
                           type="button"
                           aria-label={`${hour}시 전체 선택`}
                           onClick={() => toggleWholeHour(hour)}
-                          className="border-t border-slate-100 bg-slate-50 text-[11px] tabular-nums text-slate-400"
+                          className="flex items-start justify-center border-t border-slate-100 bg-slate-50 pt-0.5 text-[11px] leading-none tabular-nums text-slate-400"
                         >
                           {hour}
                         </button>
@@ -259,18 +261,31 @@ const MobileSingleFilterSheet = ({
         </div>
 
         {field === 'time' && (
-          <div className="flex gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
-            <button
-              type="button"
-              onClick={() => setDraftBlocks({})}
-              className="btn-secondary h-11 px-3 text-[13px]"
-              disabled={Object.keys(draftBlocks).length === 0}
-            >
-              <RotateCcw size={13} /> 초기화
-            </button>
-            <button type="button" onClick={applyTimeDraft} className="btn-primary h-11 flex-1 text-[13px]">
-              적용하고 닫기
-            </button>
+          <div className="border-t border-slate-100 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)]">
+            {/* 백엔드는 요일당 구간 1개만 받으므로 떨어진 칸은 병합 적용된다 — 재오픈 시 "안 누른 칸이 켜짐" 오해 방지용 사전 안내 */}
+            {(() => {
+              const merged = Object.entries(draftBlocks)
+                .filter(([, hours]) => hours.length > 1 && Math.max(...hours) - Math.min(...hours) + 1 !== hours.length)
+                .map(([day, hours]) => `${day} ${Math.min(...hours)}~${Math.max(...hours) + 1}시`);
+              return merged.length > 0 ? (
+                <p className="mb-2 text-[11px] leading-4 text-amber-600">
+                  떨어진 칸은 사이 시간을 포함해 {merged.join(' · ')} 구간으로 적용돼요.
+                </p>
+              ) : null;
+            })()}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDraftBlocks({})}
+                className="btn-secondary h-11 px-3 text-[13px]"
+                disabled={Object.keys(draftBlocks).length === 0}
+              >
+                <RotateCcw size={13} /> 초기화
+              </button>
+              <button type="button" onClick={applyTimeDraft} className="btn-primary h-11 flex-1 text-[13px]">
+                적용하고 닫기
+              </button>
+            </div>
           </div>
         )}
       </div>
