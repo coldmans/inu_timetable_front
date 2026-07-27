@@ -1,6 +1,6 @@
 // 현재 학기. 앱 부팅 시 서버 설정(GET /api/settings/current-semester)으로 갱신된다.
 // ESM live binding 이므로 setCurrentSemester 이후 import 측에서도 최신 값을 읽는다.
-export let CURRENT_SEMESTER = '2026-1';
+export let CURRENT_SEMESTER = '2026-2';
 
 export const SEMESTER_PATTERN = /^\d{4}-[12]$/;
 
@@ -222,6 +222,7 @@ export const departments = [
     '전체',
     '&Service',
     'Global',
+    'Global Trade & Service학부',
     'HUSS(타대학)',
     'HUSS포용사회이니셔티브학부',
     'IBE전공',
@@ -230,6 +231,7 @@ export const departments = [
     '건축공학전공',
     '경영학부',
     '경제학과',
+    '경제학과(야)',
     '공연예술학과',
     '광전자공학전공(연계)',
     '교양',
@@ -301,6 +303,7 @@ export const departments = [
     '정보통신공학과',
     '정치외교학과',
     '조형예술학부',
+    '지능형로봇시스템연계전공',
     '중국학과',
     '중어중국학과',
     '창의인재개발학과',
@@ -327,15 +330,15 @@ const departmentGroupDefinitions = [
     },
     {
         label: '사회과학대학',
-        departments: ['사회복지학과', '미디어커뮤니케이션학과', '문헌정보학과', '창의인재개발학과', '소비자학과']
+        departments: ['사회복지학과', '미디어커뮤니케이션학과', '문헌정보학과', '창의인재개발학과']
     },
     {
         label: '글로벌정경대학',
-        departments: ['행정학과', '정치외교학과', '경제학과', '무역학부', '무역학부(야)', 'Global', 'Trade', '&Service']
+        departments: ['행정학과', '정치외교학과', '경제학과', '경제학과(야)', '무역학부', '무역학부(야)', 'Global Trade & Service학부', '소비자학과', 'Global', 'Trade', '&Service']
     },
     {
         label: '공과대학',
-        departments: ['기계공학과', '전기공학과', '전자공학과', '전자공학부', '전자공학전공', '전자(야)', '산업경영공학과', '산경(야)', '신소재공학과', '안전공학과', '에너지화학공학과', '바이오-로봇시스템공학과']
+        departments: ['기계공학과', '전기공학과', '전자공학과', '전자공학부', '전자공학전공', '반도체융합전공', '전자(야)', '산업경영공학과', '산경(야)', '신소재공학과', '안전공학과', '에너지화학공학과', '바이오-로봇시스템공학과']
     },
     {
         label: '정보기술대학',
@@ -366,44 +369,55 @@ const departmentGroupDefinitions = [
         departments: ['자유전공학부']
     },
     {
-        label: '단과대구분없음',
-        departments: ['HUSS(타대학)', 'HUSS포용사회이니셔티브학부', 'IBE전공', '동북아국제통상전공', '스마트물류공학전공', '물류학전공(연계)', '광전자공학전공(연계)', '미래교육디자인연계전공', '미래자동차연계전공', '소셜데이터사이언스연계전공', '인문문화예술기획연계전공', '창의적디자인연계전공', '반도체융합전공', '국제개발협력연계전공']
+        label: '동북아국제통상물류학부',
+        departments: ['동북아국제통상전공', 'IBE전공', '스마트물류공학전공']
     },
     {
-        label: '단과대구분없음(법학)',
+        label: '단과대구분없음',
+        departments: ['HUSS(타대학)', 'HUSS포용사회이니셔티브학부', '물류학전공(연계)', '광전자공학전공(연계)', '미래교육디자인연계전공', '미래자동차연계전공', '지능형로봇시스템연계전공', '소셜데이터사이언스연계전공', '인문문화예술기획연계전공', '창의적디자인연계전공', '국제개발협력연계전공']
+    },
+    {
+        label: '법학부',
         departments: ['법학부']
     }
 ];
 
 const nonDepartmentFilterValues = new Set(['교양', '심화교양', '교직', '일선', '군사학']);
-const knownDepartmentSet = new Set(departments);
 
-const createDepartmentGroup = ({ label, departments: groupDepartments }) => ({
-    id: `group:${label}`,
-    label,
-    departments: groupDepartments.filter(department => knownDepartmentSet.has(department))
-});
+export const buildDepartmentGroups = (availableDepartments = departments) => {
+    const normalizedDepartments = [...new Set(
+        availableDepartments
+            .filter(department => typeof department === 'string')
+            .map(department => department.trim())
+            .filter(Boolean)
+    )];
+    const availableDepartmentSet = new Set(normalizedDepartments);
+    const curatedDepartmentGroups = departmentGroupDefinitions
+        .map(({ label, departments: groupDepartments }) => ({
+            id: `group:${label}`,
+            label,
+            departments: groupDepartments.filter(department => availableDepartmentSet.has(department))
+        }))
+        .filter(group => group.departments.length > 0);
+    const groupedDepartmentSet = new Set(curatedDepartmentGroups.flatMap(group => group.departments));
+    const ungroupedDepartments = normalizedDepartments
+        .filter(department => (
+            department !== '전체'
+            && !nonDepartmentFilterValues.has(department)
+            && !groupedDepartmentSet.has(department)
+        ));
 
-const curatedDepartmentGroups = departmentGroupDefinitions
-    .map(createDepartmentGroup)
-    .filter(group => group.departments.length > 0);
+    return [
+        ...curatedDepartmentGroups,
+        ...(ungroupedDepartments.length > 0
+            ? [{ id: 'group:기타', label: '기타', departments: ungroupedDepartments }]
+            : [])
+    ];
+};
 
-const groupedDepartmentSet = new Set(curatedDepartmentGroups.flatMap(group => group.departments));
-const ungroupedDepartments = departments
-    .filter(department => (
-        department !== '전체'
-        && !nonDepartmentFilterValues.has(department)
-        && !groupedDepartmentSet.has(department)
-    ));
+export const departmentGroups = buildDepartmentGroups();
 
-export const departmentGroups = [
-    ...curatedDepartmentGroups,
-    ...(ungroupedDepartments.length > 0
-        ? [{ id: 'group:기타', label: '기타', departments: ungroupedDepartments }]
-        : [])
-];
-
-export const getDepartmentFilterSelection = (value) => {
+export const getDepartmentFilterSelection = (value, availableGroups = departmentGroups) => {
     if (!value || value === '전체') {
         return {
             type: 'all',
@@ -412,7 +426,7 @@ export const getDepartmentFilterSelection = (value) => {
         };
     }
 
-    const group = departmentGroups.find(candidate => candidate.id === value);
+    const group = availableGroups.find(candidate => candidate.id === value);
     if (group) {
         return {
             type: 'group',
@@ -430,8 +444,8 @@ export const getDepartmentFilterSelection = (value) => {
     };
 };
 
-export const getDepartmentFilterParams = (value) => {
-    const selection = getDepartmentFilterSelection(value);
+export const getDepartmentFilterParams = (value, availableGroups = departmentGroups) => {
+    const selection = getDepartmentFilterSelection(value, availableGroups);
 
     if (selection.type === 'all') {
         return {};

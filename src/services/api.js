@@ -171,6 +171,16 @@ export const subjectAPI = {
     const response = await fetch(`${BASE_URL}/subjects/count`);
     return handleResponse(response);
   },
+
+  // 현재 학기에 실제로 존재하는 학과/전공 목록 조회
+  getDepartments: async (semester = CURRENT_SEMESTER) => {
+    const params = new URLSearchParams();
+    if (semester) {
+      params.set('semester', semester);
+    }
+    const response = await fetch(`${BASE_URL}/subjects/departments?${params}`);
+    return handleResponse(response);
+  },
 };
 
 // 과목 데이터 업데이트 일지 (공개)

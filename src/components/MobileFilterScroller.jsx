@@ -2,10 +2,10 @@ import { Filter, X } from 'lucide-react';
 import { SEARCH_FIELD_LABELS } from './MobileSearchSheet';
 import { getDepartmentFilterSelection } from '../utils/timetableUtils';
 
-const getCompactFilterLabel = (filterKey, value) => {
+const getCompactFilterLabel = (filterKey, value, departmentGroups) => {
   if (filterKey === 'department') {
     if (value === '전체') return '전체';
-    const selection = getDepartmentFilterSelection(value);
+    const selection = getDepartmentFilterSelection(value, departmentGroups);
     return selection.type === 'group' ? selection.group?.label || value : selection.department || value;
   }
 
@@ -22,7 +22,8 @@ const MobileFilterScroller = ({
   onOpenSearch,
   onSelectField,
   onClearField,
-  onClearSearch
+  onClearSearch,
+  departmentGroups
 }) => {
   const timeBlockEntries = Object.entries(filters.timeBlocks || {});
   const timeLabel = timeBlockEntries.length > 0
@@ -37,7 +38,7 @@ const MobileFilterScroller = ({
     {
       key: 'department',
       label: '학과',
-      value: getCompactFilterLabel('department', filters.department),
+      value: getCompactFilterLabel('department', filters.department, departmentGroups),
       active: filters.department !== '전체',
       onClick: () => onSelectField('department'),
       onClear: () => onClearField('department')

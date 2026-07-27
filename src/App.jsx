@@ -32,6 +32,7 @@ import {
   formatCourse,
   getCourseTypeColorScheme,
   checkConflict,
+  buildDepartmentGroups,
   getDepartmentFilterParams,
   courseTypes,
   grades,
@@ -65,6 +66,7 @@ function AppContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ department: '전체', subjectType: '전체', grade: '전체', credits: '전체', dayOfWeek: '전체', startTime: '전체', endTime: '전체' });
+  const [filterDepartmentGroups, setFilterDepartmentGroups] = useState(() => buildDepartmentGroups());
   const [expandedCourseId, setExpandedCourseId] = useState(null);
 
   // 페이지 상태 관리
@@ -147,6 +149,24 @@ function AppContent() {
     setTutorialRunId(0);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    subjectAPI.getDepartments(CURRENT_SEMESTER)
+      .then(availableDepartments => {
+        if (!cancelled && Array.isArray(availableDepartments) && availableDepartments.length > 0) {
+          setFilterDepartmentGroups(buildDepartmentGroups(availableDepartments));
+        }
+      })
+      .catch(error => {
+        debugLog('학과/전공 목록 조회 실패, 기본 목록을 사용합니다.', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // iOS WebKit 은 방금 스크롤 가능해진 요소를 첫 터치 전까지 제스처 대상으로
   // 등록하지 않는 경우가 있어, 검색이 열리면 1px 스크롤 킥으로 강제 등록한다.
   useEffect(() => {
@@ -226,7 +246,7 @@ function AppContent() {
       const gradeFilter = filters.grade === '전체' ? undefined :
         parseInt(filters.grade.replace('학년', ''));
       const isUnassignedTimeFilter = filters.dayOfWeek === UNASSIGNED_TIME_FILTER;
-      const departmentFilterParams = getDepartmentFilterParams(filters.department);
+      const departmentFilterParams = getDepartmentFilterParams(filters.department, filterDepartmentGroups);
 
       const effectiveTerm = searchOverrides?.searchTerm ?? searchTerm;
       const effectiveField = searchOverrides?.searchField ?? searchField;
@@ -1465,6 +1485,7 @@ function AppContent() {
         activeFilterCount={activeFilterCount}
         onReset={handleResetFilters}
         majorShortcuts={userMajorShortcuts}
+        departmentGroups={filterDepartmentGroups}
       />
 
       <MobileSingleFilterSheet
@@ -1473,6 +1494,7 @@ function AppContent() {
         setFilters={setFilters}
         onClose={() => setMobileFilterField(null)}
         majorShortcuts={userMajorShortcuts}
+        departmentGroups={filterDepartmentGroups}
       />
 
       <header
@@ -1602,6 +1624,7 @@ function AppContent() {
             <div data-tour="course-search">
               <MobileFilterScroller
                 filters={filters}
+                departmentGroups={filterDepartmentGroups}
                 searchTerm={searchTerm}
                 searchField={searchField}
                 activeFilterCount={activeFilterCount}
@@ -1650,6 +1673,7 @@ function AppContent() {
           <div className="mt-2.5 hidden grid-cols-2 gap-1.5 md:grid md:grid-cols-4 lg:grid-cols-7">
             <DepartmentFilterButton
               value={filters.department}
+              departmentGroups={filterDepartmentGroups}
               majorShortcuts={userMajorShortcuts}
               onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
             />

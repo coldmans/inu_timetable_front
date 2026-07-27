@@ -10,7 +10,14 @@ const TIME_PICKER_DAYS = ['월', '화', '수', '목', '금', '토'];
 // 24시 기준 표시 시간대(8시~23시). 교시 변환은 시각-8 (9시 = 1교시).
 const TIME_PICKER_HOURS = Array.from({ length: 16 }, (_, index) => 8 + index);
 
-const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorShortcuts }) => {
+const MobileSingleFilterSheet = ({
+  field,
+  filters,
+  setFilters,
+  onClose,
+  majorShortcuts,
+  departmentGroups
+}) => {
   const panelRef = useRef(null);
   // 에타식 시간 그리드 픽커의 임시 선택값. { 요일: [시각,...] } — 셀 단위 자유 토글.
   const [draftBlocks, setDraftBlocks] = useState({});
@@ -158,6 +165,7 @@ const MobileSingleFilterSheet = ({ field, filters, setFilters, onClose, majorSho
     return (
       <DepartmentFilterButton
         value={filters.department}
+        departmentGroups={departmentGroups}
         majorShortcuts={majorShortcuts}
         defaultOpen
         hideTrigger

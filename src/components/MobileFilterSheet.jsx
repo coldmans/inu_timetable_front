@@ -14,7 +14,8 @@ const MobileFilterSheet = ({
   setFilters,
   activeFilterCount,
   onReset,
-  majorShortcuts
+  majorShortcuts,
+  departmentGroups
 }) => {
   const panelRef = useRef(null);
   useFocusTrap(isOpen, panelRef);
@@ -74,6 +75,7 @@ const MobileFilterSheet = ({
         <div className="flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-4 py-3">
           <DepartmentFilterButton
             value={filters.department}
+            departmentGroups={departmentGroups}
             majorShortcuts={majorShortcuts}
             onChange={(event) => updateFilter('department', event.target.value)}
           />
