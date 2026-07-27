@@ -109,6 +109,126 @@ test('asks anonymous users to log in before saving a course', async ({ page, isM
   await expect(page.getByText('INU 시간표 계정으로 계속하세요.')).toBeVisible();
 });
 
+test('keeps an added course when a removal resync finishes late', async ({ page, isMobile }) => {
+  test.skip(isMobile, '데스크톱 시간표 상태 경합 회귀 검증');
+
+  const courseName = '영화속바이러스의이해';
+  const course = {
+    id: 12346,
+    subjectName: courseName,
+    courseCode: '0005069001',
+    credits: 3,
+    professor: '예정용',
+    department: '교양',
+    subjectType: '핵교',
+    grade: 0,
+    semester: '2026-2',
+    schedules: [{ dayOfWeek: '화', startTime: '09:00', endTime: '12:00' }],
+  };
+  const existingCourse = {
+    id: 12000,
+    subjectName: '기존 테스트 과목',
+    courseCode: 'TEST0001',
+    credits: 3,
+    professor: '테스트교수',
+    department: '교양',
+    subjectType: '핵교',
+    grade: 0,
+    semester: '2026-2',
+    schedules: [{ dayOfWeek: '목', startTime: '09:00', endTime: '12:00' }],
+  };
+
+  let releaseRemovalResync;
+  const removalResyncGate = new Promise(resolve => {
+    releaseRemovalResync = resolve;
+  });
+  let timetableLoadCount = 0;
+  let removalResyncStarted = false;
+
+  await page.route('**/api/settings/current-semester', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ semester: '2026-2' }),
+  }));
+  await page.route('**/api/auth/me', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: 681,
+      username: 'race-test-user',
+      grade: 4,
+      major: '컴퓨터공학부',
+      majors: [],
+    }),
+  }));
+  await page.route('**/api/subjects/filter?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      content: [course],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+    }),
+  }));
+  await page.route('**/api/subjects/departments?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/wishlist/user/**', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/timetable/user/**', async route => {
+    timetableLoadCount += 1;
+    if (timetableLoadCount === 1) {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([{ id: 1, subject: existingCourse }]),
+      });
+      return;
+    }
+
+    removalResyncStarted = true;
+    await removalResyncGate;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: '[]',
+    });
+  });
+  await page.route('**/api/auth/csrf', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ token: 'test-csrf-token' }),
+  }));
+  await page.route('**/api/timetable/remove?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: '{}',
+  }));
+  await page.route('**/api/timetable/add', async route => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 1 }),
+    });
+    releaseRemovalResync();
+  });
+  await page.route('**/api/notifications/unread', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /기존 테스트 과목.*옵션 열기/ }).click();
+  await page.getByRole('menuitem', { name: '시간표에서 제거', exact: true }).click();
+  // 과거 구현의 1초 지연 재조회가 시작될 시간까지 기다린 뒤 새 과목을 추가한다.
+  await page.waitForTimeout(1_200);
+
+  const courseSummary = page.getByTestId('course-row-summary').filter({ hasText: courseName });
+  await expect(courseSummary).toBeVisible();
+  await courseSummary.locator('..').getByRole('button', { name: '추가', exact: true }).click();
+
+  await expect(page.getByRole('status')).toContainText('시간표에 추가했어요');
+  await expect(page.getByRole('button', { name: new RegExp(`${courseName}.*옵션 열기`) })).toBeVisible();
+  expect(removalResyncStarted).toBe(false);
+});
+
 test('searches courses by name', async ({ page, isMobile }) => {
   await page.goto('/');
   await openMobileCourseSearch(page, isMobile);
