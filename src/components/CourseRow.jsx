@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { AlertTriangle, ChevronDown, Clock, MessageSquare, Plus, RotateCcw, SearchX, ShoppingCart } from 'lucide-react';
-import { parseTime, parseTimeString } from '../utils/timetableUtils';
+import { getNoScheduleLabel, parseTime, parseTimeString } from '../utils/timetableUtils';
 
 const formatPeriod = (value) => {
   const rounded = Math.round(value * 2) / 2;
@@ -11,7 +11,7 @@ const formatPeriod = (value) => {
 const formatScheduleLabel = (course) => {
   const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
   if (!times || times.length === 0) {
-    return course.time ? course.time : '온라인';
+    return course.time ? course.time : getNoScheduleLabel(course.classMethod);
   }
   return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
 };
@@ -95,7 +95,7 @@ const WishlistCountChip = ({ count, variant = 'meta', className = '' }) => {
 const getClassMethodLabel = (classMethod) => {
   if (classMethod === 'ONLINE') return '온라인';
   if (classMethod === 'OFFLINE') return '오프라인';
-  if (classMethod === 'HYBRID') return '혼합';
+  if (classMethod === 'HYBRID' || classMethod === 'BLENDED') return '혼합';
   return classMethod || null;
 };
 

@@ -3,11 +3,12 @@ import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutLis
 import TimetableGrid from './TimetableGrid';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
+import { getNoScheduleLabel } from '../utils/timetableUtils';
 
 // 시간 표시를 위한 헬퍼 함수
 const formatTimeDisplay = (course) => {
   const schedules = course?.schedules;
-  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(course?.classMethod);
 
   const dayMapping = {
     'MONDAY': '월',

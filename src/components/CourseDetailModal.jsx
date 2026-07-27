@@ -2,11 +2,12 @@ import { useRef } from 'react';
 import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
+import { getNoScheduleLabel } from '../utils/timetableUtils';
 
 // 시간 정보를 한국어 표시용으로 포맷하는 함수
 const formatTimeDisplay = (course) => {
   const schedules = course?.schedules;
-  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(course?.classMethod);
 
   const dayMapping = {
     'MONDAY': '월',
@@ -60,7 +61,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
   const classMethodLabel =
     course.classMethod === 'ONLINE' ? '온라인' :
     course.classMethod === 'OFFLINE' ? '오프라인' :
-    course.classMethod === 'HYBRID' ? '혼합' : course.classMethod;
+    course.classMethod === 'HYBRID' || course.classMethod === 'BLENDED' ? '혼합' : course.classMethod;
 
   return (
     <div

@@ -7,6 +7,7 @@ import {
   parseTime,
   getCourseTypeBadgeClass,
   getCourseTypeColorScheme,
+  getNoScheduleLabel,
   timeSlots,
   displayTimeSlots
 } from '../utils/timetableUtils';
@@ -178,7 +179,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
 
   const formatTimeDisplay = (subject) => {
     const schedules = subject?.schedules;
-    if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return '온라인';
+    if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(subject?.classMethod);
 
     const dayMapping = {
       'MONDAY': '월', 'TUESDAY': '화', 'WEDNESDAY': '수', 'THURSDAY': '목', 'FRIDAY': '금'
@@ -305,7 +306,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
                 {unscheduledCourses.length > 0 && (
                   <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <div className="border-b border-slate-100 px-3 py-2">
-                      <h4 className="text-xs font-semibold text-slate-500">온라인 · 시간 미지정</h4>
+                      <h4 className="text-xs font-semibold text-slate-500">온라인 · 시간 미정</h4>
                     </div>
                     <div className="course-list">
                       {unscheduledCourses.map(({ subject, colorScheme }, idx) => (
@@ -317,7 +318,7 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
                             <div className="truncate text-xs font-semibold text-slate-900">{subject.subjectName}</div>
                             <div className="mt-1 flex items-center gap-1.5">
                               <span className={`course-type-badge ${colorScheme.bg} ${colorScheme.text}`}>{subject.subjectType}</span>
-                              <span className="meta-chip bg-white">온라인</span>
+                              <span className="meta-chip bg-white">{getNoScheduleLabel(subject.classMethod)}</span>
                             </div>
                           </div>
                         </div>
