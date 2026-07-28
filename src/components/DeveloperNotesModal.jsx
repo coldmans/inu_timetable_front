@@ -3,17 +3,11 @@ import { CalendarClock, FileSpreadsheet, X } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { updateLogAPI } from '../services/api';
+import { formatUtcDateTimeInKorea } from '../utils/dateTime';
 
 const SOURCE_FORMAT_LABELS = {
   OFFICIAL_TIMETABLE: '공식 종합강의시간표',
   SYLLABUS: '강의계획서 조회',
-};
-
-const formatLogDate = (value) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 // 과목 데이터 반영 이력(서버 기록)을 보여주는 업데이트 소식 모달.
@@ -79,7 +73,7 @@ const DeveloperNotesModal = ({ onClose }) => {
                 <li key={`${log.appliedAt}-${log.semester}`} className="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-inset ring-slate-100">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <CalendarClock size={14} className="flex-shrink-0 text-blue-500" />
-                    <time className="text-xs font-semibold tabular-nums text-slate-500">{formatLogDate(log.appliedAt)}</time>
+                    <time className="text-xs font-semibold tabular-nums text-slate-500">{formatUtcDateTimeInKorea(log.appliedAt)}</time>
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">{log.semester} 학기</span>
                     {SOURCE_FORMAT_LABELS[log.sourceFormat] && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
