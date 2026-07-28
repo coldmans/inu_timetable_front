@@ -31,7 +31,7 @@ test('shows each schedule room segment in course results', async ({ page, isMobi
   const course = {
     id: 99991,
     subjectName: courseName,
-    courseCode: 'ROOM0001',
+    courseCode: '0005069001',
     credits: 3,
     professor: '테스트교수',
     department: '건축공학전공',
@@ -79,7 +79,9 @@ test('shows each schedule room segment in course results', async ({ page, isMobi
 
   const courseSummary = page.getByTestId('course-row-summary').filter({ hasText: courseName });
   await expect(courseSummary).toBeVisible();
-  await expect(courseSummary).toContainText('목 1~7교시 · 28-508 / 09-501 / 27-104');
+  await expect(courseSummary.getByTestId('course-time-chip')).toHaveText('목 1~7교시');
+  await expect(courseSummary.getByTestId('course-room-chip')).toHaveText('28-508 / 09-501 / 27-104');
+  await expect(courseSummary).not.toContainText('목 1~7교시 · 28-508');
   await expect(courseSummary).not.toContainText('목 1~4교시');
 
   if (isMobile) {
