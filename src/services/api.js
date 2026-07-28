@@ -402,6 +402,21 @@ export const statisticsAPI = {
   },
 };
 
+// 사이트 내 문의 API (인스타 DM 링크 대체)
+export const inquiryAPI = {
+  // 문의 접수. 비로그인도 가능하고, 로그인 상태면 세션 쿠키로 작성자가 함께 기록된다.
+  submit: async ({ content, contact }) => {
+    const response = await fetchWithUserSession(`${BASE_URL}/inquiries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content, contact }),
+    });
+    return handleResponse(response);
+  },
+};
+
 // 설문조사 API
 export const surveyAPI = {
   // 설문 응답 제출
