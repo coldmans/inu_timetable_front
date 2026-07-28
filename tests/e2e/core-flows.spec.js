@@ -79,17 +79,15 @@ test('shows each schedule room segment in course results', async ({ page, isMobi
 
   const courseSummary = page.getByTestId('course-row-summary').filter({ hasText: courseName });
   await expect(courseSummary).toBeVisible();
-  await expect(courseSummary).toContainText('28-508');
-  await expect(courseSummary).toContainText('09-501');
-  await expect(courseSummary).toContainText('27-104');
+  await expect(courseSummary).toContainText('목 1~7교시 · 28-508 / 09-501 / 27-104');
+  await expect(courseSummary).not.toContainText('목 1~4교시');
 
   if (isMobile) {
     await courseSummary.click();
     const roomDetails = page.getByTestId('course-room-details');
     await expect(roomDetails).toBeVisible();
-    await expect(roomDetails).toContainText('목 1~4교시 · 28-508');
-    await expect(roomDetails).toContainText('목 4~5.5교시 · 09-501');
-    await expect(roomDetails).toContainText('목 5.5~7교시 · 27-104');
+    await expect(roomDetails).toContainText('28-508 / 09-501 / 27-104');
+    await expect(roomDetails).not.toContainText('목 1~4교시');
   }
 });
 

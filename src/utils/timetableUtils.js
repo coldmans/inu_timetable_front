@@ -170,14 +170,7 @@ export const getCourseRoomNames = (course) => {
 };
 
 export const formatCourseRoomDetails = (course) => {
-    const roomSegments = getCourseRoomSegments(course);
-    if (roomSegments.length === 0) {
-        return getCourseRoomNames(course);
-    }
-
-    return [...new Set(roomSegments.map(segment => (
-        `${segment.day} ${formatScheduleRange(segment.startTime, segment.endTime)} · ${segment.room}`
-    )))];
+    return getCourseRoomNames(course);
 };
 
 export const formatCourseSchedule = (course, { includeRooms = true } = {}) => {
@@ -187,22 +180,22 @@ export const formatCourseSchedule = (course, { includeRooms = true } = {}) => {
         return course?.time || getNoScheduleLabel(course?.classMethod);
     }
 
-    return schedules.flatMap(schedule => {
+    return schedules.map(schedule => {
         const day = normalizeScheduleDay(schedule.dayOfWeek);
         const roomSegments = Array.isArray(schedule.roomSegments)
             ? schedule.roomSegments.filter(segment => (
                 typeof segment?.room === 'string' && segment.room.trim()
             ))
             : [];
+        const scheduleLabel = `${day} ${formatScheduleRange(schedule.startTime, schedule.endTime)}`;
 
         if (includeRooms && roomSegments.length > 0) {
-            return roomSegments.map(segment => (
-                `${day} ${formatScheduleRange(segment.startTime, segment.endTime)} · ${segment.room.trim()}`
-            ));
+            const roomNames = [...new Set(roomSegments.map(segment => segment.room.trim()))];
+            return `${scheduleLabel} · ${roomNames.join(' / ')}`;
         }
 
-        return `${day} ${formatScheduleRange(schedule.startTime, schedule.endTime)}`;
-    }).join(' / ');
+        return scheduleLabel;
+    }).join(', ');
 };
 
 const subjectTypeAliases = {
