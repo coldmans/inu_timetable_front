@@ -6,7 +6,7 @@ import { formatCourseRoomDetails, formatCourseSchedule } from '../utils/timetabl
 
 const InfoRow = ({ icon: Icon, label, value, valueClass = 'text-slate-900', wrap = false }) => (
   <div className={`flex justify-between gap-3 py-2.5 ${wrap ? 'items-start' : 'items-center'}`}>
-    <div className="flex items-center gap-2 text-[13px] text-slate-500">
+    <div className="flex flex-shrink-0 items-center gap-2 whitespace-nowrap text-[13px] text-slate-500">
       <Icon size={15} className="text-slate-400" />
       {label}
     </div>
