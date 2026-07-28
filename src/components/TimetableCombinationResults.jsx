@@ -8,6 +8,7 @@ import {
   getCourseTypeBadgeClass,
   getCourseTypeColorScheme,
   getNoScheduleLabel,
+  formatCourseSchedule,
   timeSlots,
   displayTimeSlots
 } from '../utils/timetableUtils';
@@ -177,28 +178,6 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
     }
   };
 
-  const formatTimeDisplay = (subject) => {
-    const schedules = subject?.schedules;
-    if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(subject?.classMethod);
-
-    const dayMapping = {
-      'MONDAY': '월', 'TUESDAY': '화', 'WEDNESDAY': '수', 'THURSDAY': '목', 'FRIDAY': '금'
-    };
-
-    return schedules.map(schedule => {
-      const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-      let start = schedule.startTime;
-      let end = schedule.endTime;
-
-      const formatPeriod = (time) => {
-        if (time >= 10) return `야${time - 9}`;
-        return time;
-      }
-
-      return `${day} ${formatPeriod(start)}~${formatPeriod(end)}교시`;
-    }).join(', ');
-  };
-
   if (!hasResults) {
     return null;
   }
@@ -357,7 +336,9 @@ const TimetableCombinationResults = ({ results, onClose, onSelectCombination, is
                               </span>
                               <span className="meta-chip min-w-0 bg-white">
                                 <Clock size={11} className="flex-shrink-0 text-slate-400" />
-                                <span className="truncate">{formatTimeDisplay(subject)}</span>
+                                <span className="truncate" title={formatCourseSchedule(subject)}>
+                                  {formatCourseSchedule(subject)}
+                                </span>
                               </span>
                             </div>
                             <div className="mt-1.5">

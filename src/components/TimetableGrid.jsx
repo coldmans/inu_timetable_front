@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Download, CalendarDays, Trash2 } from 'lucide-react';
 import TimetableCourseMenu from './TimetableCourseMenu';
-import { parseTime, parseTimeString, daysOfWeek, timeSlots, displayTimeSlots } from '../utils/timetableUtils';
+import { getCourseRoomNames, parseTime, parseTimeString, daysOfWeek, timeSlots, displayTimeSlots } from '../utils/timetableUtils';
 
 const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
     const course = grid[day]?.[slot];
@@ -13,6 +13,7 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
         if (course.isStart) {
             const backgroundColor = course.color || 'bg-blue-100';
             const textColor = course.textColor || 'text-slate-900';
+            const roomLabel = getCourseRoomNames(course).join(' / ');
             return (
                 <td
                     rowSpan={course.span || 1}
@@ -21,12 +22,17 @@ const TimeSlotCell = ({ day, slot, index, grid, onCourseClick }) => {
                     <button
                         type="button"
                         onClick={(e) => onCourseClick(e, course)}
-                        aria-label={`${course.name}${course.professor ? ', ' + course.professor : ''} · 옵션 열기`}
-                        title={course.name}
+                        aria-label={`${course.name}${course.professor ? ', ' + course.professor : ''}${roomLabel ? ', ' + roomLabel : ''} · 옵션 열기`}
+                        title={[course.name, roomLabel].filter(Boolean).join(' · ')}
                         className={`absolute inset-[2px] flex flex-col overflow-hidden rounded-md px-1.5 py-1 text-left transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${backgroundColor} ${textColor}`}
                     >
                         {/* 한글 과목명은 공백이 없어 break-keep 으로는 줄바꿈이 안 된다 — 글자 단위로 꺾어 세로로 채운다. */}
                         <span className="w-full break-all text-[11px] font-semibold leading-tight">{course.name}</span>
+                        {roomLabel && (course.span || 0) >= 3 && (
+                            <span className="mt-1 w-full truncate text-[9px] font-medium leading-none opacity-75">
+                                {roomLabel}
+                            </span>
+                        )}
                     </button>
                 </td>
             );

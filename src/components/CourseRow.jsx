@@ -1,20 +1,6 @@
 import React, { useMemo } from 'react';
-import { AlertTriangle, ChevronDown, Clock, MessageSquare, Plus, RotateCcw, SearchX, ShoppingCart } from 'lucide-react';
-import { getNoScheduleLabel, parseTime, parseTimeString } from '../utils/timetableUtils';
-
-const formatPeriod = (value) => {
-  const rounded = Math.round(value * 2) / 2;
-  if (rounded >= 10) return `야${rounded - 9}`;
-  return `${rounded}`;
-};
-
-const formatScheduleLabel = (course) => {
-  const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
-  if (!times || times.length === 0) {
-    return course.time ? course.time : getNoScheduleLabel(course.classMethod);
-  }
-  return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
-};
+import { AlertTriangle, ChevronDown, Clock, MapPin, MessageSquare, Plus, RotateCcw, SearchX, ShoppingCart } from 'lucide-react';
+import { formatCourseRoomDetails, formatCourseSchedule } from '../utils/timetableUtils';
 
 const extractWishlistCount = (course) => {
   const countKeys = [
@@ -114,7 +100,8 @@ export const CourseRow = React.memo(({
   const courseReviewUrl = `https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`;
   const classMethodLabel = getClassMethodLabel(course.classMethod);
   const courseCode = course.code || course.subjectCode || course.courseCode || course.courseNo;
-  const scheduleLabel = useMemo(() => formatScheduleLabel(course), [course]);
+  const scheduleLabel = useMemo(() => formatCourseSchedule(course), [course]);
+  const roomDetails = useMemo(() => formatCourseRoomDetails(course), [course]);
   // 펼침 영역에는 접힌 행에 없는 정보만 보여준다(구분·학점은 요약 행과 중복이라 제외).
   const detailItems = [
     course.grade ? `${course.grade}학년` : '전학년',
@@ -159,7 +146,7 @@ export const CourseRow = React.memo(({
             </span>
             <span className="meta-chip min-w-0 flex-shrink bg-white">
               <Clock size={11} className="flex-shrink-0 text-slate-400" />
-              <span className="truncate">{scheduleLabel}</span>
+              <span className="truncate" title={scheduleLabel}>{scheduleLabel}</span>
             </span>
           </div>
         </button>
@@ -219,6 +206,12 @@ export const CourseRow = React.memo(({
               <p className="mt-1 text-xs leading-5 text-slate-500">
                 {course.note || course.description}
               </p>
+            )}
+            {roomDetails.length > 0 && (
+              <div data-testid="course-room-details" className="mt-1 flex items-start gap-1 text-xs leading-5 text-slate-600">
+                <MapPin size={12} className="mt-1 flex-shrink-0 text-slate-400" />
+                <span>{roomDetails.join(' / ')}</span>
+              </div>
             )}
             <div className="mt-2 flex items-center gap-1.5">
               <button
@@ -307,4 +300,3 @@ export const ErrorResults = ({ onRetry }) => (
     </button>
   </div>
 );
-

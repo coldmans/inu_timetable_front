@@ -2,52 +2,15 @@ import { useRef } from 'react';
 import { X, Clock, Star, MapPin, BookOpen, User, Calendar, Tag, Plus } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { getNoScheduleLabel } from '../utils/timetableUtils';
+import { formatCourseRoomDetails, formatCourseSchedule } from '../utils/timetableUtils';
 
-// 시간 정보를 한국어 표시용으로 포맷하는 함수
-const formatTimeDisplay = (course) => {
-  const schedules = course?.schedules;
-  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(course?.classMethod);
-
-  const dayMapping = {
-    'MONDAY': '월',
-    'TUESDAY': '화',
-    'WEDNESDAY': '수',
-    'THURSDAY': '목',
-    'FRIDAY': '금',
-    'SATURDAY': '토',
-    'SUNDAY': '일'
-  };
-
-  return schedules.map(schedule => {
-    const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-    let timeStr = '';
-
-    if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
-      timeStr = `${schedule.startTime}~${schedule.endTime}`;
-    } else {
-      let startDisplay = schedule.startTime;
-      let endDisplay = schedule.endTime;
-
-      if (schedule.startTime >= 10) {
-        startDisplay = `야${schedule.startTime - 9}`;
-        endDisplay = `야${schedule.endTime - 9}`;
-      }
-
-      timeStr = `${startDisplay}~${endDisplay}교시`;
-    }
-
-    return `${day} ${timeStr}`;
-  }).join(', ');
-};
-
-const InfoRow = ({ icon: Icon, label, value, valueClass = 'text-slate-900' }) => (
-  <div className="flex items-center justify-between gap-3 py-2.5">
+const InfoRow = ({ icon: Icon, label, value, valueClass = 'text-slate-900', wrap = false }) => (
+  <div className={`flex justify-between gap-3 py-2.5 ${wrap ? 'items-start' : 'items-center'}`}>
     <div className="flex items-center gap-2 text-[13px] text-slate-500">
       <Icon size={15} className="text-slate-400" />
       {label}
     </div>
-    <p className={`min-w-0 truncate text-right text-sm font-medium ${valueClass}`}>{value}</p>
+    <p className={`min-w-0 text-right text-sm font-medium ${wrap ? 'whitespace-normal leading-5' : 'truncate'} ${valueClass}`}>{value}</p>
   </div>
 );
 
@@ -58,6 +21,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
 
   if (!isOpen || !course) return null;
 
+  const roomDetails = formatCourseRoomDetails(course);
   const classMethodLabel =
     course.classMethod === 'ONLINE' ? '온라인' :
     course.classMethod === 'OFFLINE' ? '오프라인' :
@@ -104,7 +68,7 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
               <div className="min-w-0">
                 <p className="text-xs font-medium text-blue-600">수업 시간</p>
                 <p className="mt-0.5 text-[15px] font-semibold text-blue-900">
-                  {formatTimeDisplay(course)}
+                  {formatCourseSchedule(course, { includeRooms: false })}
                 </p>
               </div>
             </div>
@@ -113,7 +77,9 @@ const CourseDetailModal = ({ isOpen, onClose, course, onAddToTimetable }) => {
           <div className="mt-3 divide-y divide-slate-100">
             <InfoRow icon={Star} label="학점" value={`${course.credits}학점`} />
             <InfoRow icon={User} label="담당교수" value={course.professor || '미정'} />
-            {course.location && <InfoRow icon={MapPin} label="강의실" value={course.location} />}
+            {roomDetails.length > 0 && (
+              <InfoRow icon={MapPin} label="강의실" value={roomDetails.join(' / ')} wrap />
+            )}
             {course.grade && <InfoRow icon={BookOpen} label="대상 학년" value={`${course.grade}학년`} />}
             {course.classMethod && <InfoRow icon={Calendar} label="수업 방식" value={classMethodLabel} />}
             {course.isNight && <InfoRow icon={Tag} label="특이사항" value="야간 수업" valueClass="text-violet-600" />}
