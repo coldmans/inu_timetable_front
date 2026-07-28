@@ -770,8 +770,10 @@ function AppContent() {
       });
 
       setIsGenerating(false);
-      setCombinationResults(response);
-      setShowCombinationResults(true);
+      const hasCombinations = Array.isArray(response?.combinations)
+        && response.combinations.length > 0;
+      setCombinationResults(hasCombinations ? response : null);
+      setShowCombinationResults(hasCombinations);
       showToast(`${response.totalCount}개의 시간표 조합을 찾았습니다!`);
     } catch (error) {
       setIsGenerating(false);
@@ -1321,8 +1323,11 @@ function AppContent() {
   const hasResultPagination = totalPages > 1;
   const canGoToPreviousPage = hasResultPagination && currentPage > 0 && !isLoading;
   const canGoToNextPage = hasResultPagination && currentPage < totalPages - 1 && !isLoading;
+  const hasVisibleCombinationResults = showCombinationResults
+    && Array.isArray(combinationResults?.combinations)
+    && combinationResults.combinations.length > 0;
   const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showInquiryModal || showAccountModal || showFilters || mobileFilterField !== null || showSearchSheet
-    || showAuthModal || showCombinationResults || showCourseDetailModal || showTimetableListModal;
+    || showAuthModal || hasVisibleCombinationResults || showCourseDetailModal || showTimetableListModal;
   // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
   // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
   // 훅이므로 아래의 조기 return 들보다 반드시 먼저 호출한다(Rules of Hooks).
@@ -1456,7 +1461,7 @@ function AppContent() {
         />
       )}
 
-      {showCombinationResults && combinationResults && (
+      {hasVisibleCombinationResults && (
         <TimetableCombinationResults
           results={combinationResults}
           onClose={() => setShowCombinationResults(false)}
