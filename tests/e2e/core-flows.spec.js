@@ -84,10 +84,9 @@ test('shows each schedule room segment in course results', async ({ page, isMobi
 
   if (isMobile) {
     await courseSummary.click();
-    const roomDetails = page.getByTestId('course-room-details');
-    await expect(roomDetails).toBeVisible();
-    await expect(roomDetails).toContainText('28-508 / 09-501 / 27-104');
-    await expect(roomDetails).not.toContainText('목 1~4교시');
+    const expandedActions = page.getByTestId('course-row-actions');
+    await expect(expandedActions).toBeVisible();
+    await expect(expandedActions).not.toContainText('28-508 / 09-501 / 27-104');
   }
 });
 
