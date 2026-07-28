@@ -85,7 +85,7 @@ const InquiryModal = ({ onClose, onSubmitted }) => {
             className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
           <p className="mt-2 text-xs leading-5 text-slate-400">
-            로그인 상태로 문의하면 계정으로도 답변을 확인할 수 있어요.
+            로그인 상태로 문의하면 계정 정보가 함께 전달돼 더 정확한 안내를 받을 수 있어요.
           </p>
 
           {errorMessage && (
