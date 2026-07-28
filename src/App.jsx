@@ -14,6 +14,7 @@ import DepartmentFilterButton from './components/DepartmentFilterButton';
 import DeveloperNotesModal from './components/DeveloperNotesModal';
 import FilterSelect from './components/FilterSelect';
 import HiddenPage from './components/HiddenPage';
+import InquiryModal from './components/InquiryModal';
 import MobileFilterScroller from './components/MobileFilterScroller';
 import MobileFilterSheet from './components/MobileFilterSheet';
 import MobileSearchSheet from './components/MobileSearchSheet';
@@ -119,6 +120,7 @@ function AppContent() {
   // runId 가 증가해 이펙트가 재실행되므로 언제든 다시 시작할 수 있다.
   const [tutorialRunId, setTutorialRunId] = useState(0);
   const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
@@ -1324,7 +1326,7 @@ function AppContent() {
   const hasVisibleCombinationResults = showCombinationResults
     && Array.isArray(combinationResults?.combinations)
     && combinationResults.combinations.length > 0;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showAccountModal || showFilters || mobileFilterField !== null || showSearchSheet
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showInquiryModal || showAccountModal || showFilters || mobileFilterField !== null || showSearchSheet
     || showAuthModal || hasVisibleCombinationResults || showCourseDetailModal || showTimetableListModal;
   // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
   // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
@@ -1438,6 +1440,13 @@ function AppContent() {
       )}
       {showDeveloperNotes && (
         <DeveloperNotesModal onClose={() => setShowDeveloperNotes(false)} />
+      )}
+
+      {showInquiryModal && (
+        <InquiryModal
+          onClose={() => setShowInquiryModal(false)}
+          onSubmitted={(message) => showToast(message)}
+        />
       )}
 
       {showAccountModal && (
@@ -2024,14 +2033,13 @@ function AppContent() {
             >
               <Info size={13} /> 업데이트 소식
             </button>
-            <a
-              href="https://www.instagram.com/jjh020426?igsh=eGcxOXllcm16Yzk2&utm_source=qr"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setShowInquiryModal(true)}
               className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
               <MessageSquare size={13} /> 문의하기
-            </a>
+            </button>
           </div>
         </div>
       </footer>
