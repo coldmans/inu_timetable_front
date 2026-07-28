@@ -3,46 +3,7 @@ import { X, Clock, User, BookOpen, Trash2, Heart, Info, MessageSquare, LayoutLis
 import TimetableGrid from './TimetableGrid';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { getNoScheduleLabel } from '../utils/timetableUtils';
-
-// 시간 표시를 위한 헬퍼 함수
-const formatTimeDisplay = (course) => {
-  const schedules = course?.schedules;
-  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(course?.classMethod);
-
-  const dayMapping = {
-    'MONDAY': '월',
-    'TUESDAY': '화',
-    'WEDNESDAY': '수',
-    'THURSDAY': '목',
-    'FRIDAY': '금',
-    'SATURDAY': '토',
-    'SUNDAY': '일'
-  };
-
-  return schedules.map(schedule => {
-    const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-    let timeStr = '';
-
-    if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
-      // HH:MM 형식
-      timeStr = `${schedule.startTime}~${schedule.endTime}`;
-    } else {
-      // 교시 번호 형식 (야간 교시 처리 포함)
-      let startDisplay = schedule.startTime;
-      let endDisplay = schedule.endTime;
-
-      if (schedule.startTime >= 10) {
-        startDisplay = `야${schedule.startTime - 9}`;
-        endDisplay = `야${schedule.endTime - 9}`;
-      }
-
-      timeStr = `${startDisplay}~${endDisplay}교시`;
-    }
-
-    return `${day} ${timeStr}`;
-  }).join(', ');
-};
+import { formatCourseSchedule } from '../utils/timetableUtils';
 
 const TimetableListModal = ({
   isOpen,
@@ -152,7 +113,9 @@ const TimetableListModal = ({
 
                       <div className="meta-chip w-fit max-w-full bg-white text-blue-600">
                         <Clock size={14} className="flex-shrink-0" />
-                        <span className="truncate font-medium">{formatTimeDisplay(course)}</span>
+                        <span className="truncate font-medium" title={formatCourseSchedule(course)}>
+                          {formatCourseSchedule(course)}
+                        </span>
                       </div>
                     </div>
 

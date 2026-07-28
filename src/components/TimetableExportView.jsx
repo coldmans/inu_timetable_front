@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getNoScheduleLabel, parseTime, parseTimeString, daysOfWeek, timeSlots } from '../utils/timetableUtils';
+import { getCourseRoomNames, getNoScheduleLabel, parseTime, parseTimeString, daysOfWeek, timeSlots } from '../utils/timetableUtils';
 
 const EXPORT_WIDTH = 760;
 const EXPORT_HORIZONTAL_PADDING = 16;
@@ -228,6 +228,11 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
     const isCompact = (course.span || 0) <= 2;
     const colorScheme = getCourseColorScheme(course);
     const nameTypography = getExportCourseNameTypography(course, isCompact);
+    const courseMeta = [
+      course.professor,
+      getCourseRoomNames(course).join(' / '),
+      course.credits ? `${course.credits}학점` : null,
+    ].filter(Boolean).join(' · ');
     return (
       <td rowSpan={course.span || 1} className="relative border border-slate-200 bg-white p-0 align-middle">
         <div
@@ -247,9 +252,7 @@ const ExportTimeSlotCell = ({ day, slot, index, grid, timeSlotList }) => {
             {course.name}
           </div>
           <div data-export-course-meta className={`${isCompact ? 'mt-0.5 text-[8px] leading-[1.25]' : 'mt-1 text-[9px] leading-[1.25]'} font-semibold opacity-95`}>
-            {course.professor && <span>{course.professor}</span>}
-            {course.professor && course.credits && <span> · </span>}
-            {course.credits && <span>{course.credits}학점</span>}
+            {courseMeta}
           </div>
         </div>
       </td>

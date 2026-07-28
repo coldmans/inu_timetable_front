@@ -2,31 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { X, Clock, Star, Trash2, Info, Plus, ChevronLeft, Calendar, Settings, MessageSquare } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { getNoScheduleLabel } from '../utils/timetableUtils';
-
-// 시간 정보를 한국어 표시용으로 포맷하는 함수 (기존 유지)
-const formatTimeDisplay = (course) => {
-  const schedules = course?.schedules;
-  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) return getNoScheduleLabel(course?.classMethod);
-
-  const dayMapping = {
-    'MONDAY': '월', 'TUESDAY': '화', 'WEDNESDAY': '수', 'THURSDAY': '목', 'FRIDAY': '금',
-    'SATURDAY': '토', 'SUNDAY': '일'
-  };
-
-  return schedules.map(schedule => {
-    const day = dayMapping[schedule.dayOfWeek] || schedule.dayOfWeek;
-    let timeStr = '';
-
-    if (typeof schedule.startTime === 'string' && schedule.startTime.includes(':')) {
-      timeStr = `${schedule.startTime}~${schedule.endTime}`;
-    } else {
-      timeStr = `${schedule.startTime}~${schedule.endTime}교시`;
-    }
-
-    return `${day} ${timeStr}`;
-  }).join(', ');
-};
+import { formatCourseSchedule } from '../utils/timetableUtils';
 
 const WishlistModal = ({
   isOpen,
@@ -172,7 +148,9 @@ const WishlistModal = ({
 
                     <div className="mb-2 sm:mb-3 meta-chip w-fit max-w-full bg-white text-blue-600">
                       <Clock size={14} className="flex-shrink-0" />
-                      <span className="truncate font-medium">{formatTimeDisplay(course)}</span>
+                      <span className="truncate font-medium" title={formatCourseSchedule(course)}>
+                        {formatCourseSchedule(course)}
+                      </span>
                     </div>
 
                     {/* Required Checkbox */}

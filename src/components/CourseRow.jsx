@@ -1,20 +1,6 @@
 import React, { useMemo } from 'react';
-import { AlertTriangle, ChevronDown, Clock, MessageSquare, Plus, RotateCcw, SearchX, ShoppingCart } from 'lucide-react';
-import { getNoScheduleLabel, parseTime, parseTimeString } from '../utils/timetableUtils';
-
-const formatPeriod = (value) => {
-  const rounded = Math.round(value * 2) / 2;
-  if (rounded >= 10) return `야${rounded - 9}`;
-  return `${rounded}`;
-};
-
-const formatScheduleLabel = (course) => {
-  const times = course.schedules ? parseTime(course.schedules) : parseTimeString(course.time);
-  if (!times || times.length === 0) {
-    return course.time ? course.time : getNoScheduleLabel(course.classMethod);
-  }
-  return times.map(t => `${t.day} ${formatPeriod(t.start)}~${formatPeriod(t.end)}교시`).join(' · ');
-};
+import { AlertTriangle, ChevronDown, Clock, MapPin, MessageSquare, Plus, RotateCcw, SearchX, ShoppingCart } from 'lucide-react';
+import { formatCourseSchedule, getCourseRoomNames } from '../utils/timetableUtils';
 
 const extractWishlistCount = (course) => {
   const countKeys = [
@@ -114,7 +100,8 @@ export const CourseRow = React.memo(({
   const courseReviewUrl = `https://everytime.kr/lecture/search?keyword=${encodeURIComponent(course.name)}&condition=name`;
   const classMethodLabel = getClassMethodLabel(course.classMethod);
   const courseCode = course.code || course.subjectCode || course.courseCode || course.courseNo;
-  const scheduleLabel = useMemo(() => formatScheduleLabel(course), [course]);
+  const scheduleLabel = useMemo(() => formatCourseSchedule(course, { includeRooms: false }), [course]);
+  const roomLabel = useMemo(() => getCourseRoomNames(course).join(' / '), [course]);
   // 펼침 영역에는 접힌 행에 없는 정보만 보여준다(구분·학점은 요약 행과 중복이라 제외).
   const detailItems = [
     course.grade ? `${course.grade}학년` : '전학년',
@@ -157,10 +144,16 @@ export const CourseRow = React.memo(({
             <span className="min-w-0 flex-shrink-[2] truncate">
               {course.professor} · {course.department}
             </span>
-            <span className="meta-chip min-w-0 flex-shrink bg-white">
+            <span data-testid="course-time-chip" className="meta-chip min-w-0 flex-shrink bg-white">
               <Clock size={11} className="flex-shrink-0 text-slate-400" />
-              <span className="truncate">{scheduleLabel}</span>
+              <span className="truncate" title={scheduleLabel}>{scheduleLabel}</span>
             </span>
+            {roomLabel && (
+              <span data-testid="course-room-chip" className="meta-chip min-w-0 flex-shrink bg-white">
+                <MapPin size={11} className="flex-shrink-0 text-slate-400" />
+                <span className="truncate" title={roomLabel}>{roomLabel}</span>
+              </span>
+            )}
           </div>
         </button>
 
@@ -307,4 +300,3 @@ export const ErrorResults = ({ onRetry }) => (
     </button>
   </div>
 );
-

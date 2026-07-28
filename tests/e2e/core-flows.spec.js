@@ -26,6 +26,72 @@ test('renders the public course search workspace', async ({ page, isMobile }) =>
   await expect(page.getByTestId('course-row-summary').first()).toBeVisible({ timeout: 45_000 });
 });
 
+test('shows each schedule room segment in course results', async ({ page, isMobile }) => {
+  const courseName = '강의실 표시 테스트';
+  const course = {
+    id: 99991,
+    subjectName: courseName,
+    courseCode: '0005069001',
+    credits: 3,
+    professor: '테스트교수',
+    department: '건축공학전공',
+    subjectType: '전심',
+    grade: 4,
+    semester: '2026-2',
+    classMethod: 'OFFLINE',
+    schedules: [{
+      dayOfWeek: '목',
+      startTime: '09:00',
+      endTime: '15:00',
+      roomSegments: [
+        { id: 1, room: '28-508', startTime: '09:00', endTime: '12:00' },
+        { id: 2, room: '09-501', startTime: '12:00', endTime: '13:30' },
+        { id: 3, room: '27-104', startTime: '13:30', endTime: '15:00' },
+      ],
+    }],
+  };
+
+  await page.route('**/api/settings/current-semester', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ semester: '2026-2' }),
+  }));
+  await page.route('**/api/auth/me', route => route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ message: '인증이 필요합니다.' }),
+  }));
+  await page.route('**/api/subjects/filter?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      content: [course],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+    }),
+  }));
+  await page.route('**/api/subjects/departments?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+
+  await page.goto('/');
+  await openMobileCourseSearch(page, isMobile);
+
+  const courseSummary = page.getByTestId('course-row-summary').filter({ hasText: courseName });
+  await expect(courseSummary).toBeVisible();
+  await expect(courseSummary.getByTestId('course-time-chip')).toHaveText('목 1~7교시');
+  await expect(courseSummary.getByTestId('course-room-chip')).toHaveText('28-508 / 09-501 / 27-104');
+  await expect(courseSummary).not.toContainText('목 1~7교시 · 28-508');
+  await expect(courseSummary).not.toContainText('목 1~4교시');
+
+  if (isMobile) {
+    await courseSummary.click();
+    const expandedActions = page.getByTestId('course-row-actions');
+    await expect(expandedActions).toBeVisible();
+    await expect(expandedActions).not.toContainText('28-508 / 09-501 / 27-104');
+  }
+});
+
 test('loads semester departments without losing college mappings', async ({ page, isMobile }) => {
   test.skip(isMobile, '데스크톱 학과 필터 매핑 검증');
   let requestedSemester = null;

@@ -57,28 +57,32 @@ export const convertToPeriod = (timeValue) => {
     return Math.round(period * 2) / 2;
 };
 
+const scheduleDayMapping = {
+    'MONDAY': '월',
+    'TUESDAY': '화',
+    'WEDNESDAY': '수',
+    'THURSDAY': '목',
+    'FRIDAY': '금',
+    'SATURDAY': '토',
+    'SUNDAY': '일'
+};
+
+export const normalizeScheduleDay = (dayOfWeek) => {
+    if (!dayOfWeek) return '';
+
+    const dayKey = typeof dayOfWeek === 'string' ? dayOfWeek.toUpperCase() : dayOfWeek;
+    return scheduleDayMapping[dayKey] || dayOfWeek;
+};
+
 export const parseTime = (schedules) => {
     if (!schedules || !Array.isArray(schedules)) return [];
-
-    const dayMapping = {
-        'MONDAY': '월',
-        'TUESDAY': '화',
-        'WEDNESDAY': '수',
-        'THURSDAY': '목',
-        'FRIDAY': '금',
-        'SATURDAY': '토',
-        'SUNDAY': '일'
-    };
 
     return schedules.map(schedule => {
         const startPeriod = convertToPeriod(schedule.startTime);
         const endPeriod = convertToPeriod(schedule.endTime);
 
-        const dayKey = schedule.dayOfWeek ? schedule.dayOfWeek.toUpperCase() : schedule.dayOfWeek;
-        const day = dayMapping[dayKey] || schedule.dayOfWeek;
-
         return {
-            day: day,
+            day: normalizeScheduleDay(schedule.dayOfWeek),
             start: startPeriod,
             end: endPeriod,
         };
@@ -120,6 +124,78 @@ export const parseTimeString = (timeString) => {
     }
 
     return results;
+};
+
+export const formatPeriod = (value) => {
+    const rounded = Math.round(Number(value) * 2) / 2;
+    if (!Number.isFinite(rounded)) return '';
+    if (rounded >= 10) return `야${rounded - 9}`;
+    return `${rounded}`;
+};
+
+const formatScheduleRange = (startTime, endTime) => {
+    const startPeriod = convertToPeriod(startTime);
+    const endPeriod = convertToPeriod(endTime);
+    return `${formatPeriod(startPeriod)}~${formatPeriod(endPeriod)}교시`;
+};
+
+const getSchedules = (course) => (
+    Array.isArray(course?.schedules) ? course.schedules : []
+);
+
+export const getCourseRoomSegments = (course) => (
+    getSchedules(course).flatMap(schedule => {
+        if (!Array.isArray(schedule.roomSegments)) return [];
+
+        return schedule.roomSegments
+            .filter(segment => typeof segment?.room === 'string' && segment.room.trim())
+            .map(segment => ({
+                id: segment.id,
+                day: normalizeScheduleDay(schedule.dayOfWeek),
+                room: segment.room.trim(),
+                startTime: segment.startTime,
+                endTime: segment.endTime,
+            }));
+    })
+);
+
+export const getCourseRoomNames = (course) => {
+    const segmentRooms = getCourseRoomSegments(course).map(segment => segment.room);
+    if (segmentRooms.length > 0) {
+        return [...new Set(segmentRooms)];
+    }
+
+    const legacyRoom = course?.location || course?.classroom || course?.room;
+    return typeof legacyRoom === 'string' && legacyRoom.trim() ? [legacyRoom.trim()] : [];
+};
+
+export const formatCourseRoomDetails = (course) => {
+    return getCourseRoomNames(course);
+};
+
+export const formatCourseSchedule = (course, { includeRooms = true } = {}) => {
+    const schedules = getSchedules(course);
+
+    if (schedules.length === 0) {
+        return course?.time || getNoScheduleLabel(course?.classMethod);
+    }
+
+    return schedules.map(schedule => {
+        const day = normalizeScheduleDay(schedule.dayOfWeek);
+        const roomSegments = Array.isArray(schedule.roomSegments)
+            ? schedule.roomSegments.filter(segment => (
+                typeof segment?.room === 'string' && segment.room.trim()
+            ))
+            : [];
+        const scheduleLabel = `${day} ${formatScheduleRange(schedule.startTime, schedule.endTime)}`;
+
+        if (includeRooms && roomSegments.length > 0) {
+            const roomNames = [...new Set(roomSegments.map(segment => segment.room.trim()))];
+            return `${scheduleLabel} · ${roomNames.join(' / ')}`;
+        }
+
+        return scheduleLabel;
+    }).join(', ');
 };
 
 const subjectTypeAliases = {
@@ -172,6 +248,8 @@ export const formatCourse = (subject) => {
     const timeString = subject.schedules && Array.isArray(subject.schedules) ?
         subject.schedules.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`).join(', ') :
         subject.time || '';
+    const roomNames = getCourseRoomNames(subject);
+    const legacyLocation = subject.location || subject.classroom || subject.room;
 
     return {
         id: subject.id,
@@ -185,7 +263,8 @@ export const formatCourse = (subject) => {
         time: timeString,
         schedules: subject.schedules,
         classMethod: subject.classMethod,
-        location: subject.location || subject.classroom || subject.room || null,
+        location: legacyLocation || roomNames.join(' · ') || null,
+        rooms: roomNames,
         note: subject.note || subject.remarks || subject.remark || null,
         description: subject.description,
         isNight: subject.isNight,
