@@ -92,6 +92,30 @@ test('shows each schedule room segment in course results', async ({ page, isMobi
   }
 });
 
+test('shows admin-published Q&A inside the inquiry modal', async ({ page }) => {
+  await page.route('**/api/inquiries/faqs', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify([
+      {
+        id: 101,
+        question: '공개 Q&A 테스트 질문',
+        answer: '관리자가 공개한 답변입니다.',
+      },
+    ]),
+  }));
+
+  await page.goto('/');
+  await page.getByRole('button', { name: '문의하기' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '문의하기' });
+  await expect(dialog.getByRole('heading', { name: '자주 묻는 질문' })).toBeVisible();
+  await expect(dialog.getByText('공개 Q&A 테스트 질문')).toBeVisible();
+  await expect(dialog.getByText('관리자가 공개한 답변입니다.')).not.toBeVisible();
+
+  await dialog.getByText('공개 Q&A 테스트 질문').click();
+  await expect(dialog.getByText('관리자가 공개한 답변입니다.')).toBeVisible();
+});
+
 test('loads semester departments without losing college mappings', async ({ page, isMobile }) => {
   test.skip(isMobile, '데스크톱 학과 필터 매핑 검증');
   let requestedSemester = null;

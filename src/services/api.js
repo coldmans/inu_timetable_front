@@ -404,6 +404,12 @@ export const statisticsAPI = {
 
 // 사이트 내 문의 API (인스타 DM 링크 대체)
 export const inquiryAPI = {
+  // 관리자가 공개한 Q&A만 표시한다. 등록된 항목이 없으면 빈 목록을 받는다.
+  getFaqs: async () => {
+    const response = await fetch(`${BASE_URL}/inquiries/faqs`);
+    return handleResponse(response);
+  },
+
   // 문의 접수. 비로그인도 가능하고, 로그인 상태면 세션 쿠키로 작성자가 함께 기록된다.
   submit: async ({ content, contact }) => {
     const response = await fetchWithUserSession(`${BASE_URL}/inquiries`, {
