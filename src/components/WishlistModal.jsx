@@ -90,7 +90,7 @@ const WishlistModal = ({
                 <p className="mt-0.5 text-xs sm:text-sm text-slate-500 truncate">
                   {step === 'list'
                     ? `총 ${wishlist.length}개 과목 • ${totalCredits}학점`
-                    : '학점과 공강 요일 선택'
+                    : '학점 또는 공강 요일 선택'
                   }
                 </p>
               </div>
@@ -211,6 +211,17 @@ const WishlistModal = ({
                   <Settings size={20} className="text-slate-500" />
                   <h3>목표 학점 설정</h3>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setTargetCredits(null)}
+                  className={`w-full rounded-lg sm:rounded-xl border px-4 py-3 text-sm font-medium transition-all ${targetCredits == null
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50'
+                    }`}
+                >
+                  상관없음
+                  <span className="ml-2 text-xs font-normal opacity-75">가능한 높은 학점 조합부터 추천</span>
+                </button>
                 <div className="grid grid-cols-4 gap-2 sm:gap-3 sm:grid-cols-6">
                   {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map(credit => (
                     <button
@@ -286,7 +297,9 @@ const WishlistModal = ({
                 }}
                 className="btn-primary h-12 w-full rounded-xl text-sm sm:text-base"
               >
-                {targetCredits}학점 조합 만들기 시작
+                {targetCredits == null
+                  ? '학점 상관없이 조합 만들기 시작'
+                  : `${targetCredits}학점 조합 만들기 시작`}
               </button>
             )}
           </div>
