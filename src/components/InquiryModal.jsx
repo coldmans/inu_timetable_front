@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, Send, X } from 'lucide-react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { inquiryAPI } from '../services/api';
@@ -13,10 +13,28 @@ const InquiryModal = ({ onClose, onSubmitted }) => {
   const panelRef = useRef(null);
   const [content, setContent] = useState('');
   const [contact, setContact] = useState('');
+  const [faqs, setFaqs] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   useFocusTrap(true, panelRef);
   useModalDismiss(true, onClose);
+
+  useEffect(() => {
+    let active = true;
+
+    inquiryAPI.getFaqs()
+      .then((items) => {
+        if (active) setFaqs(Array.isArray(items) ? items : []);
+      })
+      .catch(() => {
+        // Q&A 조회가 실패해도 사용자가 문의를 접수하는 흐름은 그대로 유지한다.
+        if (active) setFaqs([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const trimmedContent = content.trim();
   const canSubmit = trimmedContent.length > 0 && !isSubmitting;
@@ -57,6 +75,29 @@ const InquiryModal = ({ onClose, onSubmitted }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="max-h-[calc(88svh-4.5rem)] overflow-y-auto overscroll-contain px-5 py-4 pb-[max(env(safe-area-inset-bottom),16px)]">
+          {faqs.length > 0 && (
+            <section className="mb-5" aria-labelledby="inquiry-faq-title">
+              <h3 id="inquiry-faq-title" className="text-sm font-bold text-slate-800">자주 묻는 질문</h3>
+              <div className="mt-2 space-y-2">
+                {faqs.map((faq) => (
+                  <details key={faq.id} className="group rounded-xl border border-slate-200 bg-slate-50 open:bg-white">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3 text-sm font-semibold text-slate-700">
+                      <span>{faq.question}</span>
+                      <ChevronDown
+                        size={16}
+                        className="shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </summary>
+                    <p className="whitespace-pre-wrap border-t border-slate-100 px-3.5 py-3 text-sm leading-6 text-slate-600">
+                      {faq.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )}
+
           <label htmlFor="inquiry-content" className="block text-sm font-semibold text-slate-700">
             문의 내용
           </label>
