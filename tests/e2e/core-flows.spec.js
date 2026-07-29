@@ -116,6 +116,107 @@ test('shows admin-published Q&A inside the inquiry modal', async ({ page }) => {
   await expect(dialog.getByText('관리자가 공개한 답변입니다.')).toBeVisible();
 });
 
+test('creates combinations without requiring an exact credit target', async ({ page, isMobile }) => {
+  const wishlistCourse = {
+    id: 501,
+    subjectId: 9001,
+    subjectName: '학점미정테스트',
+    credits: 3,
+    professor: '테스트교수',
+    department: '컴퓨터공학부',
+    subjectType: '전심',
+    grade: 3,
+    classMethod: 'OFFLINE',
+    isNight: false,
+    isRequired: false,
+    schedules: [{ dayOfWeek: '화', startTime: 1, endTime: 2.5 }],
+  };
+  let combinationRequest = null;
+
+  await page.route('**/api/settings/current-semester', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ semester: '2026-2' }),
+  }));
+  await page.route('**/api/auth/me', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: 681,
+      username: 'credit-test-user',
+      grade: 3,
+      major: '컴퓨터공학부',
+      majors: [],
+    }),
+  }));
+  await page.route('**/api/wishlist/user/**', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify([wishlistCourse]),
+  }));
+  await page.route('**/api/timetable/user/**', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/notifications/unread', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/subjects/filter?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+    }),
+  }));
+  await page.route('**/api/subjects/departments?*', route => route.fulfill({
+    contentType: 'application/json',
+    body: '[]',
+  }));
+  await page.route('**/api/auth/csrf', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ token: 'test-csrf-token' }),
+  }));
+  await page.route('**/api/timetable-combination/generate', async route => {
+    combinationRequest = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        combinations: [[wishlistCourse]],
+        totalCount: 1,
+        targetCredits: null,
+        ignoreTargetCredits: true,
+        freeDays: [],
+        statistics: [{
+          totalCredits: 3,
+          subjectCount: 1,
+          subjectTypeDistribution: { '전심': 1 },
+          dayDistribution: { '화': 1 },
+          freeDays: ['월', '수', '목', '금'],
+        }],
+      }),
+    });
+  });
+
+  await page.goto('/');
+  if (isMobile) {
+    await page.getByRole('button', { name: '조합', exact: true }).click();
+  } else {
+    await page.getByRole('button', { name: '시간표 조합 만들기 · 3학점' }).click();
+  }
+
+  const dialog = page.getByRole('dialog', { name: '조합 설정' });
+  await dialog.getByRole('button', { name: /상관없음/ }).click();
+  await dialog.getByRole('button', { name: '학점 상관없이 조합 만들기 시작' }).click();
+
+  await expect(page.getByRole('button', { name: '이 조합 선택' })).toBeVisible();
+  expect(combinationRequest).toMatchObject({
+    userId: 681,
+    semester: '2026-2',
+    ignoreTargetCredits: true,
+  });
+  expect(combinationRequest).not.toHaveProperty('targetCredits');
+});
+
 test('loads semester departments without losing college mappings', async ({ page, isMobile }) => {
   test.skip(isMobile, '데스크톱 학과 필터 매핑 검증');
   let requestedSemester = null;

@@ -761,10 +761,12 @@ function AppContent() {
 
     setIsGenerating(true);
     try {
+      const ignoreTargetCredits = targetCredits == null;
       const response = await combinationAPI.generate({
         userId: user.id,
         semester: CURRENT_SEMESTER,
-        targetCredits: targetCredits,
+        ...(ignoreTargetCredits ? {} : { targetCredits }),
+        ignoreTargetCredits,
         maxCombinations: 20,
         freeDays: freeDays
       });
@@ -831,13 +833,19 @@ function AppContent() {
           grade: 3,
           department: course.department || "컴퓨터공학부"
         })),
-        ...mockOptionalCourses.slice(0, Math.max(1, targetCredits / 3 - requiredCoursesInMock.length))
+        ...mockOptionalCourses.slice(
+          0,
+          targetCredits == null
+            ? mockOptionalCourses.length
+            : Math.max(1, targetCredits / 3 - requiredCoursesInMock.length)
+        )
       ];
 
       const mockCombinationResults = {
         combinations: [mockCombination1],
         totalCount: 1,
         targetCredits: targetCredits,
+        ignoreTargetCredits: targetCredits == null,
         statistics: [
           {
             totalCredits: mockCombination1.reduce((sum, course) => sum + course.credits, 0),
@@ -1915,11 +1923,14 @@ function AppContent() {
                     <span className="text-[13px] font-medium text-slate-600">목표 학점</span>
                     <div className="w-[120px]">
                       <FilterSelect
-                        value={targetCredits}
-                        onChange={(e) => setTargetCredits(parseInt(e.target.value))}
+                        value={targetCredits ?? 'any'}
+                        onChange={(e) => setTargetCredits(
+                          e.target.value === 'any' ? null : parseInt(e.target.value)
+                        )}
                         active={targetCredits !== 18}
                         label="목표 학점 선택"
                       >
+                        <option value="any">상관없음</option>
                         {[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map(credit => (
                           <option key={credit} value={credit}>
                             {credit}학점{credit === 18 ? ' (권장)' : ''}
