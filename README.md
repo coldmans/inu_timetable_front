@@ -68,6 +68,7 @@ The app calls the backend through `src/services/api.js`.
 ```text
 VITE_API_BASE_URL=/api
 VITE_ADMIN_API_BASE_URL=/admin/api
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 Main API groups:
@@ -78,6 +79,8 @@ Main API groups:
 - `wishlistAPI`: add, remove, priority, required subjects
 - `timetableAPI`: add, remove, memo, clear, get by user
 - `combinationAPI`: generate timetable combinations
+
+`VITE_GA_MEASUREMENT_ID`가 유효한 GA4 웹 스트림 측정 ID일 때만 Google 태그를 로드합니다. 비어 있거나 잘못된 값이면 로컬·Preview·Production 모두 Google Analytics 요청을 보내지 않습니다. 기존 자체 분석 이벤트는 유지하며, Google에는 검색어와 과목명 label을 전송하지 않습니다.
 
 ## Local Setup
 
@@ -101,6 +104,12 @@ BACKEND_ORIGIN=https://<Mac mini Cloudflare API domain>
 ```
 
 Set `BACKEND_ORIGIN` in the Vercel project for Production, Preview, and Development. Do not include a trailing slash.
+
+GA4를 활성화하려면 Vercel의 Production 환경에 웹 데이터 스트림 측정 ID를 추가한 뒤 새로 배포합니다.
+
+```bash
+printf 'G-XXXXXXXXXX' | vercel env add VITE_GA_MEASUREMENT_ID production
+```
 
 The same origin is also used by the Sites deployment worker when publishing through OpenAI Sites.
 
