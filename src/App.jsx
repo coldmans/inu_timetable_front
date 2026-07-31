@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Info, ChevronLeft, ChevronRight, Star, X, ShoppingCart, CalendarDays, LogIn, Maximize, MessageSquare, RotateCcw, UserCircle } from 'lucide-react';
+import { Search, Info, ChevronLeft, ChevronRight, Star, X, ShoppingCart, CalendarDays, LogIn, Maximize, MessageSquare, RotateCcw, ShieldCheck, UserCircle } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import Pagination from './components/Pagination';
@@ -20,6 +20,7 @@ import MobileFilterSheet from './components/MobileFilterSheet';
 import MobileSearchSheet from './components/MobileSearchSheet';
 import MobileSingleFilterSheet from './components/MobileSingleFilterSheet';
 import NewUserTutorial from './components/NewUserTutorial';
+import PrivacyNoticeModal from './components/PrivacyNoticeModal';
 import { LoadingOverlay, Toast } from './components/Toast';
 import { portalRegisteredCourses } from './components/portalMockData';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
@@ -121,6 +122,7 @@ function AppContent() {
   const [tutorialRunId, setTutorialRunId] = useState(0);
   const [showDeveloperNotes, setShowDeveloperNotes] = useState(false);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
@@ -1334,7 +1336,7 @@ function AppContent() {
   const hasVisibleCombinationResults = showCombinationResults
     && Array.isArray(combinationResults?.combinations)
     && combinationResults.combinations.length > 0;
-  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showInquiryModal || showAccountModal || showFilters || mobileFilterField !== null || showSearchSheet
+  const hasBlockingOverlay = showWishlistModal || showDeveloperNotes || showInquiryModal || showPrivacyNotice || showAccountModal || showFilters || mobileFilterField !== null || showSearchSheet
     || showAuthModal || hasVisibleCombinationResults || showCourseDetailModal || showTimetableListModal;
   // App 레벨 오버레이의 body 스크롤 락을 한 곳에서 전역 카운터로 관리한다.
   // (내부 state 로 열리는 시트 3곳은 각자 useBodyScrollLock 을 호출한다.)
@@ -1455,6 +1457,10 @@ function AppContent() {
           onClose={() => setShowInquiryModal(false)}
           onSubmitted={(message) => showToast(message)}
         />
+      )}
+
+      {showPrivacyNotice && (
+        <PrivacyNoticeModal onClose={() => setShowPrivacyNotice(false)} />
       )}
 
       {showAccountModal && (
@@ -2050,6 +2056,13 @@ function AppContent() {
               className="btn-ghost h-10 px-3 text-xs text-slate-500"
             >
               <MessageSquare size={13} /> 문의하기
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPrivacyNotice(true)}
+              className="btn-ghost h-10 px-3 text-xs text-slate-500"
+            >
+              <ShieldCheck size={13} /> 개인정보 안내
             </button>
           </div>
         </div>
