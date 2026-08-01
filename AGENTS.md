@@ -1,221 +1,113 @@
-# AGENTS.md
+# Repository Guidance
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+## Scope
 
-## Project Overview
+This repository is the React 18/Vite frontend for INU Timetable. It is a JavaScript SPA styled with Tailwind CSS and backed by the Spring Boot API in `coldmans/inu_timetable`.
 
-This is a React-based university timetable application for INU (Incheon National University) built with Vite and Tailwind CSS. The application connects to a Spring Boot backend API and allows students to search for courses, manage a wishlist, generate timetable combinations, and export their timetable for sharing.
+Keep documentation and implementation aligned with the current code. In particular, do not describe the combination service as AI, authentication as stateless/localStorage-only, search as debounced, export as PDF, analytics as GA4, or the admin page as a production SPA.
 
-## Development Commands
+## Commands
 
-### Essential Commands
-- `npm run dev` - Start development server (connects to http://localhost:8080 API)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint to check code quality
+~~~bash
+npm ci
+npm run dev
+npm run lint
+npm run test:unit
+npm run build
+npm run test:e2e
+npm run test:e2e:production
+npm run build:sites
+npm run preview
+~~~
 
-### Package Management
-- `npm install` - Install all dependencies
-- `npm install <package>` - Add new dependency
-- `npm install -D <package>` - Add development dependency
+- `npm run dev` proxies `/api` and `/admin/api` to `http://localhost:8080`. Set `VITE_DEV_BACKEND_ORIGIN` (preferred for dev) or `VITE_BACKEND_ORIGIN` to override it.
+- `npm run test:unit` runs Node tests matching `tests/unit/*.test.js`.
+- `npm run test:e2e` builds and previews locally at `http://127.0.0.1:4173`, then runs desktop Chromium and Pixel 5 projects. The preview proxy uses `E2E_BACKEND_ORIGIN` or the current Cloud Run backend.
+- `npm run test:e2e:production` sets `E2E_BASE_URL` to the live Vercel site. When any `E2E_BASE_URL` is set, Playwright does not start the local web server.
+- Authenticated E2E cases that depend on `POST /api/dev/session` intentionally skip against backends without the dev endpoint.
 
-## Technology Stack
+For ordinary code changes, run lint, unit tests, and build. Run the relevant Playwright projects when behavior or responsive UI changes.
 
-- **Frontend Framework**: React 18 with JSX
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS with utility classes
-- **Icons**: Lucide React
-- **State Management**: React Context API + hooks (useState, useMemo, useEffect)
-- **API Integration**: Fetch API with custom service layer
-- **Authentication**: Context-based with localStorage persistence
-- **Language**: JavaScript (not TypeScript)
+## Source Map
 
-## Architecture & Code Structure
-
-### Project Structure
-```
+~~~text
 src/
-├── components/          # Reusable UI components
-│   └── AuthModal.jsx   # Login/Register modal
-├── contexts/           # React Context providers
-│   └── AuthContext.jsx # Authentication state management
-├── services/           # API service layer
-│   └── api.js         # All API endpoints and utilities
-├── App.jsx            # Main application component
-├── main.jsx           # React app entry point
-└── index.css          # Tailwind CSS imports
-```
+├── App.jsx
+├── main.jsx
+├── components/
+├── contexts/AuthContext.jsx
+├── hooks/
+├── services/
+│   ├── api.js
+│   ├── adminApi.js
+│   └── analytics.js
+└── utils/
+    ├── dateTime.js
+    └── timetableUtils.js
+tests/
+├── unit/
+└── e2e/
+~~~
 
-### API Service Layer (`src/services/api.js`)
-Centralized API communication with the Spring Boot backend:
+- `src/main.jsx` fetches the server's current semester before mounting React and mounts Vercel Speed Insights.
+- `src/App.jsx` owns the main course, wishlist, timetable, combination, responsive, export, and modal flows.
+- `src/components/` contains reusable course rows, timetable views, mobile sheets, account/auth/inquiry UI, and the dev-only subject manager.
+- `src/contexts/AuthContext.jsx` restores the server session and mirrors the last server-confirmed user profile to localStorage.
+- `src/services/api.js` owns public and student APIs; `src/services/adminApi.js` owns `/admin/api` calls.
+- `src/services/analytics.js` sends first-party attempt events to `POST /api/events`.
+- `src/utils/timetableUtils.js` owns the current-semester fallback, schedule/room formatting, conflict logic, colors, and filter constants.
+- `src/utils/dateTime.js` renders server timestamps in `Asia/Seoul`.
 
-1. **Authentication API** (`authAPI`)
-   - `register()`: User registration
-   - `login()`: User authentication
+## Runtime Contracts
 
-2. **Subject API** (`subjectAPI`)
-   - `getAll()`: Paginated course list
-   - `filter()`: Advanced course filtering
-   - `getCount()`: Course count
+### Semester
 
-3. **Wishlist API** (`wishlistAPI`)
-   - `add()`: Add course to wishlist
-   - `getByUser()`: Get user's wishlist
-   - `remove()`: Remove from wishlist
-   - `updatePriority()`: Change course priority
+- `CURRENT_SEMESTER` defaults to `2026-2`.
+- Before the app renders, `GET /api/settings/current-semester` may replace that value. A 2.5-second timeout or request failure keeps the fallback.
+- Keep all semester-scoped subject, department, wishlist, timetable, and combination calls on the same resolved value.
 
-4. **Timetable API** (`timetableAPI`)
-   - `add()`: Add course to personal timetable
-   - `getByUser()`: Get user's timetable
-   - `remove()`: Remove from timetable
-   - `updateMemo()`: Update course memo
+### Authentication and CSRF
 
-5. **Combination API** (`combinationAPI`)
-   - `generate()`: Generate optimal timetable combinations
+- Authentication is a cookie-backed server session, not a client-only token.
+- `AuthContext` restores with `GET /api/auth/me` using `credentials: include`. `localStorage.user` is a write-only profile mirror in current code and must not be trusted as proof of authentication.
+- Use `fetchWithUserSession` for session-aware reads.
+- Use `fetchWithUserCsrf` for authenticated user/admin state changes. It obtains `XSRF-TOKEN` from `GET /api/auth/csrf`, sends `X-XSRF-TOKEN`, and retries once after a 403 with a refreshed token. Login, registration, and public inquiry have separate request contracts; verify the existing API group before adding a call.
+- Keep public/student endpoints in `api.js` and admin endpoints in `adminApi.js`.
 
-### Authentication System (`src/contexts/AuthContext.jsx`)
-- React Context for global auth state
-- localStorage persistence for user sessions
-- Automatic session restoration on app load
-- Provides: `user`, `isLoggedIn`, `login()`, `register()`, `logout()`
+### Search and Responsive Results
 
-### Component Architecture
+- Search text is submitted explicitly: Enter or the desktop search button, and Enter/recent-search selection in the mobile sheet. There is no search debounce.
+- Filter changes automatically reload page zero.
+- The backend supplies 20-item pages. Desktop shows page navigation; mobile accumulates pages with an `IntersectionObserver` sentinel.
+- Mobile starts with the timetable and opens search/filter sheets. Preserve the separate mobile and desktop interaction paths when changing shared state.
 
-1. **Helper Functions**: Data manipulation utilities
-   - `parseTime()`: API schedule data to UI format
-   - `parseTimeString()`: Legacy time string parsing
-   - `checkConflict()`: Schedule conflict detection
-   - `formatCourse()`: API course data to UI format
+### Timetable Data and Export
 
-2. **UI Components**: Functional React components
-   - `Toast`: Notification system
-   - `LoadingOverlay`: Progress indicator with animation
-   - `MiniTimetable`: Grid-based timetable visualization
-   - `CourseCard`: Individual course display cards
-   - `AuthModal`: Login/Register modal
+- Preserve schedule-level `roomSegments`. A course can have several room segments and several distinct room labels.
+- Reuse `formatCourseSchedule`, `getCourseRoomNames`, and related utilities instead of rebuilding room/time strings in components.
+- The timetable export path dynamically imports `html2canvas` and downloads PNG only. There is no jsPDF dependency.
+- Combination generation is a backend request using wishlist requirements and free days. `targetCredits` is optional; `null` sends `ignoreTargetCredits: true` and omits an exact target.
 
-3. **Main App Component**: Central state management and API orchestration
+### Updates, Inquiries, and Analytics
 
-### State Management Pattern
-- **Global State**: Authentication via React Context
-- **Local State**: React hooks (useState, useMemo, useEffect)
-- **API State**: Loading states, error handling, data caching
-- **Real-time Updates**: Automatic data refresh on user actions
+- Update logs come from `/api/subjects/update-logs`. Unzoned backend values are treated as UTC and displayed in Korean time through `formatUtcDateTimeInKorea`.
+- Inquiries are submitted through `/api/inquiries` by anonymous or authenticated users. Public FAQ items come from `/api/inquiries/faqs` and the FAQ section stays hidden when empty.
+- Analytics events from `analytics.js` are attempt events. For example, add/generate events can fire before auth, validation, conflict checks, or persistence. Do not report them as successful saved actions.
+- Speed Insights is mounted independently of the first-party event endpoint.
 
-### Data Flow Architecture
-1. **Authentication**: Login → Context → localStorage → Global state
-2. **Course Search**: Filters → API call → Format data → UI display
-3. **Wishlist Management**: User action → API call → Local state update → UI refresh
-4. **Timetable Management**: Conflict check → API call → State update → Visual feedback
-5. **AI Generation**: Wishlist data → API processing → Results display
+### Admin and Deployment Boundaries
 
-### Error Handling Strategy
-- **Network Failures**: Graceful degradation to mock data
-- **API Errors**: User-friendly toast notifications
-- **Authentication Errors**: Automatic modal display
-- **Validation Errors**: Inline form feedback
+- `/admin/subjects` and `AdminSubjectManager` are development-only. `App.jsx` guards the lazy import with `import.meta.env.DEV` and returns `HiddenPage` in production.
+- This is an exact pathname branch inside `AppContent`, not a separate router entry or production admin application.
+- Do not add the admin bundle to production or describe a production admin SPA without an explicit product/security decision.
+- `vercel.mjs` rewrites both API prefixes through one `BACKEND_ORIGIN`. The Sites worker created by `npm run build:sites` uses the same variable.
+- Development-only mock fallbacks must remain guarded by `import.meta.env.DEV`; production API failures should surface as errors.
 
-### Korean Localization
-- Full Korean UI text and interactions
-- Korean time format (월/화/수/목/금 for weekdays)
-- Korean course type abbreviations (전핵, 전심, etc.)
-- Korean error messages and notifications
+## Change Guidelines
 
-### Responsive Design Pattern
-- **Desktop**: Side-by-side layout with mini timetable
-- **Mobile**: Stacked layout with floating action button
-- **Adaptive Grids**: Course cards adjust to screen size
-- **Touch-Friendly**: Adequate button sizes and spacing
-
-## Key Features to Understand
-
-### Time Parsing & Conflict Detection
-- **API Format**: Backend sends schedule arrays with `dayOfWeek`, `startTime`, `endTime`
-- **Legacy Support**: Maintains compatibility with string formats like "월 7-8, 수 5-6"
-- **Conflict Algorithm**: Checks for overlapping time periods across same days
-- **Visual Feedback**: Color-coded course blocks in timetable grid
-
-### Authentication Flow
-- **Login/Register**: Modal-based authentication
-- **Session Persistence**: localStorage for user data
-- **Context Integration**: Global auth state via React Context
-- **Route Protection**: Features require authentication
-
-### API Integration Pattern
-- **Service Layer**: Centralized API calls in `src/services/api.js`
-- **Error Handling**: Graceful fallback to mock data
-- **Loading States**: UI feedback during API operations
-- **Data Transformation**: Convert between API and UI formats
-
-### AI Timetable Generation
-- **Input**: User's wishlist with priorities
-- **Processing**: Backend AI generates optimal combinations
-- **Output**: Multiple timetable options with statistics
-- **UI Feedback**: Progress animation during generation
-
-## Development Guidelines
-
-### Code Style
-- Use functional components with hooks
-- Prefer async/await for API calls
-- Keep components focused and single-purpose
-- Use descriptive Korean variable names where appropriate
-- Follow the service layer pattern for new API endpoints
-
-### Adding New Features
-1. **API First**: Add API endpoint to `src/services/api.js`
-2. **State Management**: Use React hooks or Context as appropriate
-3. **UI Components**: Create in `src/components/` if reusable
-4. **Error Handling**: Implement proper error boundaries and user feedback
-5. **Korean Localization**: Ensure all text is in Korean
-6. **Responsive Design**: Test on mobile and desktop
-
-### Backend Dependencies
-- **API Base URL**: `http://localhost:8080/api`
-- **Expected Format**: Spring Boot REST API
-- **Authentication**: Stateless, user data stored client-side
-- **CORS**: Must be configured on backend for development
-
-### Mock Data Strategy
-When backend is unavailable:
-- Service layer falls back to hardcoded mock data
-- Mock data structure matches API response format
-- Maintains full functionality for development/testing
-
-### Testing Considerations
-- **API Mocking**: Mock the service layer for unit tests
-- **Korean Content**: Test with actual Korean characters
-- **Time Parsing**: Verify both API and legacy time formats
-- **Conflict Detection**: Test edge cases in schedule overlaps
-- **Authentication**: Test login/logout flows and persistence
-
-### Performance Notes
-- **Debounced Search**: 1000ms delay on search input to reduce API calls
-- **Pagination**: Server-side pagination (20 items per page) for fast loading
-- **Memoized Calculations**: Course filtering and timetable grid
-- **Lazy Loading**: Components load data only when needed
-- **Optimistic Updates**: UI updates before API confirmation
-- **Client-side Filtering**: Removed in favor of server-side filtering for better performance
-
-### Pagination System
-The application uses server-side pagination to handle large datasets efficiently:
-
-**API Integration:**
-- `/api/subjects/filter?page=0&size=20` - Paginated course search
-- Supports page numbers (0-based) and page size configuration
-- Returns paginated response with metadata (totalElements, totalPages, etc.)
-
-**Frontend Components:**
-- `Pagination.jsx` - Full-featured pagination component with page numbers
-- Handles page navigation, loading states, and result counts
-- Auto-scrolls to top on page change
-
-**State Management:**
-- `currentPage`, `totalPages`, `totalElements`, `pageSize` state variables
-- `handlePageChange()` function for page navigation
-- Filter changes reset to page 0
-
-**Performance Benefits:**
-- Reduced API response time: 30s-2min → 1-2s
-- Lower memory usage: Only 20 items in DOM instead of 2000+
-- Better user experience with loading indicators
+- Use functional components and hooks; put reusable UI in `src/components` and shared behavior in `hooks` or `utils`.
+- Keep Korean user-facing copy concise and test accessible names/roles when changing interactions.
+- Keep API parsing and cookie/CSRF behavior in the service layer rather than duplicating fetch logic in components.
+- Preserve desktop and mobile behavior independently: verify both after search, filter, modal, timetable, or combination changes.
+- Extend focused unit tests for pure utilities and Playwright tests for user-visible flows.
+- Do not claim a feature, endpoint, metric, deployment, or admin surface from a helper name alone; verify the active call site and target environment.
